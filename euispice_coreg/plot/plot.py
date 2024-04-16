@@ -15,6 +15,7 @@ import os
 import warnings
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+
 def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
     """
     Interpolates in 2D image using either map_coordinates or opencv
@@ -567,9 +568,9 @@ class PlotFunctions:
                 header_spice["BUNIT"] = hdul_spice[small_fov_window].header["BUNIT"]
                 hdr_spice_shifted["BUNIT"] = hdul_spice[small_fov_window].header["BUNIT"]
                 header_spice["DATE-AVG"] = hdul_spice[small_fov_window].header["DATE-AVG"]
-                cm = 1 / 2.54  # centimeters in inches
+                # cm = 1 / 2.54  # centimeters in inches
 
-                fig = plt.figure(figsize=(17*cm, 10*cm))
+                fig = plt.figure(figsize=(12, 8))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                     PlotFunctions.compare_plot(header_large, data_large, header_spice, data_spice, hdr_spice_shifted,
                                                data_spice, show=False, norm=norm, levels=levels, return_axes=True,
@@ -580,13 +581,16 @@ class PlotFunctions:
 
                 ax1.set_title(f"{detector} {wave} & Small FOV (contour) not aligned ")
                 ax2.set_title(f"{detector} {wave} & Small FOV (contour) aligned ")
+                ax2.set_yticklabels([])
+                ax3.set_yticklabels([])
+
                 ax3.set_title("Small FOV (%s) aligned " % small_fov_window)
                 date = Time(hdul_spice[small_fov_window].header["DATE-AVG"]).fits[:19]
                 date = date.replace(":", "_")
                 date = date.replace("-", "_")
 
                 date_str = header_spice["DATE-OBS"][:19]
-                fig.suptitle(f"Small FOV {date_str} aligned with {detector} {wave}")
+                fig.suptitle(f"Small FOV {date_str}  aligned with {detector} {wave}")
                 # fig.suptitle("Alignement of SPICE  using a synthetic raster of HRIEUV images")
                 if results_folder is not None:
                     fig.savefig('%s/compare_alignment.pdf' % (results_folder))
