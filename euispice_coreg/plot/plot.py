@@ -309,19 +309,15 @@ class PlotFunctions:
                      hdr_contour_2, data_contour_2, norm, norm_contour=None, path_save=None,
                      cmap1="plasma", cmap2="viridis", show=True,
                      levels=None, fig=None, gs=None, ax1=None, ax2=None, ax3=None, aspect=1, return_axes=False):
+        cm = 1/2.54  # centimeters in inches
 
         if (norm.vmin is None) or (norm.vmax is None):
             raise ValueError("Must explicit vmin and vmax in norm, so that the cbar is the same for both figures.")
         if fig is None:
-            fig = plt.figure(figsize=(10, 4))
+            fig = plt.figure(figsize=(17*cm, 10*cm))
 
 
-        cm = 1/2.54  # centimeters in inches
         #
-        fig1 = plt.figure(figsize=(17*cm, 10*cm))
-        gs1 = GridSpec(1, 2, wspace=0.5)
-
-        axs1 = [fig.add_subplot(gs1[n]) for n in range(2)]
 
         gs = GridSpec(1, 5, width_ratios=[1, 1, 0.2, 1, 0.2], wspace=0.5)
         if ax1 is None:
@@ -679,53 +675,3 @@ class PlotFunctions:
                 hdul_spice.close()
             hdul_large.close()
 
-
-# class Util:
-#     @staticmethod
-#     def ang2pipi(ang):
-#         """ put angle between ]-180, +180] deg """
-#         pi = u.Quantity(180, 'deg')
-#         return - ((- ang + pi) % (2 * pi) - pi)
-#
-#     @staticmethod
-#     def fits_create_submap(data, header, longitude_limits_arcsec: list, latitude_limits_arcsec: list):
-#         longitude, latitude, dsun_obs = Util.extract_EUI_coordinates(hdr=header)
-#         mask_longitude = np.array((longitude.to(u.arcsec) > longitude_limits_arcsec[0]) &
-#                                   (longitude.to(u.arcsec) < longitude_limits_arcsec[1]), dtype="bool")
-#
-#         mask_latitude = np.array((latitude.to(u.arcsec) > latitude_limits_arcsec[0]) &
-#                                  (latitude.to(u.arcsec) < latitude_limits_arcsec[1]), dtype="bool")
-#
-#     @staticmethod
-#     def extract_EUI_coordinates(hdr):
-#         w = WCS(hdr)
-#         idx_lon = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-#         idx_lat = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
-#         x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
-#                            np.arange(w.pixel_shape[idx_lat]), )
-#         # should reproject on a new coordinate grid first : suppose slits at the same time :
-#         longitude, latitude = w.pixel_to_world(x, y)
-#         if "DSUN_OBS" in w.to_header():
-#             dsun_obs_large = w.to_header()["DSUN_OBS"]
-#         else:
-#             dsun_obs_large = None
-#         return Util.ang2pipi(longitude), Util.ang2pipi(latitude), dsun_obs_large
-#
-#     @staticmethod
-#     def _extract_spice_coordinates(hdr):
-#         w_small = WCS(hdr)
-#         w2 = w_small.deepcopy()
-#
-#         w2.wcs.pc[3, 0] = 0
-#         w2.wcs.pc[3, 1] = 0
-#
-#         w_xyt = w2.dropaxis(2)
-#         w_xy = w_xyt.dropaxis(2)
-#         idx_lon = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-#         idx_lat = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
-#         x_small, y_small = np.meshgrid(np.arange(w_xy.pixel_shape[idx_lon]),
-#                                        np.arange(w_xy.pixel_shape[idx_lat]),
-#                                        indexing='ij')  # t dépend de x,
-#         # should reproject on a new coordinate grid first : suppose slits at the same time :
-#         longitude_small, latitude_small = w_xy.pixel_to_world(x_small, y_small)
-#         return longitude_small, latitude_small
