@@ -349,30 +349,6 @@ class Alignment:
 
     def _find_best_header_parameters(self):
 
-        naxis1, naxis2 = self._get_naxis(self.hdr_large)
-
-        # if (self.hdr_large["CRPIX1"] != (naxis1 + 1) / 2) or (self.hdr_large["CRPIX2"] != (naxis2 + 1) / 2):
-        #     crpix1_old = self.hdr_large["CRPIX1"]
-        #     crpix2_old = self.hdr_large["CRPIX2"]
-        #     self._recenter_crpix_in_header(self.hdr_large)
-        #     crpix1_new = self.hdr_large["CRPIX1"]
-        #     crpix2_new = self.hdr_large["CRPIX2"]
-        #     warnings.warn(f"in hdr_large : CRPIX1 or 2 not in center of FOV."
-        #                   f"\nReplacing CRPIX1 from {crpix1_old} to {crpix1_new}"
-        #                   f"\nReplacing CRPIX2 from {crpix2_old} to {crpix2_new}")
-
-        naxis1, naxis2 = self._get_naxis(self.hdr_small)
-
-        # if (self.hdr_small["CRPIX1"] != (naxis1 + 1) / 2) or (self.hdr_small["CRPIX2"] != (naxis2 + 1) / 2):
-        #     crpix1_old = self.hdr_small["CRPIX1"]
-        #     crpix2_old = self.hdr_small["CRPIX2"]
-        #     self._recenter_crpix_in_header(self.hdr_small)
-        #     crpix1_new = self.hdr_small["CRPIX1"]
-        #     crpix2_new = self.hdr_small["CRPIX2"]
-        #
-        #     warnings.warn(f"in hdr_small : CRPIX1 or 2 not in center of FOV."
-        #                   f"\nReplacing CRPIX1 from {crpix1_old} to {crpix1_new}"
-        #                   f"\nReplacing CRPIX2 from {crpix2_old} to {crpix2_new}")
 
         self.crval1_ref = self.hdr_small['CRVAL1']
         self.crval2_ref = self.hdr_small['CRVAL2']
@@ -399,7 +375,7 @@ class Alignment:
         #     raise ValueError("in hdr_large : CRPIX1 or 2 not in center of FOV")
 
         if "arcsec" in self.unit1:
-            warnings.warn("Unit of headers in arcsec : must provide arcsec units for dcrval")
+            # warnings.warn("Unit of headers in arcsec : must provide arcsec units for dcrval")
             self.unit_lag = "arcsec"
 
         elif "deg" in self.unit1:
@@ -417,13 +393,10 @@ class Alignment:
         shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
         self._correlation = {"name": shmm_correlation.name, "size": data_correlation.size,
                              "shape": data_correlation.shape}
-        # shmm_correlation.close()
         del results
 
         if self.parallelism:
-            # if (len(self.lag_cdelta1) > 1) or (len(self.lag_crota) > 1) or (len(self.lag_cdelta2) > 1):
-            #     raise NotImplementedError
-            # else:
+
             for kk, d_solar_r in enumerate(self.lag_solar_r):
                 Processes = []
 
@@ -440,11 +413,6 @@ class Alignment:
                 shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_small))
                 self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
                 del self.data_small
-
-                # shmm_correlation.close()
-                # shmm_small.close()
-                # shmm_large.close()
-                shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
 
                 for ii, d_cdelta1 in enumerate(self.lag_cdelta1):
                     for ll, d_cdelta2 in enumerate(self.lag_cdelta2):
@@ -463,8 +431,7 @@ class Alignment:
                                 }
 
                                 Processes.append(Process(target=self._iteration_step_along_crval2, kwargs=kwargs))
-                # len_processes = np.arange(len(Processes))
-                # start_index = np.arange(0, len(Processes), self.counts)
+
                 if self.counts is None:
                     self.counts = mp.cpu_count()
 
@@ -482,7 +449,6 @@ class Alignment:
                             if (not(P.is_alive())) and (kk <= ii):
                                 P.close()
                                 is_close.append(kk)
-                                # Processes.pop(kk)
 
 
                 while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if (mm not in is_close)]) != 0):
@@ -492,41 +458,6 @@ class Alignment:
                         if (not (P.is_alive())) and (kk <= ii):
                             P.close()
                             is_close.append(kk)
-                # for P in Processes:
-                #
-                #     P.join()
-
-                # while (index_processes < len(Processes)):
-                #     idx = []
-                #     count = 0s
-                #     A = index_processes
-                #     while (count < self.counts):
-                #         Processes[A + index_processes].start()
-                #         count += 1
-                #         A += 1
-                #     while (count < self.counts):
-                #         Processes[index_processes].join()
-
-                # for sublist in len_processes_split:
-                #     if len(sublist) > 0:
-                #         for index_processes in sublist:
-                #
-                #             Processes[index_processes].start()
-                #         #
-                #         for ff, index_processes in enumerate(sublist):
-                #             # print(f'Start process #{ff}')
-                #             # Processes[index_processes].terminate()
-                #             Processes[index_processes].join()
-                #             Processes[index_processes].terminate()
-                # pool = mp.Pool(count)
-                # results[:, :, ii, ll, jj, kk] = pool.map(partial(self._iteration_step_along_crval2,
-                #                                                  d_cdelta1=d_cdelta1,
-                #                                                  d_cdelta2=d_cdelta2,
-                #                                                  d_crota=d_crota,
-                #                                                  method=self.method,
-                #                                                  d_solar_r=d_solar_r, ),
-                #                                          self.lag_crval1)
-
 
 
         else:

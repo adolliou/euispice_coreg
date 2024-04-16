@@ -89,8 +89,8 @@ parameter_alignment = {
 
 }
 
-PlotFunctions.plot_correlation(corr, lag_crval1=lag_crval1, lag_crval2=lag_crval2, show=True,
-                           path_save=os.path.join(path_save_fig, "correlation.pdf"))
+PlotFunctions.plot_correlation(corr,  show=True,
+                           path_save=os.path.join(path_save_fig, "correlation.pdf"), **parameter_alignment)
 PlotFunctions.plot_co_alignment(small_fov_window=-1, large_fov_window=-1, corr=corr,
                             small_fov_path=path_hri, large_fov_path=path_fsi, show=True,
                             results_folder=path_save_fig, levels_percentile=[95],
@@ -154,8 +154,8 @@ parameter_alignment = {
 
 }
 
-PlotFunctions.plot_correlation(corr, lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_drot=lag_crota, show=True,
-                           path_save=os.path.join(path_save_fig, "correlation.pdf"))
+PlotFunctions.plot_correlation(corr, show=True,
+                           path_save=os.path.join(path_save_fig, "correlation.pdf"), **parameter_alignment)
 PlotFunctions.plot_co_alignment(small_fov_window=-1, large_fov_window=-1, corr=corr,
                             small_fov_path=path_hri, large_fov_path=path_fsi, show=True,
                             results_folder=path_save_fig, levels_percentile=[95],

@@ -68,7 +68,7 @@ def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
 
 class PlotFunctions:
     @staticmethod
-    def plot_correlation(corr, lag_crval1, lag_crval2, lag_drot=None, lag_cdelta1=None, lag_cdelta2=None,
+    def plot_correlation(corr, lag_crval1, lag_crval2, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
                          path_save=None, fig=None, ax=None, show=False,
                          lag_dx_label=None, lag_dy_label=None, unit='\'\'', type_plot="xy", ):
 
@@ -104,18 +104,18 @@ class PlotFunctions:
         ax.add_patch(rect)
         ax.axhline(y=lag_dy[max_index[1]], color='r', linestyle='--', linewidth=0.5)
         ax.axvline(x=lag_dx[max_index[0]], color='r', linestyle='--', linewidth=0.5)
-        if (lag_drot is not None) & (lag_cdelta1 is None):
+        if (lag_crota is not None) & (lag_cdelta1 is None):
             textstr = '\n'.join((
                 r'$dx=%.1f$ %s' % (lag_dx[max_index[0]], unit),
                 r'$dy=%.1f$ %s' % (lag_dy[max_index[1]], unit),
-                r'$drota=%.2f$ $^\circ$' % (lag_drot[max_index[4]]),
+                r'$drota=%.2f$ $^\circ$' % (lag_crota[max_index[4]]),
                 r'max_cc = %.2f' % (np.nanmax(corr))
             ))
-        elif (lag_drot is not None) & (lag_cdelta1 is not None):
+        elif (lag_crota is not None) & (lag_cdelta1 is not None):
             textstr = '\n'.join((
                 r'$dx=%.1f$ %s' % (lag_dx[max_index[0]], unit),
                 r'$dy=%.1f$ %s' % (lag_dy[max_index[1]], unit),
-                r'$drota=%.2f$ $^\circ$' % (lag_drot[max_index[4]]),
+                r'$drota=%.2f$ $^\circ$' % (lag_crota[max_index[4]]),
                 r'$cdelt1=%.2f$ $^\circ$' % (lag_cdelta1[max_index[2]]),
                 r'$cdelt2=%.2f$ $^\circ$' % (lag_cdelta2[max_index[3]]),
                 r'max_cc = %.2f' % (np.nanmax(corr))))
