@@ -319,7 +319,7 @@ class PlotFunctions:
 
         #
 
-        gs = GridSpec(1, 5, width_ratios=[1, 1, 0.2, 1, 0.2], wspace=0.5)
+        gs = GridSpec(1, 5, width_ratios=[1, 1, 0.05, 1, 0.05], wspace=0.1)
         if ax1 is None:
             ax1 = fig.add_subplot(gs[0])
         if ax2 is None:
@@ -565,8 +565,9 @@ class PlotFunctions:
                 header_spice["BUNIT"] = hdul_spice[small_fov_window].header["BUNIT"]
                 hdr_spice_shifted["BUNIT"] = hdul_spice[small_fov_window].header["BUNIT"]
                 header_spice["DATE-AVG"] = hdul_spice[small_fov_window].header["DATE-AVG"]
+                cm = 1 / 2.54  # centimeters in inches
 
-                fig = plt.figure(figsize=(10, 4))
+                fig = plt.figure(figsize=(17*cm, 10*cm))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                     PlotFunctions.compare_plot(header_large, data_large, header_spice, data_spice, hdr_spice_shifted,
                                                data_spice, show=False, norm=norm, levels=levels, return_axes=True,
