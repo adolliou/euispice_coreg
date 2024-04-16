@@ -1,7 +1,7 @@
-# SPICE_Alignment
+# **euispice_coreg**
 
 
-Welcome to the SPICE_alignment python package :artificial_satellite: :sun_with_face:. This package can be used to correct the pointing information of SPICE or HRI-EUV datasets, on board Solar Orbiter. 
+Welcome to the euispice_coreg python package :artificial_satellite:. This package can be used to correct the pointing information of SPICE or HRI-EUV datasets, on board Solar Orbiter. 
 
 ## Description :
 
@@ -30,7 +30,7 @@ source env/bin/activate # write "deactivate" in shell to go out of your virtual 
 You can use the pip install + git command, while you are in virtual environment, to install the package into your own project.
 
 ```shell
-pip install git+https://github.com/adolliou/SPICE_Alignement
+pip install git+https://github.com/adolliou/euispice_coreg
 ```
 You can also clone the SPICE_alignment repository locally. Then, while you are in the virtual environment of your personal project, you can add the Alignment package with the following command :
 
@@ -49,9 +49,9 @@ Here, we co-register an HRIEUV image with an FSI 174 image. We start using Helio
 
 ```python
 import numpy as np
-from SPICE_alignment.hdrshift.alignement import Alignment
-from SPICE_alignment.plot.plot import PlotFunctions
-from SPICE_alignment.utils.Util import AlignCommonUtil
+from euispice_coreg.hdrshift.alignement import Alignment
+from euispice_coreg.plot.plot import PlotFunctions
+from euispice_coreg.utils.Util import AlignCommonUtil
 import os
 
 path_hri = "path/to/HRIEUV.fits"
@@ -108,10 +108,10 @@ In that case, you have to provide the grid where the aligment is performed.
 
 ```python
 import os.path
-from SPICE_alignment.hdrshift.alignement import Alignment
+from euispice_coreg.hdrshift.alignement import Alignment
 import numpy as np
-from SPICE_alignment.plot.plot import PlotFunctions
-from SPICE_alignment.utils.Util import AlignCommonUtil
+from euispice_coreg.plot.plot import PlotFunctions
+from euispice_coreg.utils.Util import AlignCommonUtil
 
 
 path_fsi = "path/to/FSI174.fits"
@@ -172,7 +172,7 @@ We show here a typical example to align SPICE data with a synthetic raster creat
 ####  Creation of a SPICE synthetic raster 
 First of all, we need to create a synthetic raster for the SPICE raster using a list of FSI 304 FITS files.
 ```python
-from SPICE_alignment.synras.map_builder import SPICEComposedMapBuilder
+from euispice_coreg.synras.map_builder import SPICEComposedMapBuilder
 from glob import glob
 import astropy.units as u
 
@@ -197,9 +197,9 @@ The header values that can be shifted are CRVAL1, CRVAL2, CROTA, CDELT1  and CDE
 
 ```python
 import numpy as np
-from SPICE_alignment.hdrshift.alignement_spice import AlignmentSpice
-from SPICE_alignment.plot.plot import PlotFunctions
-from SPICE_alignment.utils.Util import AlignSpiceUtil
+from euispice_coreg.hdrshift.alignement_spice import AlignmentSpice
+from euispice_coreg.plot.plot import PlotFunctions
+from euispice_coreg.utils.Util import AlignSpiceUtil
 
 
 path_to_synthetic_raster_fits = "path/to/input/synthetic_raster.fits"

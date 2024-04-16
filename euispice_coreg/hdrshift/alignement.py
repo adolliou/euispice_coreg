@@ -165,25 +165,20 @@ class Alignment:
                                          d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
                                          method=method, d_solar_r=d_solar_r,
                                          )
+
         else:
-            # print(f'je suis là')
 
             for ii, d_crval2 in enumerate(self.lag_crval2):
-                # print(f'{ii=}')
-                # print(f'{d_crval2=}')
-
                 results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
                                          d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
                                          method=method, d_solar_r=d_solar_r,
                                          )
-                # print(f'{results=}')
-        # if lock is not None:
 
         lock.acquire()
         shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
         data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
-        # print(f'{data_correlation[:, :, position[1], position[2], position[3],  position[4]]}')
         lock.release()
+        data_correlation.close()
         # shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
         # assert self.data_large == data_large
         # shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
@@ -192,8 +187,7 @@ class Alignment:
         # if lock is not None:
 
     def _step(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
-        # print(hdr_small['CRVAL1'])
-        # print(self.crval1_ref)
+
         shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
         shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
 
@@ -423,7 +417,7 @@ class Alignment:
         shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
         self._correlation = {"name": shmm_correlation.name, "size": data_correlation.size,
                              "shape": data_correlation.shape}
-        shmm_correlation.close()
+        # shmm_correlation.close()
         del results
 
         if self.parallelism:
@@ -447,9 +441,10 @@ class Alignment:
                 self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
                 del self.data_small
 
-                shmm_correlation.close()
-                shmm_small.close()
-                shmm_large.close()
+                # shmm_correlation.close()
+                # shmm_small.close()
+                # shmm_large.close()
+                shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
 
                 for ii, d_cdelta1 in enumerate(self.lag_cdelta1):
                     for ll, d_cdelta2 in enumerate(self.lag_cdelta2):
@@ -472,22 +467,7 @@ class Alignment:
                 # start_index = np.arange(0, len(Processes), self.counts)
                 if self.counts is None:
                     self.counts = mp.cpu_count()
-                # len_processes_split = divide_chunks(l=len_processes, n=self.counts)
-                # print(f"{len_processes_split=}")
-                # len_processes_split = np.array_split(len_processes, self.counts)
-                # print(f'{len_processes_split=}')
-                len_processes_split_ = []
-                index_processes = 0
-                # sublists_Processes = [Processes[x:x + self.counts] for x in range(0, len(Processes), self.counts)]
-                # for sublist in sublists_Processes:
-                #     ii = 0
-                #     for P in sublist:
-                #         print(f'{ii=}')
-                #         ii += 1
-                #         P.start()
-                #     for P in sublist:
-                #         P.join()
-                #         P.terminate()
+
                 lenp = len(Processes)
                 ii = -1
                 is_close = []
@@ -496,7 +476,6 @@ class Alignment:
                     Processes[ii].start()
                     while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if (mm not in is_close)]) > self.counts):
 
-                        # [p.terminate() for kk, p in zip(range(lenp), Processes) if ((~(p.is_alive()) and kk <= ii))]
                         pass
                     for kk, P in zip(range(lenp), Processes):
                         if kk not in is_close:
