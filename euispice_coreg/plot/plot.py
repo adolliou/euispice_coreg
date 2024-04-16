@@ -321,7 +321,7 @@ class PlotFunctions:
         #
 
         # gs = GridSpec(1, 5, width_ratios=[1, 1, 0.2, 1, 0.2], wspace=0.5)
-        gs = GridSpec(1, 5, width_ratios=[1, 1, 0.2, 1, 0.05], wspace=0.3)
+        gs = GridSpec(1, 5, width_ratios=[1, 1, 0.1, 1, 0.1], wspace=0.2)
 
         if ax1 is None:
             ax1 = fig.add_subplot(gs[0])
@@ -579,8 +579,8 @@ class PlotFunctions:
                 detector = header_large["DETECTOR"]
                 wave = header_large["WAVELNTH"]
 
-                ax1.set_title(f"{detector} {wave} & Small FOV (contour) not aligned ")
-                ax2.set_title(f"{detector} {wave} & Small FOV (contour) aligned ")
+                ax1.set_title(f"{detector} {wave} & Small FOV (contour) NA ")
+                ax2.set_title(f"{detector} {wave} & Small FOV (contour) A ")
                 ax2.set_yticklabels([])
                 ax3.set_yticklabels([])
 
@@ -590,7 +590,7 @@ class PlotFunctions:
                 date = date.replace("-", "_")
 
                 date_str = header_spice["DATE-OBS"][:19]
-                fig.suptitle(f"Small FOV {date_str}  aligned with {detector} {wave}")
+                fig.suptitle(f"Small FOV {date_str}  aligned with {detector} {wave}. Aligned (A) ; Not Aligned (NA)")
                 # fig.suptitle("Alignement of SPICE  using a synthetic raster of HRIEUV images")
                 if results_folder is not None:
                     fig.savefig('%s/compare_alignment.pdf' % (results_folder))
