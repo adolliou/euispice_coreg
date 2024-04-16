@@ -570,7 +570,7 @@ class PlotFunctions:
                 header_spice["DATE-AVG"] = hdul_spice[small_fov_window].header["DATE-AVG"]
                 # cm = 1 / 2.54  # centimeters in inches
 
-                fig = plt.figure(figsize=(12, 8))
+                fig = plt.figure(figsize=(13, 5))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                     PlotFunctions.compare_plot(header_large, data_large, header_spice, data_spice, hdr_spice_shifted,
                                                data_spice, show=False, norm=norm, levels=levels, return_axes=True,
