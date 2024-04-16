@@ -319,7 +319,9 @@ class PlotFunctions:
 
         #
 
+        # gs = GridSpec(1, 5, width_ratios=[1, 1, 0.2, 1, 0.2], wspace=0.5)
         gs = GridSpec(1, 5, width_ratios=[1, 1, 0.05, 1, 0.05], wspace=0.1)
+
         if ax1 is None:
             ax1 = fig.add_subplot(gs[0])
         if ax2 is None:
