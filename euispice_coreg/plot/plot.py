@@ -578,7 +578,7 @@ class PlotFunctions:
                     lon, lat = w_large.pixel_to_world(x_, y_)
                     lat_ = AlignCommonUtil.ang2pipi(lat).to("arcsec").value
 
-                    b = np.logical_and(lat_ < lmin-25, lat_ > lmax+25)
+                    b = np.logical_or(lat_ < lmin-25, lat_ > lmax+25)
 
                     data_large_cp[b] = np.nan
                     data_large_cp[b] = np.nan
