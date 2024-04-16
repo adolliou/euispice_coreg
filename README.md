@@ -32,10 +32,10 @@ You can use the pip install + git command, while you are in virtual environment,
 ```shell
 pip install git+https://github.com/adolliou/euispice_coreg
 ```
-You can also clone the SPICE_alignment repository locally. Then, while you are in the virtual environment of your personal project, you can add the Alignment package with the following command :
+You can also clone the euispice_coreg repository locally. Then, while you are in the virtual environment of your personal project, you can add the Alignment package with the following command :
 
 ```shell
-cd path/to/SPICE_alignment
+cd path/to/euispice_coreg
 pip install .
 ```
 
