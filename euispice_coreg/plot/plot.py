@@ -465,8 +465,9 @@ class PlotFunctions:
                     data_spice = np.nansum(data_small[0, :, :, :], axis=0)
                     data_spice[:ymin, :] = np.nan
                     data_spice[ymax:, :] = np.nan
-
                     longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_spice.copy(), dsun=False)
+                    lmin = latitude[ymin, 0]
+                    lmax = latitude[ymax, 0]
 
                     if cut_from_center is not None:
 
@@ -618,13 +619,18 @@ class PlotFunctions:
                 data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan, data_spice_interp_shift)
 
 
-                data_fsi_interp = np.where(data_spice_interp_shift == np.nan, np.nan, data_fsi_interp)
-
-
                 longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid.to("arcsec")).value
                 latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid.to("arcsec")).value
                 dlon = longitude_grid_arc[0, 1] - longitude_grid_arc[0, 0]
                 dlat = latitude_grid_arc[1, 0] - latitude_grid_arc[0, 0]
+
+                if "SPICE" in header_spice_original["TELESCOP"]:
+                    b = np.logical_and(longitude_grid_arc > lmin-10, longitude_grid_arc < lmax+10)
+                    data_fsi_interp[b] = np.nan
+                    data_fsi_interp[b] = np.nan
+                    breakpoint()
+
+
 
                 isnan = np.isnan(data_spice_interp)
                 min = np.percentile(data_spice_interp[~isnan], 3)
