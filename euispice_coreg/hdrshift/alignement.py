@@ -8,12 +8,12 @@ from multiprocessing import Process, Lock
 import astropy.io.fits as Fits
 from . import c_correlate
 from ..utils import rectify
-from astropy.wcs import WCS
+from astropy.wcs import WCS, FITSFixedWarning
 import astropy.units as u
 from ..plot import plot
 import warnings
 from ..utils import Util
-
+warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 
 def divide_chunks(l, n):
     # looping till length l
@@ -178,7 +178,7 @@ class Alignment:
         shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
         data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
         lock.release()
-        data_correlation.close()
+        shmm_correlation.close()
         # shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
         # assert self.data_large == data_large
         # shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)

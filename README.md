@@ -250,11 +250,12 @@ Example of a results for co-alignment between a SPICE C III image and a FSI 304 
 ![Example of a results for co-alignment between SPICE and FSI 304, from plot_spice_co_alignement](co_alignment_SPICE_FSI.png)
 
 
-## Credits
+## Acknowledgments
 
 - Carrington transform: [F. Auchère](https://github.com/frederic-auchere)
 - SPICE utils: [G. Pelouze](https://github.com/gpelouze)
 - Matrix transform: [F. Auchère](https://github.com/frederic-auchere)
+- 
 
 ## Contact
 
