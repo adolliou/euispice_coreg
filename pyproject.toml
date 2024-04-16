@@ -13,7 +13,6 @@ astropy = "^6.0.1"
 matplotlib = "^3.8.4"
 opencv-python = "^4.9.0.80"
 scipy = "^1.13.0"
-h5py = "^3.11.0"
 
 
 [build-system]
