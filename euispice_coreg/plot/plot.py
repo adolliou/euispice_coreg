@@ -576,8 +576,9 @@ class PlotFunctions:
                     w_large = WCS(header_large)
                     x_, y_ = np.meshgrid(np.arange(header_large["NAXIS1"]), np.arange(header_large["NAXIS2"]))
                     lon, lat = w_large.pixel_to_world(x_, y_)
+                    lat_ = AlignCommonUtil.ang2pipi(lat).to("arcsec").value
 
-                    b = np.logical_and(lat > lmin-10, lat < lmax+10)
+                    b = np.logical_and(lat_ > lmin-10, lat_ < lmax+10)
 
                     data_large_cp[b] = np.nan
                     data_large_cp[b] = np.nan
