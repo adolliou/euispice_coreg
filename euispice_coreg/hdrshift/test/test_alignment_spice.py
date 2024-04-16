@@ -10,9 +10,9 @@ from pathlib import Path
 def test_alignement_helioprojective_spice():
     folder = 'C:/Users/adolliou/PycharmProjects/Alignement/test'
 
-    path_fsi = os.path.join(Path().absolute(), "SPICE_alignment", "hdrshift", "test",
+    path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
                             "fitsfiles", 'solo_L2_eui-fsi304-image_20220317T000800208_V02.fits')
-    path_spice = os.path.join(Path().absolute(), "SPICE_alignment", "hdrshift", "test",
+    path_spice = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
                               "fitsfiles", 'solo_L2_spice-n-ras_20220317T000032_V02_100663831-000.fits')
 
     small_fov_window = 3

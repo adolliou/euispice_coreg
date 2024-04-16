@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "euispice-coreg"
 version = "0.1.0"
-description = ""
+description = "Tools to co-register imagers (including HRI-EUV) and SPICE, on-bord Solar Orbiter. "
 authors = ["adolliou <antoine.dolliou@universite-paris-saclay.fr>"]
 readme = "README.md"
 
