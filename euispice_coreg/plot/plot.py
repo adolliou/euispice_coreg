@@ -569,10 +569,24 @@ class PlotFunctions:
                 hdr_spice_shifted["BUNIT"] = hdul_spice[small_fov_window].header["BUNIT"]
                 header_spice["DATE-AVG"] = hdul_spice[small_fov_window].header["DATE-AVG"]
                 # cm = 1 / 2.54  # centimeters in inches
+                data_large_cp = copy.deepcopy(data_large)
+                if "SPICE" in header_spice_original["TELESCOP"]:
+                    lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
+                    lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
+                    w_large = WCS(header_large)
+                    x_, y_ = np.meshgrid(np.arange(header_large["NAXIS1"]), np.arange(header_large["NAXIS2"]))
+                    lon, lat = w_large.pixel_to_world(x_, y_)
+
+                    b = np.logical_and(lat > lmin-10, lat < lmax+10)
+
+                    data_large_cp[b] = np.nan
+                    data_large_cp[b] = np.nan
+                    # breakpoint()
+
 
                 fig = plt.figure(figsize=(12, 6))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
-                    PlotFunctions.compare_plot(header_large, data_large, header_spice, data_spice, hdr_spice_shifted,
+                    PlotFunctions.compare_plot(header_large, data_large_cp, header_spice, data_spice, hdr_spice_shifted,
                                                data_spice, show=False, norm=norm, levels=levels, return_axes=True,
                                                fig=fig,
                                                cmap1="plasma", cmap2="viridis", path_save=None)
@@ -621,14 +635,6 @@ class PlotFunctions:
                 dlon = longitude_grid_arc[0, 1] - longitude_grid_arc[0, 0]
                 dlat = latitude_grid_arc[1, 0] - latitude_grid_arc[0, 0]
 
-                if "SPICE" in header_spice_original["TELESCOP"]:
-                    lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
-                    lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
-
-                    b = np.logical_and(longitude_grid_arc > lmin-10, longitude_grid_arc < lmax+10)
-                    data_fsi_interp[b] = np.nan
-                    data_fsi_interp[b] = np.nan
-                    breakpoint()
 
 
 
