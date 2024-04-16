@@ -614,6 +614,8 @@ class PlotFunctions:
                 data_fsi_interp = np.where(data_fsi_interp == -32762, np.nan, data_fsi_interp)
                 data_spice_interp = np.where(data_spice_interp == -32762, np.nan, data_spice_interp)
                 data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan, data_spice_interp_shift)
+                data_fsi_interp = np.where(data_spice_interp_shift == np.nan, np.nan, data_fsi_interp)
+
 
                 longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid.to("arcsec")).value
                 latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid.to("arcsec")).value
