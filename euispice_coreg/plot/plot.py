@@ -582,7 +582,6 @@ class PlotFunctions:
 
                     data_large_cp[b] = np.nan
                     data_large_cp[b] = np.nan
-                    breakpoint()
 
 
                 fig = plt.figure(figsize=(12, 6))
