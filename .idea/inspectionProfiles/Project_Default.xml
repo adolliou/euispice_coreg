@@ -1,0 +1,29 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="11">
+            <item index="0" class="java.lang.String" itemvalue="pandas" />
+            <item index="1" class="java.lang.String" itemvalue="UtilFunctions" />
+            <item index="2" class="java.lang.String" itemvalue="h5py" />
+            <item index="3" class="java.lang.String" itemvalue="astropy" />
+            <item index="4" class="java.lang.String" itemvalue="scikit-image" />
+            <item index="5" class="java.lang.String" itemvalue="scipy" />
+            <item index="6" class="java.lang.String" itemvalue="seaborn" />
+            <item index="7" class="java.lang.String" itemvalue="opencv-python" />
+            <item index="8" class="java.lang.String" itemvalue="matplotlib" />
+            <item index="9" class="java.lang.String" itemvalue="numpy" />
+            <item index="10" class="java.lang.String" itemvalue="sunpy" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
+      <option name="processCode" value="true" />
+      <option name="processLiterals" value="true" />
+      <option name="processComments" value="true" />
+    </inspection_tool>
+  </profile>
+</component>

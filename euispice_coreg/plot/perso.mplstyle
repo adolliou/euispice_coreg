@@ -1,0 +1,24 @@
+
+
+axes.titlesize : 6
+axes.linewidth: 1.0
+xtick.major.size: 1.5
+xtick.major.width: 1
+xtick.minor.size: 1.5
+xtick.minor.width: 1
+ytick.major.size: 1.5
+ytick.major.width: 1
+ytick.minor.size: 1.5
+ytick.minor.width: 1
+
+lines.linewidth: 1
+lines.markersize : 5
+xtick.labelsize : 5
+ytick.labelsize : 5
+
+axes.labelsize: 5
+
+legend.fontsize: 5
+
+figure.figsize: 6.7, 6.7
+figure.titlesize: 6
