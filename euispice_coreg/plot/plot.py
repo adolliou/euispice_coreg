@@ -70,16 +70,26 @@ class PlotFunctions:
     @staticmethod
     def plot_correlation(corr, lag_crval1, lag_crval2, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
                          path_save=None, fig=None, ax=None, show=False,
-                         lag_dx_label=None, lag_dy_label=None, unit='\'\'', type_plot="xy", ):
+                         unit='\'\'', ):
+        """
 
+        :param corr: (np.array) correlation Matrix obtained from co-alignment
+        :param lag_crval1: (np.array): chosen lags for the CRVAL1 value on header. Must correspond to the correlation matrix
+        :param lag_crval2: (np.array): chosen lags for the CRVAL2 value on header. Must correspond to the correlation matrix
+        :param lag_crota: (np.array) (optional) chosen lags for the CROTA value on header. Must correspond to the correlation matrix
+        :param lag_cdelta1: (np.array) (optional) chosen lags for the CDELT1 value on header. Must correspond to the correlation matrix
+        :param lag_cdelta2: (np.array) (optional) chosen lags for the CDELT2 value on header. Must correspond to the correlation matrix
+        :param path_save: (str) (optional) path to save the figure.
+        :param fig: (matplotlib.figure.Figure) (optional) figure object where to plot the figure. If none, will create a new figure
+        :param ax:  (matplotlib.axes.ax) (optional) ax where to plot the figure. If none, will create a new ax
+        :param show: (bool) (optional) whether or not to show the figure.
+        :param unit: (str) (optional) unit to use for the figure.
+        """
         max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
 
-        if type_plot == "xy":
-            lag_dx_label = 'CRVAL1 [arcsec]'
-            lag_dy_label = 'CRVAL2 [arcsec]'
-            corr = corr[:, :, max_index[2], max_index[3], max_index[4]]
-        else:
-            raise NotImplementedError
+        lag_dx_label = 'CRVAL1 [arcsec]'
+        lag_dy_label = 'CRVAL2 [arcsec]'
+        corr = corr[:, :, max_index[2], max_index[3], max_index[4]]
 
         if fig is None:
             fig = plt.figure()
