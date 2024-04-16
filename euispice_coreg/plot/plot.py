@@ -309,7 +309,8 @@ class PlotFunctions:
     def compare_plot(hdr_main, data_main, hdr_contour_1, data_contour_1,
                      hdr_contour_2, data_contour_2, norm, norm_contour=None, path_save=None,
                      cmap1="plasma", cmap2="viridis", show=True,
-                     levels=None, fig=None, gs=None, ax1=None, ax2=None, ax3=None, aspect=1, return_axes=False):
+                     levels=None, fig=None, gs=None, ax1=None, ax2=None, ax3=None, aspect=1, return_axes=False,
+                     lmin = None,lmax=None):
         cm = 1/2.54  # centimeters in inches
 
         if (norm.vmin is None) or (norm.vmax is None):
@@ -339,7 +340,7 @@ class PlotFunctions:
 
         im = PlotFunctions.contour_plot(hdr_main=hdr_main, data_main=data_main, plot_colorbar=False, aspect=aspect,
                                         hdr_contour=hdr_contour_1, data_contour=data_contour_1, cmap=cmap1,
-                                        path_save=None, show=False, levels=levels, fig=fig, ax=ax1, norm=norm)
+                                        path_save=None, show=False, levels=levels, fig=fig, ax=ax1, norm=norm, )
 
         im, lon_grid, lat_grid = \
             PlotFunctions.contour_plot(hdr_main=hdr_main, data_main=data_main, show_ylabel=False,
@@ -350,6 +351,14 @@ class PlotFunctions:
                                        norm=norm,
                                        header_coordinates_plot=hdr_contour_1, return_grid=True)
 
+        if lmin is not None:
+            # w_large = WCS(hdr_main)
+            # x_, y_ = np.meshgrid(np.arange(hdr_main["NAXIS1"]), np.arange(hdr_main["NAXIS2"]))
+            # lon, lat = w_large.pixel_to_world(x_, y_)
+            # lat_ = AlignCommonUtil.ang2pipi(lat).to("arcsec").value
+            ax1.set_ylim([lmin-20, lmax+20])
+            ax2.set_ylim([lmin-20, lmax+20])
+            # b = np.logical_or(lat_ < lmin - 25, lat_ > lmax + 25)
 
         if norm_contour is None:
             # isnan = np.isnan(data_contour_2)
@@ -443,7 +452,8 @@ class PlotFunctions:
             data_large = hdul_large[large_fov_window].data.copy()
             with fits.open(small_fov_path) as hdul_spice:
                 header_spice_original = hdul_spice[small_fov_window].header.copy()
-
+                lmin = None
+                lmax = None
                 if "HRI_EUV" in  header_spice_original["TELESCOP"]:
                     # AlignEUIUtil.recenter_crpix_in_header(header_spice)
                     w_xy = WCS(header_spice_original)
@@ -570,6 +580,8 @@ class PlotFunctions:
                 header_spice["DATE-AVG"] = hdul_spice[small_fov_window].header["DATE-AVG"]
                 # cm = 1 / 2.54  # centimeters in inches
                 data_large_cp = copy.deepcopy(data_large)
+                lmin = None
+                lmax = None
                 if "SPICE" in header_spice_original["TELESCOP"]:
                     lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
@@ -580,15 +592,15 @@ class PlotFunctions:
 
                     b = np.logical_or(lat_ < lmin-25, lat_ > lmax+25)
 
-                    data_large_cp[b] = np.nan
-                    data_large_cp[b] = np.nan
+                    # data_large_cp[b] = np.nan
+                    # data_large_cp[b] = np.nan
 
 
                 fig = plt.figure(figsize=(12, 6))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                     PlotFunctions.compare_plot(header_large, data_large_cp, header_spice, data_spice, hdr_spice_shifted,
                                                data_spice, show=False, norm=norm, levels=levels, return_axes=True,
-                                               fig=fig,
+                                               fig=fig, lmin=lmin, lmax=lmax,
                                                cmap1="plasma", cmap2="viridis", path_save=None)
                 detector = header_large["DETECTOR"]
                 wave = header_large["WAVELNTH"]
