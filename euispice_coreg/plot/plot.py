@@ -622,8 +622,8 @@ class PlotFunctions:
                 dlat = latitude_grid_arc[1, 0] - latitude_grid_arc[0, 0]
 
                 if "SPICE" in header_spice_original["TELESCOP"]:
-                    lmin = latitude[ymin, 0]
-                    lmax = latitude[ymax, 0]
+                    lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
+                    lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
 
                     b = np.logical_and(longitude_grid_arc > lmin-10, longitude_grid_arc < lmax+10)
                     data_fsi_interp[b] = np.nan
