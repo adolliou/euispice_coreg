@@ -351,13 +351,7 @@ class PlotFunctions:
                                        norm=norm,
                                        header_coordinates_plot=hdr_contour_1, return_grid=True)
 
-        if lmin is not None:
-            # w_large = WCS(hdr_main)
-            # x_, y_ = np.meshgrid(np.arange(hdr_main["NAXIS1"]), np.arange(hdr_main["NAXIS2"]))
-            # lon, lat = w_large.pixel_to_world(x_, y_)
-            # lat_ = AlignCommonUtil.ang2pipi(lat).to("arcsec").value
-            ax1.set_ylim([lmin-20, lmax+20])
-            ax2.set_ylim([lmin-20, lmax+20])
+
             # b = np.logical_or(lat_ < lmin - 25, lat_ > lmax + 25)
 
         if norm_contour is None:
@@ -407,6 +401,11 @@ class PlotFunctions:
         ax1.set_title("(a) Before alignment")
         ax2.set_title("(b) After alignment")
         ax3.set_title("(c) Aligned image")
+        if lmin is not None:
+
+            ax1.set_ylim([lmin-20, lmax+20])
+            ax2.set_ylim([lmin-20, lmax+20])
+            ax3.set_ylim([lmin-20, lmax+20])
 
         if show:
             fig.show()
