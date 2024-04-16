@@ -321,7 +321,7 @@ class PlotFunctions:
         #
 
         # gs = GridSpec(1, 5, width_ratios=[1, 1, 0.2, 1, 0.2], wspace=0.5)
-        gs = GridSpec(1, 5, width_ratios=[1, 1, 0.1, 1, 0.1], wspace=0.2)
+        gs = GridSpec(1, 5, width_ratios=[1, 1, 0.1, 1, 0.1], wspace=0.1)
 
         if ax1 is None:
             ax1 = fig.add_subplot(gs[0])
@@ -570,7 +570,7 @@ class PlotFunctions:
                 header_spice["DATE-AVG"] = hdul_spice[small_fov_window].header["DATE-AVG"]
                 # cm = 1 / 2.54  # centimeters in inches
 
-                fig = plt.figure(figsize=(13, 5))
+                fig = plt.figure(figsize=(12, 6))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                     PlotFunctions.compare_plot(header_large, data_large, header_spice, data_spice, hdr_spice_shifted,
                                                data_spice, show=False, norm=norm, levels=levels, return_axes=True,
@@ -590,7 +590,7 @@ class PlotFunctions:
                 date = date.replace("-", "_")
 
                 date_str = header_spice["DATE-OBS"][:19]
-                fig.suptitle(f"Small FOV {date_str}  aligned with {detector} {wave}. Aligned (A) ; Not Aligned (NA)")
+                fig.suptitle(f"Small FOV {date_str} aligned with {detector} {wave}. Aligned (A) ; Not Aligned (NA) ; ")
                 # fig.suptitle("Alignement of SPICE  using a synthetic raster of HRIEUV images")
                 if results_folder is not None:
                     fig.savefig('%s/compare_alignment.pdf' % (results_folder))
