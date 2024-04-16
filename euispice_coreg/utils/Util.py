@@ -13,7 +13,7 @@ import astropy.units as u
 from matplotlib.gridspec import GridSpec
 import matplotlib.patches as patches
 from astropy.visualization import ImageNormalize, AsymmetricPercentileInterval, SqrtStretch, LinearStretch, LogStretch
-from multiprocessing.shared_memory import SharedMemory
+from multiprocess.shared_memory import SharedMemory
 
 
 class AlignCommonUtil:
