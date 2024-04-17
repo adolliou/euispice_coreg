@@ -3,9 +3,6 @@ import os.path
 import numpy as np
 from ..alignment import Alignment
 from pathlib import Path
-from ...plot.plot import PlotFunctions
-from ...utils.Util import AlignCommonUtil
-import sunpy.map
 
 def test_alignement_helioprojective_shift():
     path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",

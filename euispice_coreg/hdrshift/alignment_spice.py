@@ -7,6 +7,7 @@ from ..synras import map_builder
 from . import c_correlate
 import copy
 from ..utils import Util
+from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 
 class AlignmentSpice(Alignment):
     def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str, lag_crval1: np.array,
@@ -14,6 +15,8 @@ class AlignmentSpice(Alignment):
                  parallelism=False, small_fov_value_max=None, counts_cpu_max=40, large_fov_window=-1,
                  small_fov_window=-1, use_tqdm=False, lag_solar_r=None,
                  path_save_figure=None):
+
+
 
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,

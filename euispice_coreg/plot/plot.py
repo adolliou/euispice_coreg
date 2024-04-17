@@ -217,7 +217,7 @@ class PlotFunctions:
             # should reproject on a new coordinate grid first : suppose slits at the same time :
             coords = w.pixel_to_world(x, y)
             longitude = AlignCommonUtil.ang2pipi(coords.Tx)
-            latitude = AlignCommonUtil.ang2pipi(coords.Tx)
+            latitude = AlignCommonUtil.ang2pipi(coords.Ty)
 
             longitude_grid, latitude_grid = PlotFunctions._build_regular_grid(longitude=longitude, latitude=latitude)
             coords_grid = SkyCoord(longitude_grid, latitude_grid, frame=coords.frame)
@@ -270,15 +270,35 @@ class PlotFunctions:
         longitude_grid, latitude_grid = PlotFunctions._build_regular_grid(longitude=longitude_main,
                                                                           latitude=latitude_main)
 
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
+
         w_xy_main = WCS(hdr_main)
-        x_small, y_small = w_xy_main.world_to_pixel(longitude_grid, latitude_grid)
+        if use_sunpy:
+            idx_lon = np.where(np.array(w_xy_main.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+            idx_lat = np.where(np.array(w_xy_main.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            x, y = np.meshgrid(np.arange(w_xy_main.pixel_shape[idx_lon]),
+                               np.arange(w_xy_main.pixel_shape[idx_lat]), )  # t dépend de x,
+            # should reproject on a new coordinate grid first : suppose slits at the same time :
+            coords_main = w_xy_main.pixel_to_world(x, y)
+            coords_grid = SkyCoord(longitude_grid, latitude_grid, frame=coords_main)
+            x_small, y_small = w_xy_main.world_to_pixel(coords_grid)
+
+        else:
+            x_small, y_small = w_xy_main.world_to_pixel(longitude_grid, latitude_grid)
         image_main_cut = interpol2d(np.array(data_main,
                                              dtype=np.float64), x=x_small, y=y_small,
                                     order=1, fill=-32768)
         image_main_cut[image_main_cut == -32768] = np.nan
 
         w_xy_contour = WCS(hdr_contour)
-        x_contour, y_contour = w_xy_contour.world_to_pixel(longitude_grid, latitude_grid)
+        if use_sunpy:
+            x_contour, y_contour = w_xy_contour.world_to_pixel(coords_grid)
+
+        else:
+            x_contour, y_contour = w_xy_contour.world_to_pixel(longitude_grid, latitude_grid)
         image_contour_cut = interpol2d(np.array(data_contour, dtype=np.float64),
                                        x=x_contour, y=y_contour,
                                        order=1, fill=-32768)
@@ -302,8 +322,7 @@ class PlotFunctions:
         if levels is None:
             max_small = np.nanmax(image_contour_cut)
             levels = [0.5 * max_small]
-        print(f'{levels=}')
-        ax.contour(image_contour_cut, levels=levels, origin='lower', linewidths=0.5, colors='w', aspect=aspect,
+        ax.contour(image_contour_cut, levels=levels, origin='lower', linewidths=0.5, colors='w',
                    extent=[longitude_grid_arc[0, 0] - 0.5 * dlon, longitude_grid_arc[-1, -1] + 0.5 * dlon,
                            latitude_grid_arc[0, 0] - 0.5 * dlat, latitude_grid_arc[-1, -1] + 0.5 * dlat])
         if show_xlabel:
@@ -334,11 +353,15 @@ class PlotFunctions:
                      levels=None, fig=None, gs=None, ax1=None, ax2=None, ax3=None, aspect=1, return_axes=False,
                      lmin = None,lmax=None):
         cm = 1/2.54  # centimeters in inches
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
 
         if (norm.vmin is None) or (norm.vmax is None):
             raise ValueError("Must explicit vmin and vmax in norm, so that the cbar is the same for both figures.")
         if fig is None:
-            fig = plt.figure(figsize=(17*cm, 10*cm))
+            fig = plt.figure(figsize=(12, 6))
 
 
         #
@@ -388,7 +411,19 @@ class PlotFunctions:
         dlat = latitude_grid_arc[1, 1] - latitude_grid_arc[0, 0]
 
         w_xy = WCS(hdr_contour_2)
-        x, y = w_xy.world_to_pixel(lon_grid, lat_grid)
+        if use_sunpy:
+            idx_lon = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+            idx_lat = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            x, y = np.meshgrid(np.arange(w_xy.pixel_shape[idx_lon]),
+                               np.arange(w_xy.pixel_shape[idx_lat]), )  # t dépend de x,
+            # should reproject on a new coordinate grid first : suppose slits at the same time :
+            coords_ = w_xy.pixel_to_world(x, y)
+            coords = SkyCoord(lon_grid, lat_grid, frame=coords_.frame)
+            x, y = w_xy.world_to_pixel(coords)
+
+        else:
+
+            x, y = w_xy.world_to_pixel(lon_grid, lat_grid)
         data_contour_2_interp = AlignCommonUtil.interpol2d(data_contour_2, x=x, y=y, order=1, fill=-32762)
         data_contour_2_interp = np.where(data_contour_2_interp == -32762, np.nan, data_contour_2_interp)
         im3 = ax3.imshow(data_contour_2_interp, origin="lower", interpolation="none", norm=norm_contour, cmap=cmap2,
@@ -456,6 +491,11 @@ class PlotFunctions:
                           small_fov_window, small_fov_path, levels_percentile=[85],
                           lag_crval1=None, lag_crval2=None, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
                           show=False, results_folder=None, cut_from_center=None):
+
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
 
         parameter_alignment = {
             "crval1": lag_crval1,
@@ -606,12 +646,8 @@ class PlotFunctions:
                 if "SPICE" in header_spice_original["TELESCOP"]:
                     lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
-                    w_large = WCS(header_large)
-                    x_, y_ = np.meshgrid(np.arange(header_large["NAXIS1"]), np.arange(header_large["NAXIS2"]))
-                    lon, lat = w_large.pixel_to_world(x_, y_)
-                    lat_ = AlignCommonUtil.ang2pipi(lat).to("arcsec").value
 
-                    b = np.logical_or(lat_ < lmin-25, lat_ > lmax+25)
+
 
                     # data_large_cp[b] = np.nan
                     # data_large_cp[b] = np.nan
@@ -648,9 +684,32 @@ class PlotFunctions:
                 w_fsi = WCS(header_fsi)
                 w_spice = WCS(header_spice)
                 w_spice_shift = WCS(hdr_spice_shifted)
-                x_fsi, y_fsi = w_fsi.world_to_pixel(longitude_grid, latitude_grid)
-                x_spice, y_spice = w_spice.world_to_pixel(longitude_grid, latitude_grid)
-                x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(longitude_grid, latitude_grid)
+                if use_sunpy:
+                    idx_lon = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                    idx_lat = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+                    x, y = np.meshgrid(np.arange(w_fsi.pixel_shape[idx_lon]),
+                                       np.arange(w_fsi.pixel_shape[idx_lat]), )  # t dépend de x,
+
+                    # should reproject on a new coordinate grid first : suppose slits at the same time :
+                    coords_fsi = w_fsi.pixel_to_world(x, y)
+
+                    idx_lon = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                    idx_lat = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+                    x, y = np.meshgrid(np.arange(w_spice.pixel_shape[idx_lon]),
+                                       np.arange(w_spice.pixel_shape[idx_lat]), )
+                    coords_spice = w_spice.pixel_to_world(x, y)
+                    breakpoint()
+                    coords_grid = SkyCoord(longitude_grid, latitude_grid, coords_fsi.frame)
+                    x_fsi, y_fsi = w_fsi.world_to_pixel(coords_grid)
+                    coords_grid = SkyCoord(longitude_grid, latitude_grid, coords_spice.frame)
+                    x_spice, y_spice = w_spice.world_to_pixel(coords_grid)
+                    x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(coords_grid)
+
+                else:
+
+                    x_fsi, y_fsi = w_fsi.world_to_pixel(longitude_grid, latitude_grid)
+                    x_spice, y_spice = w_spice.world_to_pixel(longitude_grid, latitude_grid)
+                    x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(longitude_grid, latitude_grid)
 
                 data_fsi_interp = AlignCommonUtil.interpol2d(data_fsi, x=x_fsi, y=y_fsi, fill=-32762, order=1)
                 data_spice_interp = AlignCommonUtil.interpol2d(data_spice, x=x_spice, y=y_spice, fill=-32762, order=1)

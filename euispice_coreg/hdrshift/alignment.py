@@ -102,6 +102,7 @@ class Alignment:
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
             if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
                 use_sunpy = True
+                # import sunpy.map
         self.use_sunpy = use_sunpy
 
     # def __del__(self):
@@ -547,8 +548,7 @@ class Alignment:
             w_cut = WCS(hdr_cut)
             idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
             idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
-            x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
-                               np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
+            x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
             coords_cut = w_cut.pixel_to_world(x, y)
 
             longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
@@ -560,26 +560,26 @@ class Alignment:
         else:
             longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
-        image_large_cut = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut, y=y_cut,
-                                                          order=1,
-                                                          fill=-32768)
-        breakpoint()
+        image_large_cut = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut, y=y_cut,order=1,fill=-32768)
+        # breakpoint()
+        # image_large_cut_ = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut_, y=y_cut_,order=1,fill=-32768)
+
         image_large_cut[image_large_cut == -32768] = np.nan
         self.hdr_large = hdr_cut.copy()
-
         w_xy_small = WCS(self.hdr_small.copy())
         if self.use_sunpy:
+            # coords_cut_small = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
             x_cut, y_cut = w_xy_small.world_to_pixel(coords_cut)
         else:
             x_cut, y_cut = w_xy_small.world_to_pixel(longitude_cut, latitude_cut)
-        image_small_cut = Util.AlignCommonUtil.interpol2d(np.array(self.data_small.copy(), dtype=np.float64), x=x_cut,
-                                                          y=y_cut,
-                                                          order=1, fill=-32768)
+
+        image_small_cut = Util.AlignCommonUtil.interpol2d(np.array(self.data_small.copy(), dtype=np.float64), x=x_cut,y=y_cut,order=1, fill=-32768)
         image_small_cut[image_small_cut == -32768] = np.nan
 
         self.data_small = image_small_cut
         self.hdr_small = hdr_cut.copy()
         levels = [0.15 * np.nanmax(self.data_small)]
+
         if self.path_save_figure is not None:
             date_small = self.hdr_small["DATE-AVG"]
             date_small = date_small.replace(":", "_")
@@ -597,7 +597,14 @@ class Alignment:
     def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr):
 
         w_xy_small = WCS(hdr)
-        if self.use_sunpy:
+        longitude_large, latitude_large, dsun_obs_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large)
+
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
+        if use_sunpy:
+
             w_large = WCS(self.hdr_large)
             idx_lon = np.where(np.array(w_large.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
             idx_lat = np.where(np.array(w_large.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
@@ -607,7 +614,6 @@ class Alignment:
             x_large, y_large = w_xy_small.world_to_pixel(coords)
 
         else:
-            longitude_large, latitude_large, dsun_obs_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large)
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
         image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype=np.float64),
                                                            x=x_large, y=y_large, order=1,
