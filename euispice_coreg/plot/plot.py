@@ -698,10 +698,14 @@ class PlotFunctions:
                     x, y = np.meshgrid(np.arange(w_spice.pixel_shape[idx_lon]),
                                        np.arange(w_spice.pixel_shape[idx_lat]), )
                     coords_spice = w_spice.pixel_to_world(x, y)
-                    breakpoint()
-                    coords_grid = SkyCoord(longitude_grid, latitude_grid, coords_fsi.frame)
+
+                    # breakpoint()
+                    coords_grid = SkyCoord(longitude_grid, latitude_grid,
+                                           frame="helioprojective", observer=coords_fsi.observer)
                     x_fsi, y_fsi = w_fsi.world_to_pixel(coords_grid)
-                    coords_grid = SkyCoord(longitude_grid, latitude_grid, coords_spice.frame)
+                    coords_grid = SkyCoord(longitude_grid, latitude_grid,
+                                           frame="helioprojective", observer=coords_spice.observer)
+
                     x_spice, y_spice = w_spice.world_to_pixel(coords_grid)
                     x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(coords_grid)
 

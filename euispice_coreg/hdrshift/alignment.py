@@ -398,7 +398,6 @@ class Alignment:
         del results
 
         if self.parallelism:
-
             for kk, d_solar_r in enumerate(self.lag_solar_r):
                 Processes = []
 
