@@ -4,12 +4,9 @@ import numpy as np
 from ..alignment import Alignment
 from pathlib import Path
 
-def test_alignement_helioprojective_shift():
-    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
-    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+import sunpy.map
 
+def test_alignement_helioprojective_shift():
     path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
                 "-image_20220317T095045281_V01.fits")
     path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
@@ -40,10 +37,6 @@ def test_alignement_helioprojective_shift():
 
 
 def test_alignement_carrington():
-    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
-    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
     path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
                 "-image_20220317T095045281_V01.fits")
     path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"

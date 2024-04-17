@@ -1,8 +1,8 @@
 import os.path
-
 import numpy as np
 from ..alignment_spice import AlignmentSpice
 from pathlib import Path
+import sunpy.map
 
 
 def test_alignement_helioprojective_spice():
