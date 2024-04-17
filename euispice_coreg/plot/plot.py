@@ -18,6 +18,7 @@ from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 from inspect import signature
 from astropy.coordinates import SkyCoord
 
+
 def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
     """
     Interpolates in 2D image using either map_coordinates or opencv
@@ -148,7 +149,7 @@ class PlotFunctions:
 
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        cbar = fig.colorbar(im, cax=cax, label="correlation" )
+        cbar = fig.colorbar(im, cax=cax, label="correlation")
         if show:
             fig.show()
         if path_save is not None:
@@ -334,7 +335,7 @@ class PlotFunctions:
             cax = divider.append_axes("right", size="5%", pad=0.05)
             if "BUNIT" in hdr_main:
 
-                fig.colorbar(im,cax=cax, label=hdr_main["BUNIT"])
+                fig.colorbar(im, cax=cax, label=hdr_main["BUNIT"])
             else:
                 fig.colorbar(im, cax=cax)
         if show:
@@ -351,8 +352,8 @@ class PlotFunctions:
                      hdr_contour_2, data_contour_2, norm, norm_contour=None, path_save=None,
                      cmap1="plasma", cmap2="viridis", show=True,
                      levels=None, fig=None, gs=None, ax1=None, ax2=None, ax3=None, aspect=1, return_axes=False,
-                     lmin = None,lmax=None):
-        cm = 1/2.54  # centimeters in inches
+                     lmin=None, lmax=None):
+        cm = 1 / 2.54  # centimeters in inches
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
             if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
@@ -362,7 +363,6 @@ class PlotFunctions:
             raise ValueError("Must explicit vmin and vmax in norm, so that the cbar is the same for both figures.")
         if fig is None:
             fig = plt.figure(figsize=(12, 6))
-
 
         #
 
@@ -396,8 +396,7 @@ class PlotFunctions:
                                        norm=norm,
                                        header_coordinates_plot=hdr_contour_1, return_grid=True)
 
-
-            # b = np.logical_or(lat_ < lmin - 25, lat_ > lmax + 25)
+        # b = np.logical_or(lat_ < lmin - 25, lat_ > lmax + 25)
 
         if norm_contour is None:
             # isnan = np.isnan(data_contour_2)
@@ -459,10 +458,9 @@ class PlotFunctions:
         ax2.set_title("(b) After alignment")
         ax3.set_title("(c) Aligned image")
         if lmin is not None:
-
-            ax1.set_ylim([lmin-20, lmax+20])
-            ax2.set_ylim([lmin-20, lmax+20])
-            ax3.set_ylim([lmin-20, lmax+20])
+            ax1.set_ylim([lmin - 20, lmax + 20])
+            ax2.set_ylim([lmin - 20, lmax + 20])
+            ax3.set_ylim([lmin - 20, lmax + 20])
 
         if show:
             fig.show()
@@ -515,12 +513,12 @@ class PlotFunctions:
                 header_spice_original = hdul_spice[small_fov_window].header.copy()
                 lmin = None
                 lmax = None
-                if "HRI_EUV" in  header_spice_original["TELESCOP"]:
+                if "HRI_EUV" in header_spice_original["TELESCOP"]:
                     # AlignEUIUtil.recenter_crpix_in_header(header_spice)
                     w_xy = WCS(header_spice_original)
                     header_spice = w_xy.to_header().copy()
                     data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
-                elif  "SPICE" in header_spice_original["TELESCOP"]:
+                elif "SPICE" in header_spice_original["TELESCOP"]:
                     # AlignSpiceUtil.recenter_crpix_in_header_L2(header_spice)
                     w_spice = WCS(header_spice_original)
                     ymin, ymax = AlignSpiceUtil.vertical_edges_limits(header_spice_original)
@@ -544,12 +542,16 @@ class PlotFunctions:
                             xmid = data_spice.shape[1] // 2
                             data_spice[:, :(xmid - xlen // 2 - 1)] = np.nan
                             data_spice[:, (xmid + xlen // 2):] = np.nan
+                    else:
+                        warnings.warn("Imager not recognised")
+                        # Here we do the code for unrecognised imager
+                        w_xy = WCS(header_spice_original)
+                        header_spice = w_xy.to_header().copy()
+                        data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
+
 
                     # header_spice["CRPIX1"] = (data_spice.shape[1] + 1) / 2
                     # header_spice["CRPIX2"] = (data_spice.shape[0] + 1) / 2
-
-
-
 
                 header_spice["SOLAR_B0"] = hdul_spice[small_fov_window].header["SOLAR_B0"]
                 header_spice["RSUN_REF"] = hdul_spice[small_fov_window].header["RSUN_REF"]
@@ -591,8 +593,6 @@ class PlotFunctions:
 
                 crota = np.rad2deg(np.arccos(copy.deepcopy(hdr_spice_shifted["PC1_1"])))
 
-
-
                 if parameter_alignment['crota'] is not None:
                     # hdr_spice_shifted["CROTA"] = hdul_spice[raster_window].header["CROTA"] +\
                     #                              parameter_alignement['crota'][max_index[4]]
@@ -606,7 +606,7 @@ class PlotFunctions:
 
                 if parameter_alignment['cdelt1'] is not None:
                     cdelt1 = u.Quantity(hdr_spice_shifted["CDELT1"], hdr_spice_shifted["CUNIT1"]) + \
-                                                  u.Quantity(parameter_alignment['cdelt1'][max_index[2]], "arcsec")
+                             u.Quantity(parameter_alignment['cdelt1'][max_index[2]], "arcsec")
                     hdr_spice_shifted["CDELT1"] = cdelt1.to(hdr_spice_shifted["CUNIT1"]).value
                     change_pcij = True
 
@@ -647,11 +647,8 @@ class PlotFunctions:
                     lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
 
-
-
                     # data_large_cp[b] = np.nan
                     # data_large_cp[b] = np.nan
-
 
                 fig = plt.figure(figsize=(12, 6))
                 fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
@@ -718,21 +715,17 @@ class PlotFunctions:
                 data_fsi_interp = AlignCommonUtil.interpol2d(data_fsi, x=x_fsi, y=y_fsi, fill=-32762, order=1)
                 data_spice_interp = AlignCommonUtil.interpol2d(data_spice, x=x_spice, y=y_spice, fill=-32762, order=1)
                 data_spice_interp_shift = AlignCommonUtil.interpol2d(data_spice, x=x_spice_shift, y=y_spice_shift,
-                                                                fill=-32762,
-                                                                order=1)
+                                                                     fill=-32762,
+                                                                     order=1)
 
                 data_fsi_interp = np.where(data_fsi_interp == -32762, np.nan, data_fsi_interp)
                 data_spice_interp = np.where(data_spice_interp == -32762, np.nan, data_spice_interp)
                 data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan, data_spice_interp_shift)
 
-
                 longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid.to("arcsec")).value
                 latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid.to("arcsec")).value
                 dlon = longitude_grid_arc[0, 1] - longitude_grid_arc[0, 0]
                 dlat = latitude_grid_arc[1, 0] - latitude_grid_arc[0, 0]
-
-
-
 
                 isnan = np.isnan(data_spice_interp)
                 min = np.percentile(data_spice_interp[~isnan], 3)
@@ -751,7 +744,7 @@ class PlotFunctions:
                                        latitude_grid_arc[0, 0] - 0.5 * dlat,
                                        latitude_grid_arc[-1, -1] + 0.5 * dlat])
                 ax.set_title(f"{detector} {wave} of %s %s files \n %s" % (header_large["DATE-AVG"][:19],
-                                                                        detector, wave))
+                                                                          detector, wave))
                 ax.set_xlabel("Solar-X [arcsec]")
                 ax.set_ylabel("Solar-Y [arcsec]")
                 cbar = fig.colorbar(im, label=header_fsi["BUNIT"])
@@ -795,4 +788,3 @@ class PlotFunctions:
 
                 hdul_spice.close()
             hdul_large.close()
-
