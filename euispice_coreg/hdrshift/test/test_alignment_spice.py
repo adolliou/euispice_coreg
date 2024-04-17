@@ -7,9 +7,10 @@ from pathlib import Path
 
 def test_alignement_helioprojective_spice():
     folder = 'C:/Users/adolliou/PycharmProjects/Alignement/test'
+    # path_spice = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
+    #                         "fitsfiles_old", "solo_L2_spice-n-ras_20220317T000032_V02_100663831-000.fits")
 
-
-    path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi304"
+    path_fsi = ("https://www.sidc.be/EUI/data/releases/202301_release_6.0/L2/2022/03/17/solo_L2_eui-fsi304"
                 "-image_20220317T000800208_V02.fits")
     path_spice = ("https://spice.osups.universite-paris-saclay.fr/spice-data/release-3.0/level2/2022/03/17"
                   "/solo_L2_spice-n-ras_20220317T000032_V02_100663831-000.fits")
