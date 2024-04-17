@@ -14,6 +14,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.patches as patches
 from astropy.visualization import ImageNormalize, AsymmetricPercentileInterval, SqrtStretch, LinearStretch, LogStretch
 from multiprocess.shared_memory import SharedMemory
+from astropy.coordinates import SkyCoord
 
 
 class AlignCommonUtil:
@@ -150,14 +151,16 @@ class AlignCommonUtil:
                     change_pcij = True
 
                 if lag_cdelta1 is not None:
-                    hdul[window].header['CDELT1'] = hdul[window].header['CDELT1'] + u.Quantity(lag_cdelta1[max_index[2]],
-                                                                                               "arcsec").to(
+                    hdul[window].header['CDELT1'] = hdul[window].header['CDELT1'] + u.Quantity(
+                        lag_cdelta1[max_index[2]],
+                        "arcsec").to(
                         hdul[window].header['CUNIT1']).value
                     change_pcij = True
 
                 if lag_cdelta2 is not None:
-                    hdul[window].header['CDELT2'] = hdul[window].header['CDELT2'] + u.Quantity(lag_cdelta2[max_index[3]],
-                                                                                               "arcsec").to(
+                    hdul[window].header['CDELT2'] = hdul[window].header['CDELT2'] + u.Quantity(
+                        lag_cdelta2[max_index[3]],
+                        "arcsec").to(
                         hdul[window].header['CUNIT2']).value
                     change_pcij = True
                 if change_pcij:
@@ -401,7 +404,20 @@ class AlignSpiceUtil:
             idx_lat = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
             x_small, y_small = np.meshgrid(np.arange(w_xy.pixel_shape[idx_lon]),
                                            np.arange(w_xy.pixel_shape[idx_lat]), )
-            longitude_small, latitude_small = w_xy.pixel_to_world(x_small, y_small)
+
+            # in case imported sunpy, and helioprojective coordinate frame has been imported, need to consider that a
+            # Skycoord object will be in output of pixel_to_world.
+            coords = w_xy.pixel_to_world(x_small, y_small)
+            if isinstance(coords, SkyCoord):
+                longitude_small = AlignCommonUtil.ang2pipi(coords.Tx)
+                latitude_small = AlignCommonUtil.ang2pipi(coords.Ty)
+
+            elif isinstance(coords, list):
+                longitude_small = coords[0]
+                latitude_small = coords[1]
+            else:
+                raise ValueError("outputs from wcs.pixel_to_world() must be SkyCoord or list")
+
             return longitude_small, latitude_small
         elif return_type == 'xyt':
             idx_lon = np.where(np.array(w_xyt.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
@@ -410,7 +426,20 @@ class AlignSpiceUtil:
             x_small, y_small, z_small = np.meshgrid(np.arange(w_xyt.pixel_shape[idx_lon]),
                                                     np.arange(w_xyt.pixel_shape[idx_lat]),
                                                     np.arange(w_xyt.pixel_shape[idx_utc]), )
-            longitude_small, latitude_small, utc_small = w_xyt.pixel_to_world(x_small, y_small, z_small)
+            coords = w_xyt.pixel_to_world(x_small, y_small, z_small)
+
+            if len(coords) == 2:
+                longitude_small = AlignCommonUtil.ang2pipi(coords[0].Tx)
+                latitude_small = AlignCommonUtil.ang2pipi(coords[0].Ty)
+                utc_small = coords[1]
+
+            elif len(coords) == 3:
+                longitude_small = coords[0]
+                latitude_small = coords[1]
+                utc_small = coords[2]
+
+            else:
+                raise ValueError("outputs from wcs.pixel_to_world() must be SkyCoord or list")
             return longitude_small, latitude_small, utc_small
 
     @staticmethod
@@ -440,7 +469,6 @@ class AlignSpiceUtil:
         # hdr["CRVAL2"] = lat_mid
         # hdr["CRPIX1"] = (naxis1 + 1) / 2
         # hdr["CRPIX2"] = (naxis2 + 1) / 2
-
 
         # must also shift the rotation
 
@@ -644,15 +672,15 @@ class PlotFits:
         w_xy_main = WCS(hdr_main)
         x_small, y_small = w_xy_main.world_to_pixel(longitude_grid, latitude_grid)
         image_main_cut = AlignCommonUtil.interpol2d(np.array(data_main,
-                                                        dtype=np.float64), x=x_small, y=y_small,
-                                               order=1, fill=-32768)
+                                                             dtype=np.float64), x=x_small, y=y_small,
+                                                    order=1, fill=-32768)
         image_main_cut[image_main_cut == -32768] = np.nan
 
         w_xy_contour = WCS(hdr_contour)
         x_contour, y_contour = w_xy_contour.world_to_pixel(longitude_grid, latitude_grid)
         image_contour_cut = AlignCommonUtil.interpol2d(np.array(data_contour, dtype=np.float64),
-                                                  x=x_contour, y=y_contour,
-                                                  order=1, fill=-32768)
+                                                       x=x_contour, y=y_contour,
+                                                       order=1, fill=-32768)
         image_contour_cut[image_contour_cut == -32768] = np.nan
         dlon = (longitude_grid[1, 1] - longitude_grid[0, 0]).to("arcsec").value
         dlat = (latitude_grid[1, 1] - latitude_grid[0, 0]).to("arcsec").value
@@ -743,8 +771,8 @@ class PlotFits:
 
         longitude_grid = longitude_grid * u.deg
         latitude_grid = latitude_grid * u.deg
-        dlon = dlon*u.deg
-        dlat = dlat*u.deg
+        dlon = dlon * u.deg
+        dlat = dlat * u.deg
         return longitude_grid, latitude_grid, dlon, dlat
 
     @staticmethod
@@ -760,12 +788,14 @@ class PlotFits:
         delta_longitude_deg = AlignCommonUtil.ang2pipi(delta_longitude).to("deg").value
         delta_latitude_deg = AlignCommonUtil.ang2pipi(delta_latitude).to("deg").value
 
-        longitude1D = np.arange(np.min(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value - 0.5 * delta_longitude_deg),
-                                np.max(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value) + 0.5 * delta_longitude_deg,
-                                dlon)
-        latitude1D = np.arange(np.min(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value - 0.5 * delta_latitude_deg),
-                               np.max(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value) + 0.5 * delta_latitude_deg,
-                               dlat)
+        longitude1D = np.arange(
+            np.min(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value - 0.5 * delta_longitude_deg),
+            np.max(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value) + 0.5 * delta_longitude_deg,
+            dlon)
+        latitude1D = np.arange(
+            np.min(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value - 0.5 * delta_latitude_deg),
+            np.max(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value) + 0.5 * delta_latitude_deg,
+            dlat)
 
         longitude_grid_ext, latitude_grid_ext = np.meshgrid(longitude1D, latitude1D)
         longitude_grid_ext = longitude_grid_ext * u.deg

@@ -179,12 +179,7 @@ class Alignment:
         data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
         lock.release()
         shmm_correlation.close()
-        # shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
-        # assert self.data_large == data_large
-        # shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
-        # assert self.data_small == data_small
 
-        # if lock is not None:
 
     def _step(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
 
@@ -369,13 +364,7 @@ class Alignment:
         self.unit1 = self.hdr_small["CUNIT1"]
         self.unit2 = self.hdr_small["CUNIT2"]
 
-        # if (self.hdr_large["CRPIX1"] !=
-        #     (self.hdr_large["NAXIS1"] + 1) / 2) or (self.hdr_large["CRPIX2"] !=
-        #                                             (self.hdr_large["NAXIS2"] + 1) / 2):
-        #     raise ValueError("in hdr_large : CRPIX1 or 2 not in center of FOV")
-
         if "arcsec" in self.unit1:
-            # warnings.warn("Unit of headers in arcsec : must provide arcsec units for dcrval")
             self.unit_lag = "arcsec"
 
         elif "deg" in self.unit1:
@@ -505,20 +494,6 @@ class Alignment:
         shmm_correlation.unlink()
         return data_correlation_cp
 
-    # def _recenter_crpix_in_header(self, hdr):
-    #     w = WCS(hdr)
-    #     naxis1, naxis2 = self._get_naxis(hdr)
-    #     x_mid = (naxis1 - 1) / 2
-    #     y_mid = (naxis2 - 1) / 2
-    #     lon_mid, lat_mid = w.pixel_to_world(np.array([x_mid]), np.array([y_mid]))
-    #     lon_mid = lon_mid[0].to(hdr["CUNIT1"]).value
-    #     lat_mid = lat_mid[0].to(hdr["CUNIT2"]).value
-    #     hdr["CRVAL1"] = lon_mid
-    #     hdr["CRVAL2"] = lat_mid
-    #     hdr["CRPIX1"] = (naxis1 + 1) / 2
-    #     hdr["CRPIX2"] = (naxis2 + 1) / 2
-    #
-    #     return hdr
 
     def _carrington_transform(self, d_solar_r, data, hdr):
 
@@ -573,18 +548,18 @@ class Alignment:
 
         self.data_small = image_small_cut
         self.hdr_small = hdr_cut.copy()
-        levels = [0.15 * np.nanmax(self.data_small)]
-        if self.path_save_figure is not None:
-            date_small = self.hdr_small["DATE-AVG"]
-            date_small = date_small.replace(":", "_")
-            plot.PlotFunctions.simple_plot(self.hdr_large, image_large_cut, show=False,
-                                           path_save='%s/large_fov_%s.pdf' % (self.path_save_figure, date_small))
-            plot.PlotFunctions.simple_plot(self.hdr_small, self.data_small, show=False,
-                                           path_save='%s/small_fov_%s.pdf' % (self.path_save_figure, date_small))
-            plot.PlotFunctions.contour_plot(self.hdr_large, image_large_cut, self.hdr_small, self.data_small,
-                                            show=False, path_save='%s/compare_plot_%s.pdf' % (self.path_save_figure,
-                                                                                              date_small),
-                                            levels=levels)
+        # levels = [0.15 * np.nanmax(self.data_small)]
+        # if self.path_save_figure is not None:
+        #     date_small = self.hdr_small["DATE-AVG"]
+        #     date_small = date_small.replace(":", "_")
+        #     plot.PlotFunctions.simple_plot(self.hdr_large, image_large_cut, show=False,
+        #                                    path_save='%s/large_fov_%s.pdf' % (self.path_save_figure, date_small))
+        #     plot.PlotFunctions.simple_plot(self.hdr_small, self.data_small, show=False,
+        #                                    path_save='%s/small_fov_%s.pdf' % (self.path_save_figure, date_small))
+        #     plot.PlotFunctions.contour_plot(self.hdr_large, image_large_cut, self.hdr_small, self.data_small,
+        #                                     show=False, path_save='%s/compare_plot_%s.pdf' % (self.path_save_figure,
+        #                                                                                       date_small),
+        #                                     levels=levels)
         self.step_figure = False
         return np.array(image_large_cut)
 
