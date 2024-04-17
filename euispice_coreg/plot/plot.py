@@ -14,7 +14,9 @@ from astropy.time import Time
 import os
 import warnings
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
+from inspect import signature
+from astropy.coordinates import SkyCoord
 
 def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
     """
@@ -201,10 +203,30 @@ class PlotFunctions:
     def simple_plot(hdr_main, data_main, path_save=None, show=False, ax=None, fig=None, norm=None,
                     show_xlabel=True, show_ylabel=True, plot_colorbar=True, cmap="plasma"):
 
-        longitude, latitude, dsun = AlignEUIUtil.extract_EUI_coordinates(hdr_main)
-        longitude_grid, latitude_grid = PlotFunctions._build_regular_grid(longitude=longitude, latitude=latitude)
-        w = WCS(hdr_main)
-        x, y = w.world_to_pixel(longitude_grid, latitude_grid)
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
+
+        if use_sunpy:
+            w = WCS(hdr_main)
+            idx_lon = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+            idx_lat = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
+                               np.arange(w.pixel_shape[idx_lat]), )  # t dépend de x,
+            # should reproject on a new coordinate grid first : suppose slits at the same time :
+            coords = w.pixel_to_world(x, y)
+            longitude = AlignCommonUtil.ang2pipi(coords.Tx)
+            latitude = AlignCommonUtil.ang2pipi(coords.Tx)
+
+            longitude_grid, latitude_grid = PlotFunctions._build_regular_grid(longitude=longitude, latitude=latitude)
+            coords_grid = SkyCoord(longitude_grid, latitude_grid, frame=coords.frame)
+            x, y = w.world_to_pixel(coords_grid)
+        else:
+            longitude, latitude, dsun = AlignEUIUtil.extract_EUI_coordinates(hdr_main)
+            longitude_grid, latitude_grid = PlotFunctions._build_regular_grid(longitude=longitude, latitude=latitude)
+            w = WCS(hdr_main)
+            x, y = w.world_to_pixel(longitude_grid, latitude_grid)
         image_on_regular_grid = interpol2d(data_main, x=x, y=y, fill=-32762, order=1)
         image_on_regular_grid[image_on_regular_grid == -32762] = np.nan
         return_im = False

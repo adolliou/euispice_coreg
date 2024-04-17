@@ -184,7 +184,15 @@ class AlignEUIUtil:
         x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
                            np.arange(w.pixel_shape[idx_lat]), )  # t dépend de x,
         # should reproject on a new coordinate grid first : suppose slits at the same time :
-        longitude, latitude = w.pixel_to_world(x, y)
+        coords = w.pixel_to_world(x, y)
+        if isinstance(coords, SkyCoord):
+            longitude = AlignCommonUtil.ang2pipi(coords.Tx)
+            latitude = AlignCommonUtil.ang2pipi(coords.Ty)
+        elif isinstance(coords, list):
+            longitude = AlignCommonUtil.ang2pipi(coords[0])
+            latitude = AlignCommonUtil.ang2pipi(coords[1])
+        else:
+            raise ValueError("output from w.pixel_to_world() must be SkyCoord or list")
         if dsun:
             dsun_obs_large = hdr["DSUN_OBS"]
             return AlignCommonUtil.ang2pipi(longitude), \
