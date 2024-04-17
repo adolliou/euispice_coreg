@@ -45,7 +45,8 @@ class Alignment:
         @param lag_cdelta1: (arcsec) array of header CDELT1 lags.
         @param lag_cdelta2: (arcsec) array of header CDELT2 lags.
         @param lag_crota: (deg) array of header CROTA lags. the PC1_1/2 matrixes will be updated accordingly.
-        @param lag_solar_r: ([1/Rsun]) set 1.004 most of the time. Only needed if apply carrington transformation
+        @param lag_solar_r: ([1/Rsun]) set to 1.004 by default. Only needed if apply carrington transformation.
+        Important: If you align PHI data, you should set it at 1.000 .
         @param small_fov_value_min: min value (optional)
         @param small_fov_value_max: max value (optional)
         @param parallelism: set true to allow parallelism.
