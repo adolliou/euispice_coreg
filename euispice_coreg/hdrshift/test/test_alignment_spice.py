@@ -3,7 +3,7 @@ import os.path
 from astropy.io import fits
 import numpy as np
 import pytest
-from ..alignement_spice import AlignmentSpice
+from ..alignment_spice import AlignmentSpice
 from pathlib import Path
 
 

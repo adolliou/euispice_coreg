@@ -1,15 +1,14 @@
 # **euispice_coreg**
 
 
-Welcome to the euispice_coreg python package :artificial_satellite:. This package can be used to correct the pointing information of SPICE or HRI-EUV datasets, on board Solar Orbiter. 
+Welcome to the euispice_coreg python package :artificial_satellite:. This package can be used to correct the pointing information of SPICE or HRIEUV datasets, on board Solar Orbiter. 
 
 ## Description :
 
-This package provide tools to co-align an image from an imager with another one (called "reference" image).  It corrects the pointing information on the FITS header using a cross-correlation algorithm. The data you want to align can be either from an image (i.e. Solar Orbiter/HRI-EUV etc.) or a Solar Orbiter/SPICE raster. Examples on how to align different types of data are provided below.  
-In addition, the package provides tools to create a synthethic raster corresponding to a given SPICE raster, using the dataset of an imager. The obtained synthetic raster can then be used as the reference image to co-align the SPICE raster.
+This package provides tools to co-align an image from an imager with another one (called "reference" image).  It corrects the pointing information on the FITS header using a cross-correlation algorithm. The data you want to align can be either from an imager (i.e. Solar Orbiter/HRIEUV etc.) or a Solar Orbiter/SPICE raster. Examples on how to align different types of data are provided below.  
+In addition, the package provides tools to create a synthethic raster from a set of images (FSI 174 for instance), given the timing of the exposures of a SPICE raster taken as a reference. In this way the SPICE raster can be co-aligned with the synthetic raster. 
 
-It is advised to use an imager with a Full Sun field of view as the reference image, with Limb fitting previously applied. Example of them include 
-the L2 FITS files of the FSI 174 and 304 imagers on board Solar Orbiter. 
+As the reference imager, it is advised to use one with a full Sun field of view, with Limb fitting previously applied. Example of them include the L2 FITS files of the FSI 174 and 304 imagers on board Solar Orbiter. 
 The co-alignment itself is performed using a cross-correlation tehcnique, through the Pearson's coefficient, or the residus method. The alignement can be done in the following frames: 
 
 - Helioprojective.
@@ -49,7 +48,7 @@ Here, we co-register an HRIEUV image with an FSI 174 image. We start using Helio
 
 ```python
 import numpy as np
-from euispice_coreg.hdrshift.alignement import Alignment
+from euispice_coreg.hdrshift.alignment import Alignment
 from euispice_coreg.plot.plot import PlotFunctions
 from euispice_coreg.utils.Util import AlignCommonUtil
 import os
@@ -108,7 +107,7 @@ In that case, you have to provide the grid where the aligment is performed.
 
 ```python
 import os.path
-from euispice_coreg.hdrshift.alignement import Alignment
+from euispice_coreg.hdrshift.alignment import Alignment
 import numpy as np
 from euispice_coreg.plot.plot import PlotFunctions
 from euispice_coreg.utils.Util import AlignCommonUtil
@@ -197,7 +196,7 @@ The header values that can be shifted are CRVAL1, CRVAL2, CROTA, CDELT1  and CDE
 
 ```python
 import numpy as np
-from euispice_coreg.hdrshift.alignement_spice import AlignmentSpice
+from euispice_coreg.hdrshift.alignment_spice import AlignmentSpice
 from euispice_coreg.plot.plot import PlotFunctions
 from euispice_coreg.utils.Util import AlignSpiceUtil
 

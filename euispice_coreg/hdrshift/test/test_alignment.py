@@ -1,7 +1,7 @@
 import os.path
 
 import numpy as np
-from ..alignement import Alignment
+from ..alignment import Alignment
 from pathlib import Path
 
 
