@@ -542,12 +542,12 @@ class PlotFunctions:
                             xmid = data_spice.shape[1] // 2
                             data_spice[:, :(xmid - xlen // 2 - 1)] = np.nan
                             data_spice[:, (xmid + xlen // 2):] = np.nan
-                    else:
-                        warnings.warn("Imager not recognised")
-                        # Here we do the code for unrecognised imager
-                        w_xy = WCS(header_spice_original)
-                        header_spice = w_xy.to_header().copy()
-                        data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
+                else:
+                    warnings.warn("Imager not recognised")
+                    # Here we do the code for unrecognised imager
+                    w_xy = WCS(header_spice_original)
+                    header_spice = w_xy.to_header().copy()
+                    data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
 
 
                     # header_spice["CRPIX1"] = (data_spice.shape[1] + 1) / 2
