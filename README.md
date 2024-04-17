@@ -11,12 +11,12 @@ In addition, the package provides tools to create a synthethic raster from a set
 As the reference imager, it is advised to use one with a full Sun field of view, with Limb fitting previously applied. Example of them include the L2 FITS files of the FSI 174 and 304 imagers on board Solar Orbiter. 
 The co-alignment itself is performed using a cross-correlation tehcnique, through the Pearson's coefficient, or the residus method. The alignement can be done in the following frames: 
 
-- Helioprojective.
-- Carrington. In that case, you have to provide the information to build a pixel grid in a carrington frame.
-- by slicing over the image pixels, complitely neglecting the headers information. (experimental)
+- **Helioprojective**. In this case both images will be reprojected into the coordinate frame of the image to align.  
+- **Carrington**: Slower, you have to provide the information to build a pixel grid in a carrington frame. Required if there is a significant time delay between both instruments, or if they do not share the same spacecraft (HRIEUV and AIA for instance).
+- **Pixels**. The algorithm slicing over the image pixels, complitely neglecting the headers information. (experimental)
 
 **Warning** As of now, the code works for day to day cases, but has not been thouroughly tested. Please always verify the results with the plot_co_alignment method.
-Report any bug you encounter with Github or by e-mailing the author (see adress at the end of the readme). 
+Report any bug you encounter with Github or by e-mailing the author (see adress at the end of the readme). We welcome any suggestion for improvement or remarks.
 
 ## Installation
 This package is designed to be used in your personal python projects, and to be imported as a standard package.
