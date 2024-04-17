@@ -8,8 +8,8 @@ Welcome to the euispice_coreg python package :artificial_satellite:. This packag
 This package provides tools to co-align an image from an imager with another one (called "reference" image).  It corrects the pointing information on the FITS header using a cross-correlation algorithm. The data you want to align can be either from an imager (i.e. Solar Orbiter/HRIEUV etc.) or a Solar Orbiter/SPICE raster. Examples on how to align different types of data are provided below.  
 In addition, the package provides tools to create a synthethic raster from a set of images (FSI 174 for instance), given the timing of the exposures of a SPICE raster taken as a reference. In this way the SPICE raster can be co-aligned with the synthetic raster. 
 
-As the reference imager, it is advised to use one with a full Sun field of view, with Limb fitting previously applied. Example of them include the L2 FITS files of the FSI 174 and 304 imagers on board Solar Orbiter. 
-The co-alignment itself is performed using a cross-correlation tehcnique, through the Pearson's coefficient, or the residus method. The alignement can be done in the following frames: 
+As the reference imager, it is advised to use one with a full Sun field of view, with Limb fitting previously applied. Examples of them are the L2 images from the FSI 174 and 304 imagers on board Solar Orbiter. 
+The co-alignment itself is performed using a cross-correlation technique, through the Pearson's coefficient, or the residus method. The alignment can be done in the following frames: 
 
 - **Helioprojective**. In this case both images will be reprojected into the coordinate frame of the image to align.  
 - **Carrington**: Slower, you have to provide the information to build a pixel grid in a carrington frame. Required if there is a significant time delay between both instruments, or if they do not share the same spacecraft (HRIEUV and AIA for instance).
@@ -101,8 +101,7 @@ AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
 
 ### Alignment of HRIEUV with FSI 174 using Carrington coordinates
 
-You can also co-register HRIEUV fits files with FSI 174 images within a common Carrington grid, which is adviced when both images are taken with significant delay. 
-In that case, you have to provide the grid where the aligment is performed. 
+You can also co-register HRIEUV fits files with FSI 174 images within a common Carrington grid, which is advised when both images are taken with significant delay, or if both instruments are on board different spacecrafts. In that case, you have to provide the grid where the aligment is performed. 
 
 ```python
 import os.path
@@ -187,7 +186,7 @@ C = SPICEComposedMapBuilder(path_to_spectro=path_spice, list_imager_paths=path_t
                                threshold_time=threshold_time)
 C.process(path_output=output_L3_fits)
 ```
-#### Alignement of the SPICE raster with the synthetic raster
+#### Alignment of the SPICE raster with the synthetic raster
 
 The code first creates a SPICE pseudo raster by spectrally summing over the chosen HDUList window (here, the C III window). It then cross-correlates the SPICE image with the synthetic raster, while shifting the header values of the SPICE image.
 It returns a cross-correlation matrix that can be used to determine the optimal shift to apply to the header values.
@@ -212,7 +211,7 @@ windows_spice = ["Mg IX 706 - Peak", # The windows where the pointing will be co
 window_sr = -1 # the HDULIST index for the synthetic raster. 
 path_save_figure= "path/to/output/figures/folder"
 
-param_alignement = {
+param_alignment = {
     "lag_crval1": np.arange(-30, -15, 4), # lag crvals in the headers, in arcsec
     "lag_crval2": np.arange(30, 51, 4),  # in arcsec
     "lag_crota": np.array([0]), # in degrees
@@ -227,25 +226,25 @@ A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small
                    parallelism=parallelism, counts_cpu_max=10,
                         large_fov_window=-1, small_fov_window=window_sr,
                         path_save_figure=path_save_figure,
-                   **param_alignement)
+                   **param_alignment)
 
 corr = A.align_using_helioprojective(method='correlation')
-PlotFunctions.plot_correlation(corr, **param_alignement)
+PlotFunctions.plot_correlation(corr, **param_alignment)
 AlignSpiceUtil.write_corrected_fits(path_spice_l2_input=path_spice_input, 
                                path_spice_l2_output="path/where/to/save/corrected/fits", corr=corr,
                                     window_spice_list=windows_spice, 
-                                    **param_alignement)
+                                    **param_alignment)
 
 PlotFunctions.plot_co_alignment(large_fov_window=-1, large_fov_path=path_to_synthetic_raster_fits,
                                            corr=corr, small_fov_window= window_spice_to_align, 
                                 levels_percentile=[80, 90], 
                                            results_folder=None, small_fov_path=path_spice_input, show=True,
-                                           **param_alignement)
+                                           **param_alignment)
 
 
 ```
 Example of a results for co-alignment between a SPICE C III image and a FSI 304 synthetic raster, obtained with plot_co_alignment :
-![Example of a results for co-alignment between SPICE and FSI 304, from plot_spice_co_alignement](co_alignment_SPICE_FSI.png)
+![Example of a results for co-alignment between SPICE and FSI 304, from plot_spice_co_alignment](co_alignment_SPICE_FSI.png)
 
 
 ## Acknowledgments
