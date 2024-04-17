@@ -67,13 +67,12 @@ lag_cdelta1 = [0]
 lag_cdelta2 = [0]
 
 lag_crota = [0]
-min_value = 0
-max_value = 1310
+
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
               lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
               parallelism=True, use_tqdm=True, counts_cpu_max=20,
-              small_fov_value_min=min_value, small_fov_value_max=max_value, )
+              )
 
 corr = A.align_using_helioprojective(method='correlation')
 max_index = np.unravel_index(corr.argmax(), corr.shape)
