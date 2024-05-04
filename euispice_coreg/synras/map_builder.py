@@ -142,7 +142,9 @@ class ComposedMapBuilder(MapBuilder):
             self.hdr_composed["CRVAL2"] = lat_mid[0].to(self.hdr_composed["CUNIT2"]).value
 
         if basename_output is None:
-            basename_new = f"solo_L3_{detector}{wave}-image-composed-{utc_composed.fits[:19]}.fits"
+            date = utc_composed.fits[:19]
+            date = date.replace(":","_")
+            basename_new = f"solo_L3_{detector}{wave}-image-composed-{date}.fits"
         else:
             basename_new = basename_output
         if path_output is not None:
