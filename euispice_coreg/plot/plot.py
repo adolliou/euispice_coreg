@@ -743,8 +743,7 @@ class PlotFunctions:
                                        longitude_grid_arc[-1, -1] + 0.5 * dlon,
                                        latitude_grid_arc[0, 0] - 0.5 * dlat,
                                        latitude_grid_arc[-1, -1] + 0.5 * dlat])
-                ax.set_title(f"{detector} {wave} of %s %s files \n %s" % (header_large["DATE-AVG"][:19],
-                                                                          detector, wave))
+                ax.set_title(f'{detector} {wave} \n {header_large["DATE-AVG"][:19]}')
                 ax.set_xlabel("Solar-X [arcsec]")
                 ax.set_ylabel("Solar-Y [arcsec]")
                 cbar = fig.colorbar(im, label=header_fsi["BUNIT"])

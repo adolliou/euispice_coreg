@@ -53,11 +53,13 @@ from euispice_coreg.plot.plot import PlotFunctions
 from euispice_coreg.utils.Util import AlignCommonUtil
 import os
 
-path_hri = "path/to/HRIEUV.fits"
-path_fsi = "path/to/FSI174.fits"
+path_hri = "path/to/HRIEUV.fits" # path to the HRI FITS file. It must end with a ".fits"
+path_fsi = "path/to/FSI174.fits" # path to the FSI FITS file. It must end with a ".fits"
+path_save_fits = "path/where/to/save/aligned_fits/fits.fits"  # path to FITS file that .
 
-path_save_fig = "path/where/to/save/figure"
-path_save_fits = "path/where/to/save/aligned_fits"
+
+
+path_save_fig = "path/where/to/save/figure" # path to the folder where to save the figure illustrating the alignment.
 
 
 lag_crval1 = np.arange(15, 26, 1)

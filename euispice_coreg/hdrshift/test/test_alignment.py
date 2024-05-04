@@ -52,7 +52,6 @@ def test_alignement_carrington():
 
     lonlims = (230, 260)
     latlims = (-65, -35)  # longitude min and max (degrees)
-
     parallelism = True
     shape = (2400, 2400)
 
