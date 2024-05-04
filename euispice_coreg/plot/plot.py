@@ -485,11 +485,30 @@ class PlotFunctions:
         return longitude_grid, latitude_grid
 
     @staticmethod
-    def plot_co_alignment(large_fov_window, large_fov_path, corr,
-                          small_fov_window, small_fov_path, levels_percentile=[85],
+    def plot_co_alignment(large_fov_window, large_fov_path: str, corr: np.array,
+                          small_fov_window, small_fov_path: str, levels_percentile=None,
                           lag_crval1=None, lag_crval2=None, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
-                          show=False, results_folder=None, cut_from_center=None):
+                          show=False, results_folder=None, cut_from_center=None,
+                          ):
+        """
 
+        :param large_fov_window: path to the file to co-align. Must end with ".fits"
+        :param large_fov_path: path to the reference file. Must end with ".fits"
+        :param corr: correlation array resulting from the Alignment class
+        :param small_fov_window: window of the fits file to align
+        :param small_fov_path: window of the reference fits fils
+        :param levels_percentile:
+        :param lag_crval1: shift array for CRVAL1  [arcsec]
+        :param lag_crval2: shift array for CRVAL2 [arcsce]
+        :param lag_crota: shift array for CROTA [degree]
+        :param lag_cdelta1: shift array for CDELTA1  [arcsec]
+        :param lag_cdelta2: shift array for CDELTA2  [arcsec]
+        :param show: if True, then show the figure
+        :param results_folder: path where to save the figures
+        :param cut_from_center: for spice only: cut the dumbells in the figure.
+        """
+        if levels_percentile is None:
+            levels_percentile = [85]
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
             if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
