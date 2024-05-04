@@ -83,7 +83,7 @@ class ComposedMapBuilder(MapBuilder):
                 data_imager = hdu_imager.data
                 w_im = WCS(hdr_imager)
                 x_fsi, y_fsi = w_im.world_to_pixel(longitude_spice[:, ii, 0], latitude_spice[:, ii, 0])
-                data_imager_on_slit = Util.CommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=1, fill=-32762)
+                data_imager_on_slit = Util.AlignCommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=1, fill=-32762)
                 data_imager_on_slit = np.where(data_imager_on_slit == -32762, np.nan, data_imager_on_slit)
                 self.data_composed[:, ii] = data_imager_on_slit
                 hdul_imager.close()
