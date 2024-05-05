@@ -39,14 +39,23 @@ class ComposedMapBuilder(MapBuilder):
         self.threshold_time = threshold_time
         self.path_composed_map = None
         self._extract_imager_metadata()
+        self.path_output = None
 
-    def process(self, path_output=None, basename_output=None, print_filename=True, level=2,
+    def process(self, folder_path_output=None, basename_output=None, print_filename=True, level=2,
                 keep_original_imager_pixel_size=False):
-        self.path_output = path_output
+        """
+
+        :param folder_path_output:  path to the output folder.
+        :param basename_output: basename of the output FITS file. mist end with .fits
+        :param print_filename: print names of the files used from the folder
+        :param level: number of dimensions for the input file. Keep to 2 except for L3 SPICE FITS files
+        :param keep_original_imager_pixel_size: keep the original pixel size of the L2 imagers lists
+        """
+        self.path_output = folder_path_output
         with fits.open(self.path_to_spectro) as hdul_spice:
             hdu_spice = hdul_spice[self.window_spectro]
             hdr_spice = hdu_spice.header.copy()
-            self._create_map_from_hdu(hdr_spice, basename_output, path_output, print_filename=print_filename,
+            self._create_map_from_hdu(hdr_spice, basename_output, folder_path_output, print_filename=print_filename,
                                       level=level,
                                       keep_original_imager_pixel_size=keep_original_imager_pixel_size)
             hdul_spice.close()
