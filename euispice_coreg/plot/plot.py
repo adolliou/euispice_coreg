@@ -73,9 +73,11 @@ def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
 class PlotFunctions:
     @staticmethod
     def plot_correlation(corr, lag_crval1, lag_crval2, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
-                         path_save=None, fig=None, ax=None, show=False,
+                         path_save=None, fig=None, ax=None, show=False, lag_dx_label='CRVAL1 [arcsec]'
+                         , lag_dy_label='CRVAL2 [arcsec]',
                          unit='\'\'', ):
         """
+
 
         :param corr: (np.array) correlation Matrix obtained from co-alignment
         :param lag_crval1: (np.array): chosen lags for the CRVAL1 value on header. Must correspond to the correlation matrix
@@ -88,11 +90,11 @@ class PlotFunctions:
         :param ax:  (matplotlib.axes.ax) (optional) ax where to plot the figure. If none, will create a new ax
         :param show: (bool) (optional) whether or not to show the figure.
         :param unit: (str) (optional) unit to use for the figure.
+        :param lag_dy_label: label for the dy axis
+        :param lag_dx_label: label for the dx axis
         """
         max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
 
-        lag_dx_label = 'CRVAL1 [arcsec]'
-        lag_dy_label = 'CRVAL2 [arcsec]'
         corr = corr[:, :, max_index[2], max_index[3], max_index[4]]
 
         if fig is None:
@@ -569,7 +571,6 @@ class PlotFunctions:
                     header_spice = w_xy.to_header().copy()
                     data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
 
-
                     # header_spice["CRPIX1"] = (data_spice.shape[1] + 1) / 2
                     # header_spice["CRPIX2"] = (data_spice.shape[0] + 1) / 2
 
@@ -697,7 +698,7 @@ class PlotFunctions:
                 if show:
                     fig.show()
                 if plot_all_figures:
-                # fig.suptitle(f"Alignement SPICE {date}- HRI 174")
+                    # fig.suptitle(f"Alignement SPICE {date}- HRI 174")
                     w_fsi = WCS(header_fsi)
                     w_spice = WCS(header_spice)
                     w_spice_shift = WCS(hdr_spice_shifted)
@@ -733,14 +734,16 @@ class PlotFunctions:
                         x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(longitude_grid, latitude_grid)
 
                     data_fsi_interp = AlignCommonUtil.interpol2d(data_fsi, x=x_fsi, y=y_fsi, fill=-32762, order=1)
-                    data_spice_interp = AlignCommonUtil.interpol2d(data_spice, x=x_spice, y=y_spice, fill=-32762, order=1)
+                    data_spice_interp = AlignCommonUtil.interpol2d(data_spice, x=x_spice, y=y_spice, fill=-32762,
+                                                                   order=1)
                     data_spice_interp_shift = AlignCommonUtil.interpol2d(data_spice, x=x_spice_shift, y=y_spice_shift,
                                                                          fill=-32762,
                                                                          order=1)
 
                     data_fsi_interp = np.where(data_fsi_interp == -32762, np.nan, data_fsi_interp)
                     data_spice_interp = np.where(data_spice_interp == -32762, np.nan, data_spice_interp)
-                    data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan, data_spice_interp_shift)
+                    data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan,
+                                                       data_spice_interp_shift)
 
                     longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid.to("arcsec")).value
                     latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid.to("arcsec")).value
@@ -773,7 +776,8 @@ class PlotFunctions:
                         fig.show()
                     fig = plt.figure(figsize=(5, 5))
                     ax = fig.add_subplot()
-                    im = ax.imshow(data_spice_interp, origin='lower', interpolation='none', cmap='viridis', norm=norm_spice,
+                    im = ax.imshow(data_spice_interp, origin='lower', interpolation='none', cmap='viridis',
+                                   norm=norm_spice,
                                    extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
                                            longitude_grid_arc[-1, -1] + 0.5 * dlon,
                                            latitude_grid_arc[0, 0] - 0.5 * dlat,
