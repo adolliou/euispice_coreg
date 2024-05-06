@@ -488,7 +488,7 @@ class PlotFunctions:
     def plot_co_alignment(large_fov_window, large_fov_path: str, corr: np.array,
                           small_fov_window, small_fov_path: str, levels_percentile=None,
                           lag_crval1=None, lag_crval2=None, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
-                          show=False, results_folder=None, cut_from_center=None,
+                          show=False, results_folder=None, cut_from_center=None, plot_all_figures=False
                           ):
         """
 
@@ -506,6 +506,7 @@ class PlotFunctions:
         :param show: if True, then show the figure
         :param results_folder: path where to save the figures
         :param cut_from_center: for spice only: cut the dumbells in the figure.
+        :param plot_all_figures: if True, plot individual figures of the reference and to align images
         """
         if levels_percentile is None:
             levels_percentile = [85]
@@ -695,114 +696,114 @@ class PlotFunctions:
                     fig.savefig('%s/compare_alignment.pdf' % (results_folder))
                 if show:
                     fig.show()
-
+                if plot_all_figures:
                 # fig.suptitle(f"Alignement SPICE {date}- HRI 174")
-                w_fsi = WCS(header_fsi)
-                w_spice = WCS(header_spice)
-                w_spice_shift = WCS(hdr_spice_shifted)
-                if use_sunpy:
-                    idx_lon = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-                    idx_lat = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
-                    x, y = np.meshgrid(np.arange(w_fsi.pixel_shape[idx_lon]),
-                                       np.arange(w_fsi.pixel_shape[idx_lat]), )  # t dépend de x,
+                    w_fsi = WCS(header_fsi)
+                    w_spice = WCS(header_spice)
+                    w_spice_shift = WCS(hdr_spice_shifted)
+                    if use_sunpy:
+                        idx_lon = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                        idx_lat = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+                        x, y = np.meshgrid(np.arange(w_fsi.pixel_shape[idx_lon]),
+                                           np.arange(w_fsi.pixel_shape[idx_lat]), )  # t dépend de x,
 
-                    # should reproject on a new coordinate grid first : suppose slits at the same time :
-                    coords_fsi = w_fsi.pixel_to_world(x, y)
+                        # should reproject on a new coordinate grid first : suppose slits at the same time :
+                        coords_fsi = w_fsi.pixel_to_world(x, y)
 
-                    idx_lon = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-                    idx_lat = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
-                    x, y = np.meshgrid(np.arange(w_spice.pixel_shape[idx_lon]),
-                                       np.arange(w_spice.pixel_shape[idx_lat]), )
-                    coords_spice = w_spice.pixel_to_world(x, y)
+                        idx_lon = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                        idx_lat = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+                        x, y = np.meshgrid(np.arange(w_spice.pixel_shape[idx_lon]),
+                                           np.arange(w_spice.pixel_shape[idx_lat]), )
+                        coords_spice = w_spice.pixel_to_world(x, y)
 
-                    # breakpoint()
-                    coords_grid = SkyCoord(longitude_grid, latitude_grid,
-                                           frame="helioprojective", observer=coords_fsi.observer)
-                    x_fsi, y_fsi = w_fsi.world_to_pixel(coords_grid)
-                    coords_grid = SkyCoord(longitude_grid, latitude_grid,
-                                           frame="helioprojective", observer=coords_spice.observer)
+                        # breakpoint()
+                        coords_grid = SkyCoord(longitude_grid, latitude_grid,
+                                               frame="helioprojective", observer=coords_fsi.observer)
+                        x_fsi, y_fsi = w_fsi.world_to_pixel(coords_grid)
+                        coords_grid = SkyCoord(longitude_grid, latitude_grid,
+                                               frame="helioprojective", observer=coords_spice.observer)
 
-                    x_spice, y_spice = w_spice.world_to_pixel(coords_grid)
-                    x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(coords_grid)
+                        x_spice, y_spice = w_spice.world_to_pixel(coords_grid)
+                        x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(coords_grid)
 
-                else:
+                    else:
 
-                    x_fsi, y_fsi = w_fsi.world_to_pixel(longitude_grid, latitude_grid)
-                    x_spice, y_spice = w_spice.world_to_pixel(longitude_grid, latitude_grid)
-                    x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(longitude_grid, latitude_grid)
+                        x_fsi, y_fsi = w_fsi.world_to_pixel(longitude_grid, latitude_grid)
+                        x_spice, y_spice = w_spice.world_to_pixel(longitude_grid, latitude_grid)
+                        x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(longitude_grid, latitude_grid)
 
-                data_fsi_interp = AlignCommonUtil.interpol2d(data_fsi, x=x_fsi, y=y_fsi, fill=-32762, order=1)
-                data_spice_interp = AlignCommonUtil.interpol2d(data_spice, x=x_spice, y=y_spice, fill=-32762, order=1)
-                data_spice_interp_shift = AlignCommonUtil.interpol2d(data_spice, x=x_spice_shift, y=y_spice_shift,
-                                                                     fill=-32762,
-                                                                     order=1)
+                    data_fsi_interp = AlignCommonUtil.interpol2d(data_fsi, x=x_fsi, y=y_fsi, fill=-32762, order=1)
+                    data_spice_interp = AlignCommonUtil.interpol2d(data_spice, x=x_spice, y=y_spice, fill=-32762, order=1)
+                    data_spice_interp_shift = AlignCommonUtil.interpol2d(data_spice, x=x_spice_shift, y=y_spice_shift,
+                                                                         fill=-32762,
+                                                                         order=1)
 
-                data_fsi_interp = np.where(data_fsi_interp == -32762, np.nan, data_fsi_interp)
-                data_spice_interp = np.where(data_spice_interp == -32762, np.nan, data_spice_interp)
-                data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan, data_spice_interp_shift)
+                    data_fsi_interp = np.where(data_fsi_interp == -32762, np.nan, data_fsi_interp)
+                    data_spice_interp = np.where(data_spice_interp == -32762, np.nan, data_spice_interp)
+                    data_spice_interp_shift = np.where(data_spice_interp_shift == -32762, np.nan, data_spice_interp_shift)
 
-                longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid.to("arcsec")).value
-                latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid.to("arcsec")).value
-                dlon = longitude_grid_arc[0, 1] - longitude_grid_arc[0, 0]
-                dlat = latitude_grid_arc[1, 0] - latitude_grid_arc[0, 0]
+                    longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid.to("arcsec")).value
+                    latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid.to("arcsec")).value
+                    dlon = longitude_grid_arc[0, 1] - longitude_grid_arc[0, 0]
+                    dlat = latitude_grid_arc[1, 0] - latitude_grid_arc[0, 0]
 
-                isnan = np.isnan(data_spice_interp)
-                min = np.percentile(data_spice_interp[~isnan], 3)
-                max = np.percentile(data_spice_interp[~isnan], 99)
-                norm_spice = ImageNormalize(stretch=LinearStretch(), vmin=min, vmax=max)
+                    isnan = np.isnan(data_spice_interp)
+                    min = np.percentile(data_spice_interp[~isnan], 3)
+                    max = np.percentile(data_spice_interp[~isnan], 99)
+                    norm_spice = ImageNormalize(stretch=LinearStretch(), vmin=min, vmax=max)
 
-                isnan = np.isnan(data_fsi_interp)
-                min = np.percentile(data_fsi_interp[~isnan], 3)
-                max = np.percentile(data_fsi_interp[~isnan], 99)
-                norm_fsi = ImageNormalize(stretch=LinearStretch(), vmin=min, vmax=max)
-                fig = plt.figure(figsize=(5, 5))
-                ax = fig.add_subplot()
-                im = ax.imshow(data_fsi_interp, origin='lower', interpolation='none', cmap='plasma', norm=norm_fsi,
-                               extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
-                                       longitude_grid_arc[-1, -1] + 0.5 * dlon,
-                                       latitude_grid_arc[0, 0] - 0.5 * dlat,
-                                       latitude_grid_arc[-1, -1] + 0.5 * dlat])
-                ax.set_title(f'{detector} {wave} \n {header_large["DATE-AVG"][:19]}')
-                ax.set_xlabel("Solar-X [arcsec]")
-                ax.set_ylabel("Solar-Y [arcsec]")
-                cbar = fig.colorbar(im, label=header_fsi["BUNIT"])
-                if results_folder is not None:
-                    fig.savefig(os.path.join(results_folder, f"Synthetic_raster_on_grid_{date}.pdf"))
-                if show:
-                    fig.show()
-                fig = plt.figure(figsize=(5, 5))
-                ax = fig.add_subplot()
-                im = ax.imshow(data_spice_interp, origin='lower', interpolation='none', cmap='viridis', norm=norm_spice,
-                               extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
-                                       longitude_grid_arc[-1, -1] + 0.5 * dlon,
-                                       latitude_grid_arc[0, 0] - 0.5 * dlat,
-                                       latitude_grid_arc[-1, -1] + 0.5 * dlat])
+                    isnan = np.isnan(data_fsi_interp)
+                    min = np.percentile(data_fsi_interp[~isnan], 3)
+                    max = np.percentile(data_fsi_interp[~isnan], 99)
+                    norm_fsi = ImageNormalize(stretch=LinearStretch(), vmin=min, vmax=max)
+                    fig = plt.figure(figsize=(5, 5))
+                    ax = fig.add_subplot()
+                    im = ax.imshow(data_fsi_interp, origin='lower', interpolation='none', cmap='plasma', norm=norm_fsi,
+                                   extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
+                                           longitude_grid_arc[-1, -1] + 0.5 * dlon,
+                                           latitude_grid_arc[0, 0] - 0.5 * dlat,
+                                           latitude_grid_arc[-1, -1] + 0.5 * dlat])
+                    ax.set_title(f'{detector} {wave} \n {header_large["DATE-AVG"][:19]}')
+                    ax.set_xlabel("Solar-X [arcsec]")
+                    ax.set_ylabel("Solar-Y [arcsec]")
+                    cbar = fig.colorbar(im, label=header_fsi["BUNIT"])
+                    if results_folder is not None:
+                        fig.savefig(os.path.join(results_folder, f"Synthetic_raster_on_grid_{date}.pdf"))
+                    if show:
+                        fig.show()
+                    fig = plt.figure(figsize=(5, 5))
+                    ax = fig.add_subplot()
+                    im = ax.imshow(data_spice_interp, origin='lower', interpolation='none', cmap='viridis', norm=norm_spice,
+                                   extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
+                                           longitude_grid_arc[-1, -1] + 0.5 * dlon,
+                                           latitude_grid_arc[0, 0] - 0.5 * dlat,
+                                           latitude_grid_arc[-1, -1] + 0.5 * dlat])
 
-                ax.set_xlabel("Solar-X [arcsec]")
-                ax.set_ylabel("Solar-Y [arcsec]")
-                ax.set_title("small FOV not aligned (%s) \n %s" % (small_fov_window, header_spice["DATE-OBS"][:19]))
-                cbar = fig.colorbar(im, label=header_spice["BUNIT"])
-                if results_folder is not None:
-                    fig.savefig(os.path.join(results_folder, f"small_fov_before_alignment_on_grid_{date}.pdf"))
-                if show:
-                    fig.show()
-                fig = plt.figure(figsize=(5, 5))
-                ax = fig.add_subplot()
-                im = ax.imshow(data_spice_interp_shift, origin='lower', interpolation='none', cmap='viridis',
-                               norm=norm_spice,
-                               extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
-                                       longitude_grid_arc[-1, -1] + 0.5 * dlon,
-                                       latitude_grid_arc[0, 0] - 0.5 * dlat,
-                                       latitude_grid_arc[-1, -1] + 0.5 * dlat])
-                ax.set_title("Small FOV aligned (%s) \n %s" % (small_fov_window, header_spice["DATE-OBS"][:19]))
-                ax.set_xlabel("Solar-X [arcsec]")
-                ax.set_ylabel("Solar-Y [arcsec]")
-                cbar = fig.colorbar(im, label=header_spice["BUNIT"], )
-                if results_folder is not None:
-                    fig.savefig(os.path.join(results_folder, f"small_fov_after_alignment_on_grid_{date}.pdf"))
-                if show:
-                    fig.show()
-                # fig.savefig(os.path.join(results_folder, "SPICE_after_alignment_on_grid.png"), dpi=150)
+                    ax.set_xlabel("Solar-X [arcsec]")
+                    ax.set_ylabel("Solar-Y [arcsec]")
+                    ax.set_title("small FOV not aligned (%s) \n %s" % (small_fov_window, header_spice["DATE-OBS"][:19]))
+                    cbar = fig.colorbar(im, label=header_spice["BUNIT"])
+                    if results_folder is not None:
+                        fig.savefig(os.path.join(results_folder, f"small_fov_before_alignment_on_grid_{date}.pdf"))
+                    if show:
+                        fig.show()
+                    fig = plt.figure(figsize=(5, 5))
+                    ax = fig.add_subplot()
+                    im = ax.imshow(data_spice_interp_shift, origin='lower', interpolation='none', cmap='viridis',
+                                   norm=norm_spice,
+                                   extent=[longitude_grid_arc[0, 0] - 0.5 * dlon,
+                                           longitude_grid_arc[-1, -1] + 0.5 * dlon,
+                                           latitude_grid_arc[0, 0] - 0.5 * dlat,
+                                           latitude_grid_arc[-1, -1] + 0.5 * dlat])
+                    ax.set_title("Small FOV aligned (%s) \n %s" % (small_fov_window, header_spice["DATE-OBS"][:19]))
+                    ax.set_xlabel("Solar-X [arcsec]")
+                    ax.set_ylabel("Solar-Y [arcsec]")
+                    cbar = fig.colorbar(im, label=header_spice["BUNIT"], )
+                    if results_folder is not None:
+                        fig.savefig(os.path.join(results_folder, f"small_fov_after_alignment_on_grid_{date}.pdf"))
+                    if show:
+                        fig.show()
+                    # fig.savefig(os.path.join(results_folder, "SPICE_after_alignment_on_grid.png"), dpi=150)
 
-                hdul_spice.close()
-            hdul_large.close()
+            hdul_spice.close()
+        hdul_large.close()

@@ -96,7 +96,7 @@ class AlignCommonUtil:
         return dst
 
     @staticmethod
-    def write_corrected_fits(path_l2_input: str, window_list, path_l2_output: str, corr: np.array,
+    def write_corrected_fits(path_l2_input: str, window_list, path_l3_output: str, corr: np.array,
                              lag_crval1=None, lag_crval2=None, lag_crota=None,
                              lag_cdelta1=None, lag_cdelta2=None,
                              ):
@@ -171,8 +171,41 @@ class AlignCommonUtil:
                     hdul[window].header["PC1_2"] = - lam * np.sin(theta)
                     hdul[window].header["PC2_1"] = (1 / lam) * np.sin(theta)
 
-            hdul.writeto(path_l2_output, overwrite=True)
+            hdul.writeto(path_l3_output, overwrite=True)
             hdul.close()
+
+    @staticmethod
+    def align_pixels_shift(delta_pix1, delta_pix2, windows, large_fov_fits_path,
+                                             large_fov_window, small_fov_path, ):
+        with fits.open(small_fov_path) as hdul_spice_CR_ref:
+            for win in windows:
+                header_spice_CR_ref = hdul_spice_CR_ref[win].header.copy()
+                with fits.open(large_fov_fits_path) as hdul_fsi_ref:
+                    header_fsi = hdul_fsi_ref[large_fov_window].header.copy()
+                    w_fsi = WCS(header_fsi)
+                    if "ZNAXIS1" in header_fsi:
+                        naxis1 = header_fsi["ZNAXIS1"]
+                        naxis2 = header_fsi["ZNAXIS2"]
+                    else:
+                        naxis1 = header_fsi["NAXIS1"]
+                        naxis2 = header_fsi["NAXIS2"]
+                    x_mid = (naxis1 - 1) / 2
+                    y_mid = (naxis2 - 1) / 2
+                    lon_mid, lat_mid = w_fsi.pixel_to_world(np.array([x_mid]), np.array([y_mid]))
+                    lon_mid_fsi = lon_mid[0].to(header_spice_CR_ref["CUNIT1"]).value
+                    lat_mid_fsi = lat_mid[0].to(header_spice_CR_ref["CUNIT2"]).value
+                    if "ZNAXIS1" in hdul_spice_CR_ref[win].header:
+                        naxis1 = hdul_spice_CR_ref[win].header["ZNAXIS1"]
+                        naxis2 = hdul_spice_CR_ref[win].header["ZNAXIS2"]
+                    else:
+                        naxis1 = hdul_spice_CR_ref[win].header["NAXIS1"]
+                        naxis2 = hdul_spice_CR_ref[win].header["NAXIS2"]
+
+                    hdul_spice_CR_ref[win].header["CRVAL1"] = lon_mid_fsi + delta_pix1 * header_spice_CR_ref["CDELT1"]
+                    hdul_spice_CR_ref[win].header["CRVAL2"] = lat_mid_fsi + delta_pix2 * header_spice_CR_ref["CDELT2"]
+                    hdul_spice_CR_ref[win].header["CRPIX1"] = (naxis1 + 1) / 2
+                    hdul_spice_CR_ref[win].header["CRPIX2"] = (naxis2 + 1) / 2
+        return hdul_spice_CR_ref[win].header
 
 
 class AlignEUIUtil:
