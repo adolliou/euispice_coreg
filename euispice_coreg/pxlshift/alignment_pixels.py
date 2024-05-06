@@ -86,7 +86,7 @@ class AlignmentPixels:
     def _shift_large_fov(self):
         xx, yy = np.meshgrid(np.arange(self.data_large.shape[1]),
                              np.arange(self.data_large.shape[0]), )
-        data_large = Util.CommonUtil.interpol2d(self.data_large, xx, yy, fill=-32762, order=1)
+        data_large = Util.AlignCommonUtil.interpol2d(self.data_large, xx, yy, fill=-32762, order=1)
         data_large = np.where(data_large == -32762, np.nan, data_large)
         dcrval = self._return_shift_large_fov_solar_rotation()
         if "CROTA" in self.hdr_large:
@@ -99,7 +99,7 @@ class AlignmentPixels:
             dy = 0
         mat = matrix_transform.MatrixTransform.displacement_matrix(dx=dx, dy=dy)
         nx, ny = matrix_transform.MatrixTransform.linear_transform(xx, yy, matrix=mat)
-        data_large = Util.CommonUtil.interpol2d(data_large, nx, ny, fill=-32762, order=1)
+        data_large = Util.AlignCommonUtil.interpol2d(data_large, nx, ny, fill=-32762, order=1)
         # norm = ImageNormalize(stretch=LogStretch(20), vmin=1, vmax=1000)
         # PlotFunctions.plot_fov(self.data_large, norm=norm)
         self.data_large = np.where(data_large == -32762, np.nan, data_large)
@@ -112,7 +112,7 @@ class AlignmentPixels:
         omega_car = np.deg2rad(360 / 25.38 / 86400)  # rad s-1
         if band == 174:
             band = 171
-        omega = omega_car + Util.EUIUtil.diff_rot(B0, f'EIT {band}')  # rad s-1
+        omega = omega_car + Util.AlignEUIUtil.diff_rot(B0, f'EIT {band}')  # rad s-1
         # helioprojective rotation rate for s/c
         Rsun = self.hdr_large['RSUN_REF']  # m
         Dsun = self.hdr_large['DSUN_OBS']  # m
