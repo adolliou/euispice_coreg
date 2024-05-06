@@ -506,7 +506,7 @@ class PlotFunctions:
         :param show: if True, then show the figure
         :param results_folder: path where to save the figures
         :param cut_from_center: for spice only: cut the dumbells in the figure.
-        :param plot_all_figures: if True, plot individual figures of the reference and to align images
+        :param plot_all_figures: if True, plot individual figures of the reference and to align images.
         """
         if levels_percentile is None:
             levels_percentile = [85]
