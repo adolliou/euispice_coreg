@@ -262,4 +262,4 @@ Author: Antoine Dolliou (antoine.dolliou@universite-paris-saclay.fr)
 
 ## Acknowledgment
 
-If you use this code in your publication, please cite Dolliou et al, 2024 (in prep). 
+If you use this code in your publication, please cite Dolliou et al, 2024 (A&A, submitted). 
