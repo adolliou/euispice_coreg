@@ -645,10 +645,10 @@ class PlotFunctions:
                     hdr_spice_shifted["PC1_2"] = -lam * np.sin(theta)
                     hdr_spice_shifted["PC2_1"] = (1 / lam) * np.sin(theta)
                 not_nan = np.isnan(data_large)
-                min = np.percentile(data_large[~not_nan], 3)
-                max = np.percentile(data_large[~not_nan], 99)
-                norm = ImageNormalize(stretch=LinearStretch(), vmin=np.max((min, 1)), vmax=max)
-
+                # min = np.percentile(data_large[~not_nan], 3)
+                # max = np.percentile(data_large[~not_nan], 99)
+                # norm = ImageNormalize(stretch=LinearStretch(), vmin=np.max((min, 1)), vmax=max)
+                norm = PlotFits.get_range(data=data_large, stre=None, vmin=2, vmax=97)
                 longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_spice.copy(), dsun=False)
                 longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude, latitude)
                 dlon = dlon.to("arcsec").value

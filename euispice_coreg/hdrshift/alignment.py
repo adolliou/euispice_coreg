@@ -17,8 +17,8 @@ import warnings
 from ..utils import Util
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 
-
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
+
 
 def divide_chunks(l, n):
     # looping till length l
@@ -35,7 +35,7 @@ class Alignment:
                  parallelism: object = False, use_tqdm: object = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
-                 path_save_figure: object = None, ) -> object:
+                 path_save_figure: object = None, reprojection_order=2 ) -> object:
         """
 
         @param large_fov_known_pointing: path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -55,6 +55,7 @@ class Alignment:
         @param large_fov_window: (str or int) HDULIST window for the reference file
         @param small_fov_window: (str or int) HDULIST window for the fits to align
         @param path_save_figure: folder where to save figs following the alignement (optional, will increase computational time)
+        @param reprojection_order: (int) order of the spline interpolation. Default is 2.
         """
         self.large_fov_known_pointing = large_fov_known_pointing
         self.small_fov_to_correct = small_fov_to_correct
@@ -159,9 +160,7 @@ class Alignment:
                 crot = self.crota_ref
             # raise NotImplementedError
         if change_pcij:
-            # print(f'{self.crota_ref=}')
-            # print(f'{crot=}')
-            # print(f'{hdr["PC1_2"]=}')
+
             rho = np.deg2rad(crot)
             lam = hdr["CDELT2"] / hdr["CDELT1"]
             hdr["PC1_1"] = np.cos(rho)
@@ -193,7 +192,6 @@ class Alignment:
         data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
         lock.release()
         shmm_correlation.close()
-
 
     def _step(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
 
@@ -297,7 +295,6 @@ class Alignment:
             self.hdr_large["PC2_1"] = 0.0
             self.hdr_large["CROTA"] = 0.0
 
-
         if 'CROTA' not in self.hdr_small:
             s = - np.sign(self.hdr_small["PC1_2"]) + (self.hdr_small["PC1_2"] == 0)
             self.hdr_small["CROTA"] = s * np.rad2deg(np.arccos(self.hdr_small["PC1_1"]))
@@ -357,7 +354,6 @@ class Alignment:
         return results
 
     def _find_best_header_parameters(self):
-
 
         self.crval1_ref = self.hdr_small['CRVAL1']
         self.crval2_ref = self.hdr_small['CRVAL2']
@@ -443,15 +439,14 @@ class Alignment:
                 while (ii < lenp - 1):
                     ii += 1
                     Processes[ii].start()
-                    while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if (mm not in is_close)]) > self.counts):
-
+                    while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if
+                                   (mm not in is_close)]) > self.counts):
                         pass
                     for kk, P in zip(range(lenp), Processes):
                         if kk not in is_close:
-                            if (not(P.is_alive())) and (kk <= ii):
+                            if (not (P.is_alive())) and (kk <= ii):
                                 P.close()
                                 is_close.append(kk)
-
 
                 while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if (mm not in is_close)]) != 0):
                     pass
@@ -507,7 +502,6 @@ class Alignment:
         shmm_correlation.unlink()
         return data_correlation_cp
 
-
     def _carrington_transform(self, d_solar_r, data, hdr):
 
         spherical = rectify.CarringtonTransform(hdr, radius_correction=d_solar_r,
@@ -515,7 +509,7 @@ class Alignment:
                                                 rate_wave=self.rat_wave[
                                                     '%i' % (self.hdr_large['WAVELNTH'])])
         spherizer = rectify.Rectifier(spherical)
-        image = spherizer(data, self.shape, self.lonlims, self.latlims, opencv=False, order=1, fill=-32762)
+        image = spherizer(data, self.shape, self.lonlims, self.latlims, opencv=False, order=self.order, fill=-32762)
         image = np.where(image == -32762, np.nan, image)
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
             if self.path_save_figure is not None:
@@ -528,7 +522,7 @@ class Alignment:
                 spherizer = rectify.Rectifier(spherical)
 
                 image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, opencv=False,
-                                        order=1, fill=-32762)
+                                        order=self.order, fill=-32762)
                 image_small = np.where(image_small == -32762, np.nan, image_small)
 
                 plot.PlotFunctions.plot_fov(image_small, show=False,
@@ -548,7 +542,8 @@ class Alignment:
             w_cut = WCS(hdr_cut)
             idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
             idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
-            x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
+            x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
+                               np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
             coords_cut = w_cut.pixel_to_world(x, y)
 
             longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
@@ -560,7 +555,8 @@ class Alignment:
         else:
             longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
-        image_large_cut = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut, y=y_cut,order=1,fill=-32768)
+        image_large_cut = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut, y=y_cut,
+                                                          order=self.order, fill=-32768)
         # breakpoint()
         # image_large_cut_ = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut_, y=y_cut_,order=1,fill=-32768)
 
@@ -573,7 +569,8 @@ class Alignment:
         else:
             x_cut, y_cut = w_xy_small.world_to_pixel(longitude_cut, latitude_cut)
 
-        image_small_cut = Util.AlignCommonUtil.interpol2d(np.array(self.data_small.copy(), dtype=np.float64), x=x_cut,y=y_cut,order=1, fill=-32768)
+        image_small_cut = Util.AlignCommonUtil.interpol2d(np.array(self.data_small.copy(), dtype=np.float64), x=x_cut,
+                                                          y=y_cut, order=self.order, fill=-32768)
         image_small_cut[image_small_cut == -32768] = np.nan
 
         self.data_small = image_small_cut
@@ -616,7 +613,7 @@ class Alignment:
         else:
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
         image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype=np.float64),
-                                                           x=x_large, y=y_large, order=1,
+                                                           x=x_large, y=y_large, order=self.order,
                                                            fill=-32768)
         image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
 

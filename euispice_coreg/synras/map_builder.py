@@ -42,7 +42,7 @@ class ComposedMapBuilder(MapBuilder):
         self.path_output = None
 
     def process(self, folder_path_output=None, basename_output=None, print_filename=True, level=2,
-                keep_original_imager_pixel_size=False):
+                keep_original_imager_pixel_size=False, return_synras_name=False):
         """
 
         :param folder_path_output:  path to the output folder.
@@ -50,15 +50,20 @@ class ComposedMapBuilder(MapBuilder):
         :param print_filename: print names of the files used from the folder
         :param level: number of dimensions for the input file. Keep to 2 except for L3 SPICE FITS files
         :param keep_original_imager_pixel_size: keep the original pixel size of the L2 imagers lists
+        :param return_synras_name: (bool) if True, return the path to the output synthetic raster.
         """
         self.path_output = folder_path_output
         with fits.open(self.path_to_spectro) as hdul_spice:
             hdu_spice = hdul_spice[self.window_spectro]
             hdr_spice = hdu_spice.header.copy()
-            self._create_map_from_hdu(hdr_spice, basename_output, folder_path_output, print_filename=print_filename,
-                                      level=level,
-                                      keep_original_imager_pixel_size=keep_original_imager_pixel_size)
+            output_synras_name = self._create_map_from_hdu(hdr_spice, basename_output, folder_path_output,
+                                                           print_filename=print_filename,
+                                                           level=level,
+                                                        keep_original_imager_pixel_size=keep_original_imager_pixel_size)
             hdul_spice.close()
+
+        if return_synras_name:
+            return output_synras_name
 
     def process_from_header(self, hdr_spice, path_output=None, basename_output=None, print_filename=False, level=2,
                             keep_original_imager_pixel_size=False):
@@ -92,7 +97,8 @@ class ComposedMapBuilder(MapBuilder):
                 data_imager = hdu_imager.data
                 w_im = WCS(hdr_imager)
                 x_fsi, y_fsi = w_im.world_to_pixel(longitude_spice[:, ii, 0], latitude_spice[:, ii, 0])
-                data_imager_on_slit = Util.AlignCommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=1, fill=-32762)
+                data_imager_on_slit = Util.AlignCommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=1,
+                                                                      fill=-32762)
                 data_imager_on_slit = np.where(data_imager_on_slit == -32762, np.nan, data_imager_on_slit)
                 self.data_composed[:, ii] = data_imager_on_slit
                 hdul_imager.close()
@@ -152,7 +158,7 @@ class ComposedMapBuilder(MapBuilder):
 
         if basename_output is None:
             date = utc_composed.fits[:19]
-            date = date.replace(":","_")
+            date = date.replace(":", "_")
             basename_new = f"solo_L3_{detector}{wave}-image-composed-{date}.fits"
         else:
             basename_new = basename_output
@@ -167,6 +173,7 @@ class ComposedMapBuilder(MapBuilder):
                 self.hdr_composed["NAXIS2"] = self.data_composed.shape[0]
             else:
                 raise NotImplementedError
+        return os.path.join(self.path_output, basename_new)
 
     def _prepare_spectro_data(self, hdr_spice, keep_original_imager_pixel_size, level):
         pass
@@ -276,4 +283,3 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
             w_xy = w_xyt.dropaxis(2)
         self.hdr_spice_ = w_xy.to_header()
         return hdr_im, latitude_spice, longitude_spice, naxis1, naxis2, naxis_long, utc_spice, w_xy
-
