@@ -328,7 +328,6 @@ class Alignment:
 
         return results
 
-
     def _check_ant_create_pcij_matrix(self, hdr):
         if ("PC1_1" not in hdr):
             warnings.warn("PCi_j matrix not found in header of the FITS file to align. Adding it to the header.")
