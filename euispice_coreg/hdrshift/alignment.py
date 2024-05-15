@@ -35,7 +35,7 @@ class Alignment:
                  parallelism: object = False, use_tqdm: object = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
-                 path_save_figure: object = None, reprojection_order=2) -> object:
+                 path_save_figure: object = None, reprojection_order=2, force_crota_0=False) -> object:
         """
 
         @param large_fov_known_pointing: path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -91,7 +91,7 @@ class Alignment:
         self.path_save_figure = path_save_figure
         self.use_tqdm = use_tqdm
         self.marker = False
-
+        self.force_crota_0 = force_crota_0
         self._large = None
         self._small = None
 
@@ -336,7 +336,12 @@ class Alignment:
             elif "CROTA2" in hdr:
                 crot = hdr["CROTA2"]
             else:
-                raise NotImplementedError
+                if self.force_crota_0:
+                    crot = 0.0
+                    hdr["CROTA"] = 0.0
+                else:
+                    raise ValueError("No, CROTA, CROTA2 or PCi_j matrix in your FITS file. If want to force a CROTA=0, "
+                                 "please set the force_crota_0 to True when initializing Alignment ")
 
             rho = np.deg2rad(crot)
             lam = hdr["CDELT2"] / hdr["CDELT1"]
