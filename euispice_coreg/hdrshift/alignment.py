@@ -287,7 +287,8 @@ class Alignment:
             raise ValueError("either set lonlims as None, or not. no in between.")
 
         if self.use_pcij:
-            self._check_ant_create_pcij_matrix()
+            self._check_ant_create_pcij_matrix(self.hdr_small)
+            self._check_ant_create_pcij_matrix(self.hdr_large)
 
         f_large.close()
         f_small.close()
@@ -315,7 +316,8 @@ class Alignment:
         self.hdr_small = f_small[self.small_fov_window].header.copy()
 
         if self.use_pcij:
-            self._check_ant_create_pcij_matrix()
+            self._check_ant_create_pcij_matrix(self.hdr_small)
+            self._check_ant_create_pcij_matrix(self.hdr_large)
 
         # self._recenter_crpix_in_header(self.hdr_small)
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
@@ -326,43 +328,35 @@ class Alignment:
 
         return results
 
-    def _check_ant_create_pcij_matrix(self):
-        if ("PC1_1" not in self.hdr_small):
+
+    def _check_ant_create_pcij_matrix(self, hdr):
+        if ("PC1_1" not in hdr):
             warnings.warn("PCi_j matrix not found in header of the FITS file to align. Adding it to the header.")
-            if "CROTA" in self.hdr_small:
-                crot = self.hdr_small["CROTA"]
-            elif "CROTA2" in self.hdr_small:
-                crot = self.hdr_small["CROTA2"]
+            if "CROTA" in hdr:
+                crot = hdr["CROTA"]
+            elif "CROTA2" in hdr:
+                crot = hdr["CROTA2"]
             else:
                 raise NotImplementedError
 
             rho = np.deg2rad(crot)
-            lam = self.hdr_small["CDELT2"] / self.hdr_small["CDELT1"]
-            self.hdr_small["PC1_1"] = np.cos(rho)
-            self.hdr_small["PC2_2"] = np.cos(rho)
-            self.hdr_small["PC1_2"] = - lam * np.sin(rho)
-            self.hdr_small["PC2_1"] = (1 / lam) * np.sin(rho)
-        if self.hdr_small["PC1_1"] > 1.0:
-            warnings.warn(f'{self.hdr_small["PC1_1"]=}, setting to  1.0.')
-            self.hdr_small["PC1_1"] = 1.0
-            self.hdr_small["PC2_2"] = 1.0
-            self.hdr_small["PC1_2"] = 0.0
-            self.hdr_small["PC2_1"] = 0.0
-            self.hdr_small["CROTA"] = 0.0
-        if self.hdr_large["PC1_1"] > 1.0:
-            warnings.warn(f'{self.hdr_large["PC1_1"]=}, setting to  1.0.')
+            lam = hdr["CDELT2"] / hdr["CDELT1"]
+            hdr["PC1_1"] = np.cos(rho)
+            hdr["PC2_2"] = np.cos(rho)
+            hdr["PC1_2"] = - lam * np.sin(rho)
+            hdr["PC2_1"] = (1 / lam) * np.sin(rho)
+        if hdr["PC1_1"] > 1.0:
+            warnings.warn(f'{hdr["PC1_1"]=}, setting to  1.0.')
+            hdr["PC1_1"] = 1.0
+            hdr["PC2_2"] = 1.0
+            hdr["PC1_2"] = 0.0
+            hdr["PC2_1"] = 0.0
+            hdr["CROTA"] = 0.0
 
-            self.hdr_large["PC1_1"] = 1.0
-            self.hdr_large["PC2_2"] = 1.0
-            self.hdr_large["PC1_2"] = 0.0
-            self.hdr_large["PC2_1"] = 0.0
-            self.hdr_large["CROTA"] = 0.0
-        if 'CROTA' not in self.hdr_small:
-            s = - np.sign(self.hdr_small["PC1_2"]) + (self.hdr_small["PC1_2"] == 0)
-            self.hdr_small["CROTA"] = s * np.rad2deg(np.arccos(self.hdr_small["PC1_1"]))
-        if 'CROTA' not in self.hdr_large:
-            s = - np.sign(self.hdr_large["PC1_2"]) + (self.hdr_large["PC1_2"] == 0)
-            self.hdr_large["CROTA"] = s * np.rad2deg(np.arccos(self.hdr_large["PC1_1"]))
+        if 'CROTA' not in hdr:
+            s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
+            hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
+
 
     def _find_best_header_parameters(self):
 
