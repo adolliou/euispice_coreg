@@ -574,7 +574,7 @@ class PlotFunctions:
                     # header_spice["CRPIX1"] = (data_spice.shape[1] + 1) / 2
                     # header_spice["CRPIX2"] = (data_spice.shape[0] + 1) / 2
 
-                header_spice["SOLAR_B0"] = hdul_spice[small_fov_window].header["SOLAR_B0"]
+                # header_spice["SOLAR_B0"] = hdul_spice[small_fov_window].header["SOLAR_B0"]
                 header_spice["RSUN_REF"] = hdul_spice[small_fov_window].header["RSUN_REF"]
                 header_spice["DSUN_OBS"] = hdul_spice[small_fov_window].header["DSUN_OBS"]
                 # data_spice = np.nansum(hdul_spice[raster_window].data.copy()[0, :, :, :], axis=0)
