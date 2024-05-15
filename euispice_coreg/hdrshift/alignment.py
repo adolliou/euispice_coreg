@@ -35,7 +35,7 @@ class Alignment:
                  parallelism: object = False, use_tqdm: object = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
-                 path_save_figure: object = None, reprojection_order=2, force_crota_0=False) -> object:
+                 path_save_figure: object = None, reprojection_order=2, force_crota_0=False):
         """
 
         @param large_fov_known_pointing: path to the reference file fits (most of the time an imager or a synthetic raster)
