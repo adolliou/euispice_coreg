@@ -35,7 +35,7 @@ class Alignment:
                  parallelism: object = False, use_tqdm: object = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
-                 path_save_figure: object = None, reprojection_order=2 ) -> object:
+                 path_save_figure: object = None, reprojection_order=2) -> object:
         """
 
         @param large_fov_known_pointing: path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -94,6 +94,11 @@ class Alignment:
 
         self._large = None
         self._small = None
+
+        self.use_pcij = False
+        if (lag_crota is None) and (lag_cdelta1 is None) and (lag_cdelta2 is None) \
+                and (lag_cdelta1 is None) and (lag_cdelta2 is None):
+            self.use_pcij = True
 
         self._correlation = None
 
@@ -160,7 +165,6 @@ class Alignment:
                 crot = self.crota_ref
             # raise NotImplementedError
         if change_pcij:
-
             rho = np.deg2rad(crot)
             lam = hdr["CDELT2"] / hdr["CDELT1"]
             hdr["PC1_1"] = np.cos(rho)
@@ -258,6 +262,8 @@ class Alignment:
 
         self.hdr_small = f_small[self.small_fov_window].header.copy()
         # self._recenter_crpix_in_header(self.hdr_small)
+
+
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
 
         if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
@@ -277,23 +283,40 @@ class Alignment:
             self.shape = shape
         else:
             raise ValueError("either set lonlims as None, or not. no in between.")
+        if self.use_pcij:
+            if ("PC1_1" not in self.hdr_small):
+                warnings.warn("PCi_j matrix not found in header of the FITS file to align. Adding it to the header.")
+                if "CROTA" in self.hdr_small:
+                    crot = self.hdr_small["CROTA"]
+                elif "CROTA2" in self.hdr_small:
+                    crot = self.hdr_small["CROTA2"]
+                else:
+                    raise NotImplementedError
 
-        if self.hdr_small["PC1_1"] > 1.0:
-            warnings.warn(f'{self.hdr_small["PC1_1"]=}, setting to  1.0.')
-            self.hdr_small["PC1_1"] = 1.0
-            self.hdr_small["PC2_2"] = 1.0
-            self.hdr_small["PC1_2"] = 0.0
-            self.hdr_small["PC2_1"] = 0.0
-            self.hdr_small["CROTA"] = 0.0
+                rho = np.deg2rad(crot)
+                lam = self.hdr_small["CDELT2"] / self.hdr_small["CDELT1"]
+                self.hdr_small["PC1_1"] = np.cos(rho)
+                self.hdr_small["PC2_2"] = np.cos(rho)
+                self.hdr_small["PC1_2"] = - lam * np.sin(rho)
+                self.hdr_small["PC2_1"] = (1 / lam) * np.sin(rho)
 
-        if self.hdr_large["PC1_1"] > 1.0:
-            warnings.warn(f'{self.hdr_large["PC1_1"]=}, setting to  1.0.')
 
-            self.hdr_large["PC1_1"] = 1.0
-            self.hdr_large["PC2_2"] = 1.0
-            self.hdr_large["PC1_2"] = 0.0
-            self.hdr_large["PC2_1"] = 0.0
-            self.hdr_large["CROTA"] = 0.0
+            if self.hdr_small["PC1_1"] > 1.0:
+                warnings.warn(f'{self.hdr_small["PC1_1"]=}, setting to  1.0.')
+                self.hdr_small["PC1_1"] = 1.0
+                self.hdr_small["PC2_2"] = 1.0
+                self.hdr_small["PC1_2"] = 0.0
+                self.hdr_small["PC2_1"] = 0.0
+                self.hdr_small["CROTA"] = 0.0
+
+            if self.hdr_large["PC1_1"] > 1.0:
+                warnings.warn(f'{self.hdr_large["PC1_1"]=}, setting to  1.0.')
+
+                self.hdr_large["PC1_1"] = 1.0
+                self.hdr_large["PC2_2"] = 1.0
+                self.hdr_large["PC1_2"] = 0.0
+                self.hdr_large["PC2_1"] = 0.0
+                self.hdr_large["CROTA"] = 0.0
 
         if 'CROTA' not in self.hdr_small:
             s = - np.sign(self.hdr_small["PC1_2"]) + (self.hdr_small["PC1_2"] == 0)
@@ -326,23 +349,40 @@ class Alignment:
         # self._recenter_crpix_in_header(self.hdr_large)
 
         self.hdr_small = f_small[self.small_fov_window].header.copy()
+        if self.use_pcij:
 
-        if self.hdr_small["PC1_1"] > 1.0:
-            warnings.warn(f'{self.hdr_small["PC1_1"]=}, setting to  1.0.')
-            self.hdr_small["PC1_1"] = 1.0
-            self.hdr_small["PC2_2"] = 1.0
-            self.hdr_small["PC1_2"] = 0.0
-            self.hdr_small["PC2_1"] = 0.0
-            self.hdr_small["CROTA"] = 0.0
+            if ("PC1_1" not in self.hdr_small):
+                warnings.warn("PCi_j matrix not found in header of the FITS file to align. Adding it to the header.")
+                if "CROTA" in self.hdr_small:
+                    crot = self.hdr_small["CROTA"]
+                elif "CROTA2" in self.hdr_small:
+                    crot = self.hdr_small["CROTA2"]
+                else:
+                    raise NotImplementedError
 
-        if self.hdr_large["PC1_1"] > 1.0:
-            warnings.warn(f'{self.hdr_large["PC1_1"]=}, setting to  1.0.')
+                rho = np.deg2rad(crot)
+                lam = self.hdr_small["CDELT2"] / self.hdr_small["CDELT1"]
+                self.hdr_small["PC1_1"] = np.cos(rho)
+                self.hdr_small["PC2_2"] = np.cos(rho)
+                self.hdr_small["PC1_2"] = - lam * np.sin(rho)
+                self.hdr_small["PC2_1"] = (1 / lam) * np.sin(rho)
 
-            self.hdr_large["PC1_1"] = 1.0
-            self.hdr_large["PC2_2"] = 1.0
-            self.hdr_large["PC1_2"] = 0.0
-            self.hdr_large["PC2_1"] = 0.0
-            self.hdr_large["CROTA"] = 0.0
+            if self.hdr_small["PC1_1"] > 1.0:
+                warnings.warn(f'{self.hdr_small["PC1_1"]=}, setting to  1.0.')
+                self.hdr_small["PC1_1"] = 1.0
+                self.hdr_small["PC2_2"] = 1.0
+                self.hdr_small["PC1_2"] = 0.0
+                self.hdr_small["PC2_1"] = 0.0
+                self.hdr_small["CROTA"] = 0.0
+
+            if self.hdr_large["PC1_1"] > 1.0:
+                warnings.warn(f'{self.hdr_large["PC1_1"]=}, setting to  1.0.')
+
+                self.hdr_large["PC1_1"] = 1.0
+                self.hdr_large["PC2_2"] = 1.0
+                self.hdr_large["PC1_2"] = 0.0
+                self.hdr_large["PC2_1"] = 0.0
+                self.hdr_large["CROTA"] = 0.0
 
         # self._recenter_crpix_in_header(self.hdr_small)
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
