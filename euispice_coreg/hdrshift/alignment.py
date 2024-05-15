@@ -286,9 +286,9 @@ class Alignment:
         else:
             raise ValueError("either set lonlims as None, or not. no in between.")
 
-        if self.use_pcij:
-            self._check_ant_create_pcij_matrix(self.hdr_small)
-            self._check_ant_create_pcij_matrix(self.hdr_large)
+        # if self.use_pcij:
+        self._check_ant_create_pcij_matrix(self.hdr_small)
+        self._check_ant_create_pcij_matrix(self.hdr_large)
 
         f_large.close()
         f_small.close()
@@ -315,9 +315,9 @@ class Alignment:
 
         self.hdr_small = f_small[self.small_fov_window].header.copy()
 
-        if self.use_pcij:
-            self._check_ant_create_pcij_matrix(self.hdr_small)
-            self._check_ant_create_pcij_matrix(self.hdr_large)
+        # if self.use_pcij:
+        self._check_ant_create_pcij_matrix(self.hdr_small)
+        self._check_ant_create_pcij_matrix(self.hdr_large)
 
         # self._recenter_crpix_in_header(self.hdr_small)
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
@@ -362,13 +362,14 @@ class Alignment:
         self.crval1_ref = self.hdr_small['CRVAL1']
         self.crval2_ref = self.hdr_small['CRVAL2']
         self.use_crota = True
+
+
         if 'CROTA' in self.hdr_small:
             self.crota_ref = self.hdr_small['CROTA']
         elif 'CROTA2' in self.hdr_small:
             self.crota_ref = self.hdr_small['CROTA2']
         else:
             s = - np.sign(self.hdr_small['PC1_2']) + (self.hdr_small['PC1_2'] == 0)
-
             self.crota_ref = np.rad2deg(np.arccos(self.hdr_small['PC1_1'])) * s
             self.hdr_small["CROTA"] = np.rad2deg(np.arccos(self.hdr_small['PC1_1']))
             # self.use_crota = False
