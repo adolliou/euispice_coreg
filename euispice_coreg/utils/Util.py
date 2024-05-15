@@ -113,6 +113,8 @@ class AlignCommonUtil:
                 # else:
                 #     raise NotImplementedError
 
+                AlignCommonUtil._check_and_create_pcij_crota_hdr(hdul[window].header)
+
                 if hdul[window].header["PC1_1"] > 1.0:
                     warnings.warn(f'{hdul[window].header["PC1_1"]=}, set it to 1.0')
                     hdul[window].header["PC1_1"] = 1.0
@@ -173,6 +175,35 @@ class AlignCommonUtil:
 
             hdul.writeto(path_l3_output, overwrite=True)
             hdul.close()
+
+    @staticmethod
+    def _check_and_create_pcij_crota_hdr(hdr):
+        if ("PC1_1" not in hdr):
+            warnings.warn(
+                "PCi_j matrix not found in header of the FITS file to align. Adding it to the header.")
+            if "CROTA" in hdr:
+                crot = hdr["CROTA"]
+            elif "CROTA2" in hdr:
+                crot = hdr["CROTA2"]
+            else:
+                raise NotImplementedError
+
+            rho = np.deg2rad(crot)
+            lam = hdr["CDELT2"] / hdr["CDELT1"]
+            hdr["PC1_1"] = np.cos(rho)
+            hdr["PC2_2"] = np.cos(rho)
+            hdr["PC1_2"] = - lam * np.sin(rho)
+            hdr["PC2_1"] = (1 / lam) * np.sin(rho)
+        if hdr["PC1_1"] > 1.0:
+            warnings.warn(f'{hdr["PC1_1"]=}, setting to  1.0.')
+            hdr["PC1_1"] = 1.0
+            hdr["PC2_2"] = 1.0
+            hdr["PC1_2"] = 0.0
+            hdr["PC2_1"] = 0.0
+            hdr["CROTA"] = 0.0
+        if 'CROTA' not in hdr:
+            s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
+            hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
 
     @staticmethod
     def align_pixels_shift(delta_pix1, delta_pix2, windows, large_fov_fits_path,
