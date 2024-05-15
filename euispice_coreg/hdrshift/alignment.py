@@ -95,10 +95,9 @@ class Alignment:
         self._large = None
         self._small = None
 
-        self.use_pcij = False
-        if (lag_crota is None) or (lag_cdelta1 is None) or (lag_cdelta2 is None) \
-                or (lag_cdelta1 is None) or (lag_cdelta2 is None):
-            self.use_pcij = True
+        self.use_pcij = True
+        if (lag_crota is None) and (lag_cdelta1 is None) and (lag_cdelta2 is None):
+            self.use_pcij = False
 
         self._correlation = None
 
