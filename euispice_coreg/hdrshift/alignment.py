@@ -397,6 +397,10 @@ class Alignment:
             self.unit_lag = "deg"
         if self.lag_solar_r is None:
             self.lag_solar_r = np.array([1.004])
+
+        for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelta1, self.lag_cdelta2, self.lag_crota]:
+            if lag is None:
+                lag = np.array([0])
         results = np.empty((len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
                             len(self.lag_crota), len(self.lag_solar_r)), dtype=np.float64)
 
