@@ -102,6 +102,9 @@ class Alignment:
 
         self._correlation = None
 
+        self.order = reprojection_order
+
+
         self.lock = Lock()
 
         # check whether the Helioprojective frame is imported through an sunpy.map import for instance.
