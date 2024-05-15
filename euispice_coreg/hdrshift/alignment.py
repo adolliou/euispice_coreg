@@ -56,6 +56,7 @@ class Alignment:
         @param small_fov_window: (str or int) HDULIST window for the fits to align
         @param path_save_figure: folder where to save figs following the alignement (optional, will increase computational time)
         @param reprojection_order: (int) order of the spline interpolation. Default is 2.
+        @param force_crota_0: if no CROTA, CROTA2 or Pci_j matrix, force the CROTA parameter to 0.
         """
         self.large_fov_known_pointing = large_fov_known_pointing
         self.small_fov_to_correct = small_fov_to_correct
