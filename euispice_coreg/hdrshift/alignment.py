@@ -104,7 +104,6 @@ class Alignment:
 
         self.order = reprojection_order
 
-
         self.lock = Lock()
 
         # check whether the Helioprojective frame is imported through an sunpy.map import for instance.
@@ -114,6 +113,10 @@ class Alignment:
                 use_sunpy = True
                 # import sunpy.map
         self.use_sunpy = use_sunpy
+
+        for lag in [self.lag_crval1, self.lag_crval2, self.lag_crota, self.lag_cdelta1, self.lag_cdelta2]:
+            if lag is None:
+                lag = np.array([0])
 
     # def __del__(self):
 
