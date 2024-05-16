@@ -401,8 +401,8 @@ class Alignment:
         for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelta1, self.lag_cdelta2, self.lag_crota]:
             if lag is None:
                 lag = np.array([0])
-        results = np.empty((len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
-                            len(self.lag_crota), len(self.lag_solar_r)), dtype=np.float64)
+        results = np.zeros((len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
+                            len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
 
         shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
         self._correlation = {"name": shmm_correlation.name, "size": data_correlation.size,
