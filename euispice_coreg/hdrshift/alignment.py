@@ -3,7 +3,6 @@ import copy
 import numpy as np
 import multiprocessing as mp
 from functools import partial
-
 from astropy.coordinates import SkyCoord
 from tqdm import tqdm
 from multiprocessing import Process, Lock
@@ -113,10 +112,11 @@ class Alignment:
                 use_sunpy = True
                 # import sunpy.map
         self.use_sunpy = use_sunpy
-
-        for lag in [self.lag_crval1, self.lag_crval2, self.lag_crota, self.lag_cdelta1, self.lag_cdelta2]:
-            if lag is None:
-                lag = np.array([0.0])
+        # set None values to np.array([0]) lags.
+        for lag_name, lag_value in zip(["lag_crval1", "lag_crval2", "lag_crota", "lag_cdelta1", "lag_cdelta2"],
+                                       [lag_crval1, lag_crval2, lag_crota, lag_cdelta1, lag_cdelta2]):
+            if lag_value is None:
+                self.__setattr__(lag_name, np.array([0.0]))
 
     # def __del__(self):
 
@@ -251,6 +251,43 @@ class Alignment:
         else:
             raise NotImplementedError
 
+    def _step_no_shmm(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
+
+        data_small = self.data_small.copy()
+        data_large = self.data_large
+        hdr_small_shft = self.hdr_small.copy()
+        self._shift_header(hdr_small_shft, d_crval1=d_crval1, d_crval2=d_crval2,
+                           d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2,
+                           d_crota=d_crota)
+
+        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
+
+        condition_1 = np.ones(len(data_small_interp.ravel()), dtype='bool')
+        condition_2 = np.ones(len(data_small_interp.ravel()), dtype='bool')
+
+        if self.small_fov_value_min is not None:
+            condition_1 = np.array(data_small_interp.ravel() > self.small_fov_value_min, dtype='bool')
+        if self.small_fov_value_max is not None:
+            condition_2 = np.array(data_small_interp.ravel() < self.small_fov_value_max, dtype='bool')
+
+        if method == 'correlation':
+
+            lag = [0]
+            is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
+                               | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
+                              dtype='bool')
+            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan) & (condition_1) & (condition_2)],
+                                        data_small_interp.ravel()[(~is_nan) & (condition_1) & (condition_2)],
+                                        lags=lag)
+            return c
+
+        elif method == 'residus':
+            norm = np.sqrt(data_large.ravel())
+            diff = (data_large.ravel() - data_small_interp.ravel()) / norm
+            return np.std(diff[(condition_1) & (condition_2)])
+        else:
+            raise NotImplementedError
+
     def align_using_carrington(self, lonlims=None, latlims=None, size_deg_carrington=None, shape=None,
                                reference_date=None, method='correlation'):
 
@@ -268,7 +305,6 @@ class Alignment:
 
         self.hdr_small = f_small[self.small_fov_window].header.copy()
         # self._recenter_crpix_in_header(self.hdr_small)
-
 
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
 
@@ -345,7 +381,7 @@ class Alignment:
                     hdr["CROTA"] = 0.0
                 else:
                     raise ValueError("No, CROTA, CROTA2 or PCi_j matrix in your FITS file. If want to force a CROTA=0, "
-                                 "please set the force_crota_0 to True when initializing Alignment ")
+                                     "please set the force_crota_0 to True when initializing Alignment ")
 
             rho = np.deg2rad(crot)
             lam = hdr["CDELT2"] / hdr["CDELT1"]
@@ -365,13 +401,11 @@ class Alignment:
             s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
             hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
 
-
     def _find_best_header_parameters(self):
 
         self.crval1_ref = self.hdr_small['CRVAL1']
         self.crval2_ref = self.hdr_small['CRVAL2']
         self.use_crota = True
-
 
         if 'CROTA' in self.hdr_small:
             self.crota_ref = self.hdr_small['CROTA']
@@ -474,7 +508,17 @@ class Alignment:
                             P.close()
                             is_close.append(kk)
 
+            shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
+            shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
+            shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
 
+            data_correlation_cp = copy.deepcopy(data_correlation)
+            shmm_correlation.close()
+            shmm_large.close()
+            shmm_large.unlink()
+            shmm_small.close()
+            shmm_small.unlink()
+            shmm_correlation.unlink()
         else:
             for hh, d_solar_r in enumerate(self.lag_solar_r):
                 if self.coordinate_frame == "carrington":
@@ -483,41 +527,32 @@ class Alignment:
                 elif self.coordinate_frame == "helioprojective":
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
 
-                shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_large)
-                self._large = {"name": shmm_large.name, "dtype": data_large.dtype, "shape": data_large.shape}
-                self.data_large = None
-
-                shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_small)
-                self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
-                self.data_small = None
-
-                shmm_large.close()
-                shmm_small.close()
+                # shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_large)
+                # self._large = {"name": shmm_large.name, "dtype": data_large.dtype, "shape": data_large.shape}
+                # self.data_large = None
+                #
+                # shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_small)
+                # self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
+                # self.data_small = None
+                #
+                # shmm_large.close()
+                # shmm_small.close()
+                data_correlation_cp = data_correlation
                 for ii, d_crval1 in enumerate(self.lag_crval1):
                     for jj, d_crval2 in enumerate(tqdm(self.lag_crval2)):
                         for kk, d_cdelta1 in enumerate(self.lag_cdelta1):
                             for mm, d_cdelta2 in enumerate(self.lag_cdelta2):
                                 for ll, d_crota in enumerate(self.lag_crota):
-                                    data_correlation[ii, jj, kk, mm, ll, hh] = self._step(d_crval2=d_crval2,
-                                                                                          d_crval1=d_crval1,
-                                                                                          d_cdelta1=d_cdelta1,
-                                                                                          d_cdelta2=d_cdelta2,
-                                                                                          d_crota=d_crota,
-                                                                                          method=self.method,
-                                                                                          d_solar_r=d_solar_r,
+                                    data_correlation_cp[ii, jj, kk, mm, ll, hh] = self._step_no_shmm(d_crval2=d_crval2,
+                                                                                                  d_crval1=d_crval1,
+                                                                                                  d_cdelta1=d_cdelta1,
+                                                                                                  d_cdelta2=d_cdelta2,
+                                                                                                  d_crota=d_crota,
+                                                                                                  method=self.method,
+                                                                                                  d_solar_r=d_solar_r,
 
-                                                                                          )
-        shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
-        shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
-        shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
+                                                                                                  )
 
-        data_correlation_cp = copy.deepcopy(data_correlation)
-        shmm_correlation.close()
-        shmm_large.close()
-        shmm_large.unlink()
-        shmm_small.close()
-        shmm_small.unlink()
-        shmm_correlation.unlink()
         return data_correlation_cp
 
     def _carrington_transform(self, d_solar_r, data, hdr):

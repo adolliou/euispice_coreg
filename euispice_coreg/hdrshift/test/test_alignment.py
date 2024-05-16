@@ -18,7 +18,7 @@ def test_alignement_helioprojective_shift():
     lag_crval1 = np.arange(15, 26, 1)
     lag_crval2 = np.arange(5, 11, 1)
 
-    lag_cdelta1 = [0]
+    lag_cdelta1 = None
     lag_cdelta2 = [0]
 
     lag_crota = [0.75]
@@ -38,6 +38,40 @@ def test_alignement_helioprojective_shift():
     assert lag_crval1[max_index[0]] == 24
     assert lag_crval2[max_index[1]] == 6
 
+
+def test_alignement_helioprojective_noparallelism_shift():
+    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
+    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
+    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
+    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+
+    path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
+                "-image_20220317T095045281_V01.fits")
+    path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
+                "-image_20220317T095045277_V01.fits")
+
+    lag_crval1 = np.arange(15, 26, 1)
+    lag_crval2 = np.arange(5, 11, 1)
+
+    lag_cdelta1 = [0]
+    lag_cdelta2 = [0]
+
+    lag_crota = [0.75]
+
+    min_value = 0
+    max_value = 1310
+
+
+    A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
+                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  parallelism=False, use_tqdm=True, counts_cpu_max=20, small_fov_value_min=min_value,
+                  small_fov_value_max=max_value,)
+
+    corr = A.align_using_helioprojective(method='correlation')
+    max_index = np.unravel_index(corr.argmax(), corr.shape)
+
+    assert lag_crval1[max_index[0]] == 24
+    assert lag_crval2[max_index[1]] == 6
 
 def test_alignement_carrington():
     # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
@@ -60,7 +94,7 @@ def test_alignement_carrington():
     reference_date = "2022-03-17T09:50:45"
     lag_solar_r = [1.004]
 
-    lag_cdelta1 = [0]
+    lag_cdelta1 = None
     lag_cdelta2 = [0]
 
     # lag_crota = [0.75]
