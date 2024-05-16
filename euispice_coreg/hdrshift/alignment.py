@@ -438,15 +438,17 @@ class Alignment:
         for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelta1, self.lag_cdelta2, self.lag_crota]:
             if lag is None:
                 lag = np.array([0])
-        results = np.zeros((len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
-                            len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
 
-        shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
-        self._correlation = {"name": shmm_correlation.name, "size": data_correlation.size,
-                             "shape": data_correlation.shape}
-        del results
 
         if self.parallelism:
+            results = np.zeros(
+                (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
+                 len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
+
+            shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
+            self._correlation = {"name": shmm_correlation.name, "size": data_correlation.size,
+                                 "shape": data_correlation.shape}
+            del results
             for kk, d_solar_r in enumerate(self.lag_solar_r):
                 Processes = []
 
@@ -520,6 +522,9 @@ class Alignment:
             shmm_small.unlink()
             shmm_correlation.unlink()
         else:
+            data_correlation_cp = np.zeros(
+                (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
+                 len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
             for hh, d_solar_r in enumerate(self.lag_solar_r):
                 if self.coordinate_frame == "carrington":
                     self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
@@ -537,7 +542,6 @@ class Alignment:
                 #
                 # shmm_large.close()
                 # shmm_small.close()
-                data_correlation_cp = data_correlation
                 for ii, d_crval1 in enumerate(self.lag_crval1):
                     for jj, d_crval2 in enumerate(tqdm(self.lag_crval2)):
                         for kk, d_cdelta1 in enumerate(self.lag_cdelta1):
