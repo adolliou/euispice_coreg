@@ -116,7 +116,7 @@ class Alignment:
 
         for lag in [self.lag_crval1, self.lag_crval2, self.lag_crota, self.lag_cdelta1, self.lag_cdelta2]:
             if lag is None:
-                lag = np.array([0])
+                lag = np.array([0.0])
 
     # def __del__(self):
 
