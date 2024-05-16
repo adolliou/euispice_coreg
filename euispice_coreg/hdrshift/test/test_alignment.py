@@ -18,7 +18,7 @@ def test_alignement_helioprojective_shift():
     lag_crval1 = np.arange(15, 26, 1)
     lag_crval2 = np.arange(5, 11, 1)
 
-    lag_cdelta1 = None
+    lag_cdelta1 = None#
     lag_cdelta2 = [0]
 
     lag_crota = [0.75]
