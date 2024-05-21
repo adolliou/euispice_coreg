@@ -9,14 +9,13 @@ import copy
 from ..utils import Util
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 
+
 class AlignmentSpice(Alignment):
     def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str, lag_crval1: np.array,
                  lag_crval2: np.array, lag_cdelta1, lag_cdelta2, lag_crota, small_fov_value_min=None,
                  parallelism=False, small_fov_value_max=None, counts_cpu_max=40, large_fov_window=-1,
                  small_fov_window=-1, use_tqdm=False, lag_solar_r=None,
                  path_save_figure=None):
-
-
 
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
@@ -57,7 +56,7 @@ class AlignmentSpice(Alignment):
         self.shape = shape
         self.reference_date = reference_date
         self.function_to_apply = self._carrington_transform
-        self.extend_pixel_size=False
+        self.extend_pixel_size = False
         self.method = method
         self.coordinate_frame = "carrington"
         self.shift_hdr_solar_rotation = False
@@ -70,9 +69,9 @@ class AlignmentSpice(Alignment):
             level = 3
         self._extract_spice_data_header(level=level, index_amplitude=index_amplitude)
         self.hdr_small["CRVAL1"] = Util.CommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL1"],
-                                                                  self.hdr_small["CUNIT1"])).to("arcsec").value
+                                                                       self.hdr_small["CUNIT1"])).to("arcsec").value
         self.hdr_small["CRVAL2"] = Util.CommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL2"],
-                                                                  self.hdr_small["CUNIT2"])).to("arcsec").value
+                                                                       self.hdr_small["CUNIT2"])).to("arcsec").value
         self.hdr_small["CDELT1"] = u.Quantity(self.hdr_small["CDELT1"], self.hdr_small["CUNIT1"]).to("arcsec").value
         self.hdr_small["CDELT2"] = u.Quantity(self.hdr_small["CDELT2"], self.hdr_small["CUNIT2"]).to("arcsec").value
         self.hdr_small["CUNIT1"] = "arcsec"
@@ -165,11 +164,9 @@ class AlignmentSpice(Alignment):
 
         if self.cut_from_center is not None:
             xlen = self.cut_from_center
-            xmid = self.data_small.shape[1]//2
-            self.data_small[:, :(xmid - xlen//2 - 1)] = np.nan
+            xmid = self.data_small.shape[1] // 2
+            self.data_small[:, :(xmid - xlen // 2 - 1)] = np.nan
             self.data_small[:, (xmid + xlen // 2):] = np.nan
-
-
 
         #
         # self.hdr_small["CRPIX1"] = (self.data_small.shape[1] + 1) / 2
@@ -193,13 +190,12 @@ class AlignmentSpice(Alignment):
         self.hdr_small["NAXIS1"] = self.data_small.shape[1]
         self.hdr_small["NAXIS2"] = self.data_small.shape[0]
 
-
-class AlignementSpice_iterative_context_raster(AlignmentSpice):
+class AlignementSpiceIterativeContextRaster(AlignmentSpice):
     def __init__(self, large_fov_list_paths: list, small_fov_to_correct: str, threshold_time: u.Quantity,
                  lag_crval1: np.array,
                  lag_crval2: np.array, lag_cdelta1, lag_cdelta2, lag_crota, small_fov_value_min=None,
                  parallelism=False, small_fov_value_max=None, counts_cpu_max=40, large_fov_window=-1,
-                 small_fov_window=-1, use_tqdm=False, path_save_figure=None,):
+                 small_fov_window=-1, use_tqdm=False, path_save_figure=None, ):
 
         super().__init__(large_fov_known_pointing="No_specific_path", small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
@@ -226,9 +222,10 @@ class AlignementSpice_iterative_context_raster(AlignmentSpice):
                            d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2,
                            d_crota=d_crota)
         C = map_builder.SPICEComposedMapBuilder(path_to_spectro=self.small_fov_to_correct,
-                               list_imager_paths=self.large_fov_list_paths,
-                               threshold_time=self.threshold_time,
-                               window_imager=self.large_fov_window, window_spectro=self.small_fov_window)
+                                                list_imager_paths=self.large_fov_list_paths,
+                                                threshold_time=self.threshold_time,
+                                                window_imager=self.large_fov_window,
+                                                window_spectro=self.small_fov_window)
         C.process_from_header(hdr_spice=hdr_small_shft_unflattened)
 
         self.data_large = copy.deepcopy(C.data_composed)
@@ -266,15 +263,15 @@ class AlignementSpice_iterative_context_raster(AlignmentSpice):
 
     def _extract_imager_data_header(self, ):
         C = map_builder.SPICEComposedMapBuilder(path_to_spectro=self.small_fov_to_correct,
-                               list_imager_paths=self.large_fov_list_paths,
-                               threshold_time=self.threshold_time,
-                               window_imager=self.large_fov_window, window_spectro=self.small_fov_window)
+                                                list_imager_paths=self.large_fov_list_paths,
+                                                threshold_time=self.threshold_time,
+                                                window_imager=self.large_fov_window,
+                                                window_spectro=self.small_fov_window)
         C.process_from_header(hdr_spice=self.header_spice_unflattened)
 
         self.data_large = copy.deepcopy(C.data_composed)
         self.hdr_large = copy.deepcopy(C.hdr_composed)
         del C
-
 
     def _create_submap_of_large_data(self, data_large):
         return data_large
@@ -305,6 +302,3 @@ class AlignementSpice_iterative_context_raster(AlignmentSpice):
     def _prepare_spice_from_l2(self, hdul_small):
         self.header_spice_unflattened = hdul_small[self.small_fov_window].header.copy()
         super()._prepare_spice_from_l2(hdul_small=hdul_small)
-
-
-

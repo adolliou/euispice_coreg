@@ -27,7 +27,7 @@ def divide_chunks(l, n):
 
 class Alignment:
 
-    def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str, lag_crval1: np.array,
+    def __init__(self, large_fov_known_pointing:str, small_fov_to_correct:str, lag_crval1: np.array,
                  lag_crval2: np.array, lag_cdelta1: object, lag_cdelta2: object, lag_crota: object,
                  lag_solar_r: object = None,
                  small_fov_value_min: object = None,
@@ -37,8 +37,8 @@ class Alignment:
                  path_save_figure: object = None, reprojection_order=2, force_crota_0=False):
         """
 
-        @param large_fov_known_pointing: path to the reference file fits (most of the time an imager or a synthetic raster)
-        @param small_fov_to_correct: path to the fits file to align. Only the header values will be changed.
+        @param large_fov_known_pointing: (str) path to the reference file fits (most of the time an imager or a synthetic raster)
+        @param small_fov_to_correct: (str)  path to the fits file to align. Only the header values will be changed.
         @param lag_crval1: (arcsec) array of header CRVAL1 lags.
         @param lag_crval2: (arcsec) array of header CRVAL2 lags.
         @param lag_cdelta1: (arcsec) array of header CDELT1 lags.
