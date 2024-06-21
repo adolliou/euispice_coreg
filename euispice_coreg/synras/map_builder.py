@@ -7,6 +7,8 @@ from astropy.time import Time
 import astropy.units as u
 from ..utils import Util
 import warnings
+from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
+from astropy.coordinates import SkyCoord
 
 
 class MapBuilder(ABC):
@@ -40,6 +42,16 @@ class ComposedMapBuilder(MapBuilder):
         self.path_composed_map = None
         self._extract_imager_metadata()
         self.path_output = None
+
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
+                # import sunpy.map
+        self.use_sunpy = use_sunpy
+        self.skycoord_spice = None
+
+
 
     def process(self, folder_path_output=None, basename_output=None, print_filename=True, level=2,
                 keep_original_imager_pixel_size=False, return_synras_name=False):
@@ -96,7 +108,14 @@ class ComposedMapBuilder(MapBuilder):
                 hdr_imager = hdu_imager.header
                 data_imager = hdu_imager.data
                 w_im = WCS(hdr_imager)
-                x_fsi, y_fsi = w_im.world_to_pixel(longitude_spice[:, ii, 0], latitude_spice[:, ii, 0])
+                if self.use_sunpy:
+
+                    coords_tmp = SkyCoord(longitude_spice[:, ii, 0],latitude_spice[:, ii, 0],
+                                          frame=self.skycoord_spice.frame)
+                    x_fsi, y_fsi = w_im.world_to_pixel(coords_tmp)
+
+                else:
+                    x_fsi, y_fsi = w_im.world_to_pixel(longitude_spice[:, ii, 0], latitude_spice[:, ii, 0])
                 data_imager_on_slit = Util.AlignCommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=1,
                                                                       fill=-32762)
                 data_imager_on_slit = np.where(data_imager_on_slit == -32762, np.nan, data_imager_on_slit)
@@ -207,6 +226,9 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
 
     def __init__(self, path_to_spectro: str, list_imager_paths: list, threshold_time: u.Quantity,
                  window_imager=-1, window_spectro=0, ):
+
+
+
         super().__init__(path_to_spectro=path_to_spectro, list_imager_paths=list_imager_paths,
                          threshold_time=threshold_time,
                          window_imager=window_imager, window_spectro=window_spectro, )
@@ -231,7 +253,15 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
                 x, y, t = np.meshgrid(np.arange(hdr_spice["NAXIS1"]),
                                       np.arange(hdr_spice["NAXIS2"]),
                                       np.arange(hdr_spice["NAXIS4"]))
-            longitude_spice, latitude_spice, utc_spice = w_xyt.pixel_to_world(x, y, t)
+            if self.use_sunpy:
+                coords_spice = w_xyt.pixel_to_world(x, y, t)
+                self.skycoord_spice = coords_spice[0]
+
+                longitude_spice = coords_spice[0].Tx
+                latitude_spice = coords_spice[0].Ty
+                utc_spice = coords_spice[1]
+            else:
+                longitude_spice, latitude_spice, utc_spice = w_xyt.pixel_to_world(x, y, t)
             w_xy = w_xyt.deepcopy()
             w_xy.wcs.pc[2, 0] = 0
             w_xy = w_xy.dropaxis(2)
@@ -277,7 +307,16 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
                                       np.arange(w_xyt.pixel_shape[idx_utc]), )
                 naxis_long = hdr_spice["NAXIS2"]
 
-            longitude_spice, latitude_spice, utc_spice = w_xyt.pixel_to_world(x, y, z)
+
+            if self.use_sunpy:
+                coords_spice = w_xyt.pixel_to_world(x, y, z)
+                self.skycoord_spice = coords_spice[0]
+
+                longitude_spice = coords_spice[0].Tx
+                latitude_spice = coords_spice[0].Ty
+                utc_spice = coords_spice[1]
+            else:
+                longitude_spice, latitude_spice, utc_spice = w_xyt.pixel_to_world(x, y, z)
 
             w_xyt.wcs.pc[2, 0] = 0
             w_xy = w_xyt.dropaxis(2)
