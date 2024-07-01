@@ -251,7 +251,10 @@ class AlignEUIUtil:
         if w.naxis == 2:
             coords = w.pixel_to_world(x, y)
         if w.naxis == 3:
-            coords,time = w.pixel_to_world(x, y,0)
+            try:
+                coords,time = w.pixel_to_world(x, y,0)
+            except:
+                coords = w.pixel_to_world(x, y,0)
         if isinstance(coords, SkyCoord):
             longitude = AlignCommonUtil.ang2pipi(coords.Tx)
             latitude = AlignCommonUtil.ang2pipi(coords.Ty)

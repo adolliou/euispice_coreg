@@ -15,6 +15,9 @@ from ..plot import plot
 import warnings
 from ..utils import Util
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
+from multiprocessing import Process, Queue
+import traceback
+from astropy.time import Time
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 
@@ -179,30 +182,35 @@ class Alignment:
             hdr["PC2_1"] = (1 / lam) * np.sin(rho)
 
     def _iteration_step_along_crval2(self, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str,
-                                     position: tuple, lock=None):
+                                     position: tuple, lock=None,error_queue = None):
+        try:
+            results = np.zeros(len(self.lag_crval2), dtype=np.float64)
+            if self.use_tqdm:
+                for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
+                    results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
+                                            d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
+                                            method=method, d_solar_r=d_solar_r,
+                                            )
 
-        results = np.zeros(len(self.lag_crval2), dtype=np.float64)
-        if self.use_tqdm:
-            for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
-                results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
-                                         d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
-                                         method=method, d_solar_r=d_solar_r,
-                                         )
+            else:
 
-        else:
+                for ii, d_crval2 in enumerate(self.lag_crval2):
+                    results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
+                                            d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
+                                            method=method, d_solar_r=d_solar_r,
+                                            )
 
-            for ii, d_crval2 in enumerate(self.lag_crval2):
-                results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
-                                         d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
-                                         method=method, d_solar_r=d_solar_r,
-                                         )
-
-        lock.acquire()
-        shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
-        data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
-        lock.release()
-        shmm_correlation.close()
-
+            lock.acquire()
+            shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
+            data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
+            lock.release()
+            shmm_correlation.close()
+        except Exception as e:
+            if error_queue is not None:
+                error_queue.put((e, traceback.format_exc()))
+            else: 
+                raise e
+        
     def _step(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
 
         shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
@@ -460,12 +468,14 @@ class Alignment:
 
                 shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_large))
                 self._large = {"name": shmm_large.name, "dtype": data_large.dtype, "shape": data_large.shape}
-                del self.data_large
+                
 
                 shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_small))
                 self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
+                import matplotlib.pyplot as plt
+                del self.data_large
                 del self.data_small
-
+                error_queue = Queue()
                 for ii, d_cdelta1 in enumerate(self.lag_cdelta1):
                     for ll, d_cdelta2 in enumerate(self.lag_cdelta2):
                         for jj, d_crota in enumerate(self.lag_crota):
@@ -482,7 +492,7 @@ class Alignment:
 
                                 }
 
-                                Processes.append(Process(target=self._iteration_step_along_crval2, kwargs=kwargs))
+                                Processes.append(Process(target=self._iteration_step_along_crval2, kwargs={**kwargs,'error_queue': error_queue}))
 
                 if self.counts is None:
                     self.counts = mp.cpu_count()
@@ -509,8 +519,12 @@ class Alignment:
                         if (not (P.is_alive())) and (kk <= ii):
                             P.close()
                             is_close.append(kk)
-
+            # Check for errors in the error queue
+            while not error_queue.empty():
+                error, traceback_str = error_queue.get()
+                print(f"Error: {error}\nTraceback: {traceback_str}")
             shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
+            
             shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
             shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
 
@@ -556,7 +570,7 @@ class Alignment:
                                                                                                   d_solar_r=d_solar_r,
 
                                                                                                   )
-
+        self.data_correlation  =data_correlation_cp
         return data_correlation_cp
 
     def _carrington_transform(self, d_solar_r, data, hdr):
@@ -675,11 +689,36 @@ class Alignment:
             idx_lat = np.where(np.array(w_large.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
             x, y = np.meshgrid(np.arange(w_large.pixel_shape[idx_lon]),
                                np.arange(w_large.pixel_shape[idx_lat]), )  # t dépend de x,
-            coords = w_large.pixel_to_world(x, y)
-            x_large, y_large = w_xy_small.world_to_pixel(coords)
-
+            if w_large.naxis == 2:
+                coords = w_large.pixel_to_world(x, y)
+            elif w_large.naxis == 3:
+                coords,time = w_large.pixel_to_world(x, y,0)
+            else:
+                raise Exception('Number of axis for the wcs object is unknown')
+            
+            if w_large.naxis == 2:
+                x_large, y_large = w_xy_small.world_to_pixel(coords)
+            if w_large.naxis == 3:
+                time_matrix = np.empty(coords.shape, dtype='datetime64[ns]')
+                for i in range(coords.shape[0]):
+                    for j in range(coords.shape[1]):
+                        time_matrix[i, j] =  np.datetime64(str(coords.obstime))
+                time_matrix =  Time(time_matrix)
+                x_large, y_large, z = w_xy_small.world_to_pixel(coords,time_matrix)
+            else:
+                raise Exception('Number of axis for the wcs object is unknown')
         else:
-            x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
+            if w_xy_small.naxis == 2:
+                x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
+            elif w_xy_small.naxis == 3:
+                time_matrix = np.empty(longitude_large.shape, dtype='datetime64[ns]')
+                for i in range(longitude_large.shape[0]):
+                    for j in range(longitude_large.shape[1]):
+                        time_matrix[i, j] =  np.datetime64(str(w_xy_small.wcs.dateobs))
+                # raise Exception(f'w_xy_small.wcs.dateobs {w_xy_small.wcs.dateobs,type(w_xy_small.wcs.dateobs),str(w_xy_small.wcs.dateobs)}')
+                time_matrix =  Time(time_matrix)
+                x_large, y_large, time = w_xy_small.world_to_pixel(longitude_large, latitude_large,time_matrix)
+                
         image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype=np.float64),
                                                            x=x_large, y=y_large, order=self.order,
                                                            fill=-32768)
