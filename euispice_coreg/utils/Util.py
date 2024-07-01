@@ -248,7 +248,10 @@ class AlignEUIUtil:
         x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
                            np.arange(w.pixel_shape[idx_lat]), )  # t dépend de x,
         # should reproject on a new coordinate grid first : suppose slits at the same time :
-        coords = w.pixel_to_world(x, y)
+        if w.naxis == 2:
+            coords = w.pixel_to_world(x, y)
+        if w.naxis == 3:
+            coords,time = w.pixel_to_world(x, y,0)
         if isinstance(coords, SkyCoord):
             longitude = AlignCommonUtil.ang2pipi(coords.Tx)
             latitude = AlignCommonUtil.ang2pipi(coords.Ty)

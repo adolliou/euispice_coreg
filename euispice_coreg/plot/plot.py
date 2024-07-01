@@ -298,8 +298,22 @@ class PlotFunctions:
 
         w_xy_contour = WCS(hdr_contour)
         if use_sunpy:
-            x_contour, y_contour = w_xy_contour.world_to_pixel(coords_grid)
-
+            if w_xy_contour.naxis == 2:
+                x_contour, y_contour = w_xy_contour.world_to_pixel(coords_grid)
+            elif w_xy_contour.naxis == 3:
+                # import pickle
+            #       with open("___.pkl", "wb") as f:
+            #         pickle.dump((w_xy_contour, coords_grid, Time([coords_grid.obstime for i in range(len(coords_grid))])), f)
+                time_matrix = np.empty(coords_grid.shape, dtype='datetime64[ns]')
+                for i in range(coords_grid.shape[0]):
+                    for j in range(coords_grid.shape[1]):
+                        time_matrix[i, j] =  np.datetime64(str(coords_grid.obstime))
+                time_matrix =  Time(time_matrix)
+                x_contour, y_contour,z = w_xy_contour.world_to_pixel(
+                    coords_grid,
+                    time_matrix
+                    )
+                
         else:
             x_contour, y_contour = w_xy_contour.world_to_pixel(longitude_grid, latitude_grid)
         image_contour_cut = interpol2d(np.array(data_contour, dtype=np.float64),
@@ -418,9 +432,29 @@ class PlotFunctions:
             x, y = np.meshgrid(np.arange(w_xy.pixel_shape[idx_lon]),
                                np.arange(w_xy.pixel_shape[idx_lat]), )  # t dépend de x,
             # should reproject on a new coordinate grid first : suppose slits at the same time :
-            coords_ = w_xy.pixel_to_world(x, y)
+            if w_xy.naxis==2:
+                coords_ = w_xy.pixel_to_world(x, y)
+            elif w_xy.naxis == 3:
+                coords_,time = w_xy.pixel_to_world(x, y, 0 )
+            else: 
+                raise Exception("WCS naxis must be 2 or 3")
             coords = SkyCoord(lon_grid, lat_grid, frame=coords_.frame)
-            x, y = w_xy.world_to_pixel(coords)
+            if w_xy.naxis==2:
+                x, y = w_xy.world_to_pixel(coords)
+            elif w_xy.naxis == 3:
+                time_matrix = np.empty(coords.shape, dtype='datetime64[ns]')
+                for i in range(coords.shape[0]):
+                    for j in range(coords.shape[1]):
+                        time_matrix[i, j] =  np.datetime64(str(coords.obstime))
+                        
+                time_matrix = Time(time_matrix)
+                print(time_matrix.shape, coords.shape)
+                print(type(time_matrix), type(coords))
+                x,y,z = w_xy.world_to_pixel(coords, time_matrix)
+            else: 
+                raise Exception("WCS naxis must be 2 or 3")
+            
+            
 
         else:
 
@@ -535,12 +569,12 @@ class PlotFunctions:
                 header_spice_original = hdul_spice[small_fov_window].header.copy()
                 lmin = None
                 lmax = None
-                if "HRI_EUV" in header_spice_original["TELESCOP"]:
+                if ("TELESCOP" in  header_spice_original.keys()) and ("HRI_EUV" in header_spice_original["TELESCOP"]):
                     # AlignEUIUtil.recenter_crpix_in_header(header_spice)
                     w_xy = WCS(header_spice_original)
                     header_spice = w_xy.to_header().copy()
                     data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
-                elif "SPICE" in header_spice_original["TELESCOP"]:
+                elif ("TELESCOP" in  header_spice_original.keys()) and ("SPICE" in header_spice_original["TELESCOP"]):
                     # AlignSpiceUtil.recenter_crpix_in_header_L2(header_spice)
                     w_spice = WCS(header_spice_original)
                     ymin, ymax = AlignSpiceUtil.vertical_edges_limits(header_spice_original)
@@ -664,7 +698,7 @@ class PlotFunctions:
                 data_large_cp = copy.deepcopy(data_large)
                 lmin = None
                 lmax = None
-                if "SPICE" in header_spice_original["TELESCOP"]:
+                if ("TELESCOP" in header_spice_original) and ("SPICE" in header_spice_original["TELESCOP"]):
                     lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
 
@@ -680,8 +714,8 @@ class PlotFunctions:
                 detector = header_large["DETECTOR"]
                 wave = header_large["WAVELNTH"]
 
-                ax1.set_title(f"{detector} {wave} & Small FOV (contour) NA ")
-                ax2.set_title(f"{detector} {wave} & Small FOV (contour) A ")
+                ax1.set_title(f"{detector} {wave} \& Small FOV (contour) NA ")
+                ax2.set_title(f"{detector} {wave} \& Small FOV (contour) A ")
                 ax2.set_yticklabels([])
                 ax3.set_yticklabels([])
 

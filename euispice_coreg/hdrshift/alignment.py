@@ -601,7 +601,13 @@ class Alignment:
             idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
             x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
                                np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
-            coords_cut = w_cut.pixel_to_world(x, y)
+            
+            if w_cut.naxis == 2:
+                coords_cut = w_cut.pixel_to_world(x, y)
+            elif w_cut.naxis == 3:
+                coords_cut,time = w_cut.pixel_to_world(x, y,0)
+            else: raise Exception('Number of axis for the wcs object is unknown')
+                
 
             longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
             latitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Ty)
@@ -622,7 +628,12 @@ class Alignment:
         w_xy_small = WCS(self.hdr_small.copy())
         if self.use_sunpy:
             # coords_cut_small = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
-            x_cut, y_cut = w_xy_small.world_to_pixel(coords_cut)
+            if w_cut.naxis == 2:
+                x_cut, y_cut = w_xy_small.world_to_pixel(coords_cut)
+            elif w_cut.naxis == 3:
+                x_cut, y_cut, time_ = w_xy_small.world_to_pixel(coords_cut,time)
+            else: raise Exception('Number of axis for the wcs object is unknown')
+
         else:
             x_cut, y_cut = w_xy_small.world_to_pixel(longitude_cut, latitude_cut)
 
