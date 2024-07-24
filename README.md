@@ -186,7 +186,7 @@ output_L3_fits = "path/to/output/synthetic_raster_folder"
 C = SPICEComposedMapBuilder(path_to_spectro=path_spice, list_imager_paths=path_to_imager_list,
                                window_imager=window_imager, window_spectro=window_spice,
                                threshold_time=threshold_time)
-C.process(path_output=output_L3_fits)
+C.process(folder_path_output=output_L3_fits)
 ```
 #### Alignment of the SPICE raster with the synthetic raster
 
@@ -217,8 +217,8 @@ param_alignment = {
     "lag_crval1": np.arange(-30, -15, 4), # lag crvals in the headers, in arcsec
     "lag_crval2": np.arange(30, 51, 4),  # in arcsec
     "lag_crota": np.array([0]), # in degrees
-    "lag_cdelt1": np.array([0]), # in arcsec
-    "lag_cdelt2": np.array([0]), # in arcsec
+    "lag_cdelta1": np.array([0]), # in arcsec
+    "lag_cdelta2": np.array([0]), # in arcsec
 }
 
 parallelism = True
