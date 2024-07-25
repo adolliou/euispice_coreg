@@ -96,7 +96,7 @@ PlotFunctions.plot_co_alignment(small_fov_window=-1, large_fov_window=-1, corr=c
                             results_folder=path_save_fig, levels_percentile=[95],
                             **parameter_alignment)
 AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
-                                 path_l2_output=path_save_fits, corr=corr,
+                                 path_l3_output=path_save_fits, corr=corr,
                                  **parameter_alignment)
 
 ```
@@ -160,7 +160,7 @@ PlotFunctions.plot_co_alignment(small_fov_window=-1, large_fov_window=-1, corr=c
                             results_folder=path_save_fig, levels_percentile=[95],
                             **parameter_alignment)
 AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
-                                 path_l2_output=path_save_fits, corr=corr,
+                                 path_l3_output=path_save_fits, corr=corr,
                                  **parameter_alignment)
 ```
 
@@ -226,7 +226,7 @@ parallelism = True
 A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small_fov_to_correct=path_spice_input,
                          use_tqdm=True,
                    parallelism=parallelism, counts_cpu_max=10,
-                        large_fov_window=-1, small_fov_window=window_sr,
+                        large_fov_window=window_sr, small_fov_window=window_spice_to_align,
                         path_save_figure=path_save_figure,
                    **param_alignment)
 
