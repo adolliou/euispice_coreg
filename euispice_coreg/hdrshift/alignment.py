@@ -27,11 +27,11 @@ def divide_chunks(l, n):
 
 class Alignment:
 
-    def __init__(self, large_fov_known_pointing:str, small_fov_to_correct:str, lag_crval1: np.array,
+    def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str, lag_crval1: np.array,
                  lag_crval2: np.array, lag_cdelta1: object, lag_cdelta2: object, lag_crota: object,
                  lag_solar_r: object = None,
                  small_fov_value_min: object = None,
-                 parallelism: object = False, use_tqdm: object = False,
+                 parallelism: object = False, display_progress_bar: bool = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
                  path_save_figure: object = None, reprojection_order=2, force_crota_0=False):
@@ -49,7 +49,7 @@ class Alignment:
         @param small_fov_value_min: min value (optional)
         @param small_fov_value_max: max value (optional)
         @param parallelism: set true to allow parallelism.
-        @param use_tqdm: show advancement bar in terminal.
+        @param display_progress_bar: show progress bar in terminal.
         @param counts_cpu_max: allow max number of cpu for the parallelism.
         @param large_fov_window: (str or int) HDULIST window for the reference file
         @param small_fov_window: (str or int) HDULIST window for the fits to align
@@ -89,7 +89,7 @@ class Alignment:
         self.small_fov_value_min = small_fov_value_min
         self.small_fov_value_max = small_fov_value_max
         self.path_save_figure = path_save_figure
-        self.use_tqdm = use_tqdm
+        self.display_progress_bar = display_progress_bar
         self.marker = False
         self.force_crota_0 = force_crota_0
         self._large = None
@@ -182,7 +182,7 @@ class Alignment:
                                      position: tuple, lock=None):
 
         results = np.zeros(len(self.lag_crval2), dtype=np.float64)
-        if self.use_tqdm:
+        if self.display_progress_bar:
             for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
                 results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
                                          d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
@@ -288,7 +288,8 @@ class Alignment:
         else:
             raise NotImplementedError
 
-    def align_using_carrington(self, lonlims: list, latlims: list, size_deg_carrington = None, shape = None,
+    def align_using_carrington(self, lonlims: tuple[int, int], latlims: tuple[int, int],
+                               size_deg_carrington=None, shape=None,
                                reference_date=None, method='correlation'):
 
         self.reference_date = reference_date
@@ -439,7 +440,6 @@ class Alignment:
             if lag is None:
                 lag = np.array([0])
 
-
         if self.parallelism:
             results = np.zeros(
                 (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
@@ -548,14 +548,14 @@ class Alignment:
                             for mm, d_cdelta2 in enumerate(self.lag_cdelta2):
                                 for ll, d_crota in enumerate(self.lag_crota):
                                     data_correlation_cp[ii, jj, kk, mm, ll, hh] = self._step_no_shmm(d_crval2=d_crval2,
-                                                                                                  d_crval1=d_crval1,
-                                                                                                  d_cdelta1=d_cdelta1,
-                                                                                                  d_cdelta2=d_cdelta2,
-                                                                                                  d_crota=d_crota,
-                                                                                                  method=self.method,
-                                                                                                  d_solar_r=d_solar_r,
+                                                                                                     d_crval1=d_crval1,
+                                                                                                     d_cdelta1=d_cdelta1,
+                                                                                                     d_cdelta2=d_cdelta2,
+                                                                                                     d_crota=d_crota,
+                                                                                                     method=self.method,
+                                                                                                     d_solar_r=d_solar_r,
 
-                                                                                                  )
+                                                                                                     )
 
         return data_correlation_cp
 

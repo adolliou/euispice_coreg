@@ -59,7 +59,7 @@ path_save_fits = "path/where/to/save/aligned_fits/fits.fits"  # path to FITS fil
 
 
 
-path_save_fig = "path/where/to/save/figure" # path to the folder where to save the figure illustrating the alignment.
+folder_save_fig = "folder/where/to/save/figure" # path to the folder where to save the figure illustrating the alignment.
 
 
 lag_crval1 = np.arange(15, 26, 1)
@@ -73,7 +73,7 @@ lag_crota = [0]
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
               lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
-              parallelism=True, use_tqdm=True, counts_cpu_max=20,
+              parallelism=True, display_progress_bar=True, counts_cpu_max=20,
               )
 
 corr = A.align_using_helioprojective(method='correlation')
@@ -90,10 +90,11 @@ parameter_alignment = {
 }
 
 PlotFunctions.plot_correlation(corr,  show=True,
-                           path_save=os.path.join(path_save_fig, "correlation.pdf"), **parameter_alignment)
-PlotFunctions.plot_co_alignment(small_fov_window=-1, large_fov_window=-1, corr=corr,
-                            small_fov_path=path_hri, large_fov_path=path_fsi, show=True,
-                            results_folder=path_save_fig, levels_percentile=[95],
+                           path_save_figure=os.path.join(folder_save_fig, "correlation.pdf"), **parameter_alignment)
+PlotFunctions.plot_co_alignment(image_to_align_window=-1, reference_image_window=-1, corr=corr, show=True,
+                            image_to_align_path=path_hri, reference_image_path=path_fsi,
+                            path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), 
+                                levels_percentile=[95],
                             **parameter_alignment)
 AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
                                  path_l3_output=path_save_fits, corr=corr,
@@ -117,7 +118,7 @@ path_fsi = "path/to/FSI174.fits"
 path_hri = "path/to/HRIEUV.fits"
 
 
-path_save_fig = "path/where/to/save/figure"
+folder_save_fig = "folder/where/to/save/figure"
 path_save_fits = "path/where/to/save/aligned_fits"
 
 parallelism = True
@@ -139,7 +140,7 @@ lag_cdelta2 = [0]
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
           lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
-          parallelism=True, use_tqdm=True,
+          parallelism=True, display_progress_bar=True,
           small_fov_window=-1, large_fov_window=-1)
 
 corr = A.align_using_carrington(method='correlation', lonlims=lonlims, latlims=latlims, shape=shape)
@@ -154,10 +155,11 @@ parameter_alignment = {
 }
 
 PlotFunctions.plot_correlation(corr, show=True,
-                           path_save=os.path.join(path_save_fig, "correlation.pdf"), **parameter_alignment)
-PlotFunctions.plot_co_alignment(small_fov_window=-1, large_fov_window=-1, corr=corr,
-                            small_fov_path=path_hri, large_fov_path=path_fsi, show=True,
-                            results_folder=path_save_fig, levels_percentile=[95],
+                           path_save_figure=os.path.join(folder_save_fig, "correlation.pdf"), **parameter_alignment)
+PlotFunctions.plot_co_alignment(reference_image_window=-1, image_to_align_window=-1, corr=corr,
+                            image_to_align_path=path_hri, reference_image_path=path_fsi, 
+                            path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"),
+                                levels_percentile=[95],
                             **parameter_alignment)
 AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
                                  path_l3_output=path_save_fits, corr=corr,
@@ -224,7 +226,7 @@ param_alignment = {
 parallelism = True
 
 A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small_fov_to_correct=path_spice_input,
-                         use_tqdm=True,
+                         display_progress_bar=True,
                    parallelism=parallelism, counts_cpu_max=10,
                         large_fov_window=window_sr, small_fov_window=window_spice_to_align,
                         path_save_figure=path_save_figure,
@@ -237,10 +239,10 @@ AlignSpiceUtil.write_corrected_fits(path_spice_l2_input=path_spice_input,
                                     window_spice_list=windows_spice, 
                                     **param_alignment)
 
-PlotFunctions.plot_co_alignment(large_fov_window=-1, large_fov_path=path_to_synthetic_raster_fits,
-                                           corr=corr, small_fov_window= window_spice_to_align, 
+PlotFunctions.plot_co_alignment(reference_image_window=-1, reference_image_path=path_to_synthetic_raster_fits,
+                                           corr=corr, image_to_align_window= window_spice_to_align, 
                                 levels_percentile=[80, 90], 
-                                           results_folder=None, small_fov_path=path_spice_input, show=True,
+                                           path_save_figure=None, image_to_align_path=path_spice_input, show=True,
                                            **param_alignment)
 
 

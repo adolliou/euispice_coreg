@@ -11,12 +11,12 @@ from ..utils import Util
 
 class AlignmentSpice(Alignment):
     def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str,
-                 lag_crval1: np.array | None = None, lag_crval2: np.array | None = None,
-                 lag_cdelta1: np.array | None = None, lag_cdelta2: np.array | None = None,
-                 lag_crota: np.array | None = None, lag_solar_r: np.array | None = None,
+                 lag_crval1: np.array = None, lag_crval2: np.array = None,
+                 lag_cdelta1: np.array = None, lag_cdelta2: np.array = None,
+                 lag_crota: np.array = None, lag_solar_r: np.array = None,
                  large_fov_window: int | str = -1, small_fov_window: int | str = -1,
                  wavelength_interval_to_sum: list[u.Quantity] | str = "all",
-                 parallelism: bool = False,  counts_cpu_max: int = 40,
+                 parallelism: bool = False, counts_cpu_max: int = 40,
                  display_progress_bar: bool = False, path_save_figure: str | None = None):
         """
 
@@ -46,7 +46,7 @@ class AlignmentSpice(Alignment):
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
                          lag_crota=lag_crota, use_tqdm=display_progress_bar,
-                         lag_solar_r=lag_solar_r,  parallelism=parallelism,
+                         lag_solar_r=lag_solar_r, parallelism=parallelism,
                          counts_cpu_max=counts_cpu_max,
                          large_fov_window=large_fov_window, small_fov_window=small_fov_window,
                          path_save_figure=path_save_figure, )
@@ -81,9 +81,9 @@ class AlignmentSpice(Alignment):
         # A
         return results
 
-    def align_using_carrington(self, lonlims: list, latlims: list,  size_deg_carrington = None, shape = None,
-                               reference_date = None, method='correlation'):
-
+    def align_using_carrington(self, lonlims: tuple[int, int], latlims: tuple[int, int],
+                               size_deg_carrington=None, shape=None,
+                               reference_date=None, method='correlation'):
 
         if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
 
@@ -116,9 +116,11 @@ class AlignmentSpice(Alignment):
             level = 3
         self._extract_spice_data_header(level=level)
         self.hdr_small["CRVAL1"] = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL1"],
-                                                                       self.hdr_small["CUNIT1"])).to("arcsec").value
+                                                                            self.hdr_small["CUNIT1"])).to(
+            "arcsec").value
         self.hdr_small["CRVAL2"] = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL2"],
-                                                                       self.hdr_small["CUNIT2"])).to("arcsec").value
+                                                                            self.hdr_small["CUNIT2"])).to(
+            "arcsec").value
         self.hdr_small["CDELT1"] = u.Quantity(self.hdr_small["CDELT1"], self.hdr_small["CUNIT1"]).to("arcsec").value
         self.hdr_small["CDELT2"] = u.Quantity(self.hdr_small["CDELT2"], self.hdr_small["CUNIT2"]).to("arcsec").value
         self.hdr_small["CUNIT1"] = "arcsec"
