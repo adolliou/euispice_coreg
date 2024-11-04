@@ -288,7 +288,7 @@ class Alignment:
         else:
             raise NotImplementedError
 
-    def align_using_carrington(self, lonlims=None, latlims=None, size_deg_carrington=None, shape=None,
+    def align_using_carrington(self, lonlims: list, latlims: list, size_deg_carrington = None, shape = None,
                                reference_date=None, method='correlation'):
 
         self.reference_date = reference_date

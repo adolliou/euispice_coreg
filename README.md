@@ -258,6 +258,7 @@ Example of a results for co-alignment between a SPICE C III image and a FSI 304 
 
 ## Contact
 
+
 Author: Antoine Dolliou (antoine.dolliou@universite-paris-saclay.fr)
 
 ## Acknowledgment

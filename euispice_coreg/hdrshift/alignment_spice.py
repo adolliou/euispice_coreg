@@ -7,26 +7,58 @@ from ..synras import map_builder
 from . import c_correlate
 import copy
 from ..utils import Util
-from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 
 
 class AlignmentSpice(Alignment):
-    def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str, lag_crval1: np.array,
-                 lag_crval2: np.array, lag_cdelta1, lag_cdelta2, lag_crota, small_fov_value_min=None,
-                 parallelism=False, small_fov_value_max=None, counts_cpu_max=40, large_fov_window=-1,
-                 small_fov_window=-1, use_tqdm=False, lag_solar_r=None,
-                 path_save_figure=None):
+    def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str,
+                 lag_crval1: np.array | None = None, lag_crval2: np.array | None = None,
+                 lag_cdelta1: np.array | None = None, lag_cdelta2: np.array | None = None,
+                 lag_crota: np.array | None = None, lag_solar_r: np.array | None = None,
+                 large_fov_window: int | str = -1, small_fov_window: int | str = -1,
+                 wavelength_interval_to_sum: list[u.Quantity] | str = "all",
+                 parallelism: bool = False,  counts_cpu_max: int = 40,
+                 display_progress_bar: bool = False, path_save_figure: str | None = None):
+        """
 
+        :param large_fov_known_pointing: path to the reference image or synthetic raster FITS file with knwown pointing
+        :param small_fov_to_correct: path to the L2 SPICE FITS file, where the pointing must be corrected.
+        :param lag_crval1: array of floats  (in arcsec) of shift applied to the CRVAL1 attribute
+        in the SPICE Fits file header. Set to None if no shift.
+        :param lag_crval2: array of floats  (in arcsec), same for CRVAL2
+        :param lag_cdelta1: array of floats (in arcsec), same for CDELT1
+        :param lag_cdelta2: array of floats (in arcsec), same for CDELT2
+        :param lag_crota: array values (in degrees), same for CROTA
+        :param lag_solar_r: used for carrington reprojections only. set an array if you want to change the
+        radius of the sphere where the reprojection is done. by default equal to 1.004.
+        :param large_fov_window: window (int or str) of the reference imager/synthetic raster HDULIST you want to use.
+        by default is -1.
+        :param small_fov_window: window (int or str) of the SPICE HDULIST you want to use (spectral window in general).
+        by default is -1.
+        :param wavelength_interval_to_sum: has the form [wave_min * u.angstrom, wave_max * u.angstrom].
+        for the given SPICE window, set the wavelength interval over which
+        the sum is performed, to obtain image (X, Y) from the SPICE L2 data (X, Y, lambda).
+        Default is "all" for the entire window.
+        :param parallelism: choose to use parallelism or not.
+        :param counts_cpu_max: choose the maximum number of CPU used.
+        :param display_progress_bar: choose to display the progress bar or not.
+        :param path_save_figure: path where to save the figures.
+        """
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
-                         lag_crota=lag_crota, use_tqdm=use_tqdm,
-                         lag_solar_r=lag_solar_r, small_fov_value_min=small_fov_value_min, parallelism=parallelism,
-                         small_fov_value_max=small_fov_value_max, counts_cpu_max=counts_cpu_max,
+                         lag_crota=lag_crota, use_tqdm=display_progress_bar,
+                         lag_solar_r=lag_solar_r,  parallelism=parallelism,
+                         counts_cpu_max=counts_cpu_max,
                          large_fov_window=large_fov_window, small_fov_window=small_fov_window,
                          path_save_figure=path_save_figure, )
 
-    def align_using_helioprojective(self, method='correlation', index_amplitude=None, extend_pixel_size=False,
-                                    cut_from_center=None):
+        self.function_to_apply = None
+        self.coordinate_frame = None
+        self.extend_pixel_size = None
+        self.cut_from_center = None
+        self.wavelength_interval_to_sum = wavelength_interval_to_sum
+
+    def align_using_helioprojective(self, method='correlation', extend_pixel_size=False,
+                                    cut_from_center=None, ):
         self.lonlims = None
         self.latlims = None
         self.shape = None
@@ -43,23 +75,38 @@ class AlignmentSpice(Alignment):
             level = 2
         elif "L3" in self.small_fov_to_correct:
             level = 3
-        self._extract_spice_data_header(level=level, index_amplitude=index_amplitude, )
+        self._extract_spice_data_header(level=level, )
 
         results = super()._find_best_header_parameters()
         # A
         return results
 
-    def align_using_carrington(self, lonlims: list, latlims: list, shape: tuple, reference_date,
-                               method='correlation', index_amplitude=None):
-        self.lonlims = lonlims
-        self.latlims = latlims
-        self.shape = shape
+    def align_using_carrington(self, lonlims: list, latlims: list,  size_deg_carrington = None, shape = None,
+                               reference_date = None, method='correlation'):
+
+
+        if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
+
+            CRLN_OBS = self.hdr_small["CRLN_OBS"]
+            CRLT_OBS = self.hdr_small["CRLT_OBS"]
+
+            self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
+            self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
+            self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
+            print(f"{self.lonlims=}")
+
+        elif (lonlims is not None) and (latlims is not None) & (shape is not None):
+
+            self.lonlims = lonlims
+            self.latlims = latlims
+            self.shape = shape
+        else:
+            raise ValueError("either set lonlims as None, or not. no in between.")
         self.reference_date = reference_date
         self.function_to_apply = self._carrington_transform
         self.extend_pixel_size = False
         self.method = method
         self.coordinate_frame = "carrington"
-        self.shift_hdr_solar_rotation = False
         self._extract_imager_data_header()
 
         level = None
@@ -67,10 +114,10 @@ class AlignmentSpice(Alignment):
             level = 2
         elif "L3" in self.small_fov_to_correct:
             level = 3
-        self._extract_spice_data_header(level=level, index_amplitude=index_amplitude)
-        self.hdr_small["CRVAL1"] = Util.CommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL1"],
+        self._extract_spice_data_header(level=level)
+        self.hdr_small["CRVAL1"] = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL1"],
                                                                        self.hdr_small["CUNIT1"])).to("arcsec").value
-        self.hdr_small["CRVAL2"] = Util.CommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL2"],
+        self.hdr_small["CRVAL2"] = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL2"],
                                                                        self.hdr_small["CUNIT2"])).to("arcsec").value
         self.hdr_small["CDELT1"] = u.Quantity(self.hdr_small["CDELT1"], self.hdr_small["CUNIT1"]).to("arcsec").value
         self.hdr_small["CDELT2"] = u.Quantity(self.hdr_small["CDELT2"], self.hdr_small["CUNIT2"]).to("arcsec").value
@@ -88,13 +135,15 @@ class AlignmentSpice(Alignment):
             # super()._recenter_crpix_in_header(self.hdr_large)
             hdul_large.close()
 
-    def _extract_spice_data_header(self, level: int, index_amplitude=None):
+    def _extract_spice_data_header(self, level: int, ):
         with fits.open(self.small_fov_to_correct) as hdul_small:
             dt = hdul_small[self.small_fov_window].header.copy()["PC4_1"]
             if level == 2:
                 self._prepare_spice_from_l2(hdul_small)
             elif level == 3:
-                self._prepare_spice_from_l3(hdul_small, index_amplitude)
+                raise NotImplementedError
+            else:
+                raise ValueError("level must be 2 or 3")
 
             self.hdr_small['SOLAR_B0'] = hdul_small[self.small_fov_window].header["SOLAR_B0"]
             self.hdr_small['RSUN_REF'] = hdul_small[self.small_fov_window].header["RSUN_REF"]
@@ -146,6 +195,7 @@ class AlignmentSpice(Alignment):
         w_spice = WCS(hdul_small[self.small_fov_window].header.copy())
         w_xyt = w_spice.dropaxis(2)
         w_xyt.wcs.pc[2, 0] = 0
+        w_wave = w_spice.sub(['spectral'])
 
         w_xy = w_xyt.dropaxis(2)
         self.hdr_small = w_xy.to_header().copy()
@@ -158,7 +208,16 @@ class AlignmentSpice(Alignment):
         data_small[:, :, :ymin, :] = np.nan
         data_small[:, :, ymax:, :] = np.nan
 
-        self.data_small = np.nansum(data_small[0, :, :, :], axis=0)
+        if self.wavelength_interval_to_sum is "all":
+            self.data_small = np.nansum(data_small[0, :, :, :], axis=0)
+        elif self.wavelength_interval_to_sum is list:
+            z = np.arange(data_small.shape[1])
+            wave = w_wave.pixel_to_world(z)
+            selection_wave = np.logical_and(wave >= self.wavelength_interval_to_sum[0],
+                                            wave <= self.wavelength_interval_to_sum[1])
+            self.data_small = np.nansum(data_small[0, selection_wave, :, :], axis=0)
+        else:
+            ValueError("wavelength_interval_to_sum must be a [wave_min * u.angstrom, wave_max * u.angstrom] or None")
         self.data_small[:ymin, :] = np.nan
         self.data_small[ymax:, :] = np.nan
 
@@ -175,20 +234,21 @@ class AlignmentSpice(Alignment):
         self.hdr_small["NAXIS1"] = self.data_small.shape[1]
         self.hdr_small["NAXIS2"] = self.data_small.shape[0]
 
-    def _prepare_spice_from_l3(self, hdul_small, index_amplitude):
-        w = WCS(hdul_small[self.small_fov_window].header.copy())
-        w2 = w.deepcopy()
-        w2.wcs.pc[3, 0] = 0
-        w2.wcs.pc[3, 1] = 0
-        w_xyt = w2.dropaxis(0)
-        w_xy = w_xyt.dropaxis(2)
-        data_small = np.array(hdul_small[self.small_fov_window].data.copy(), dtype=np.float64)
-        self.data_small = data_small[:, :, index_amplitude]
-        self.data_small[self.data_small == hdul_small[self.small_fov_window].header["ANA_MISS"]] = np.nan
-        self.hdr_small = w_xy.to_header().copy()
+    # def _prepare_spice_from_l3(self, hdul_small, index_amplitude):
+    #     w = WCS(hdul_small[self.small_fov_window].header.copy())
+    #     w2 = w.deepcopy()
+    #     w2.wcs.pc[3, 0] = 0
+    #     w2.wcs.pc[3, 1] = 0
+    #     w_xyt = w2.dropaxis(0)
+    #     w_xy = w_xyt.dropaxis(2)
+    #     data_small = np.array(hdul_small[self.small_fov_window].data.copy(), dtype=np.float64)
+    #     self.data_small = data_small[:, :, index_amplitude]
+    #     self.data_small[self.data_small == hdul_small[self.small_fov_window].header["ANA_MISS"]] = np.nan
+    #     self.hdr_small = w_xy.to_header().copy()
+    #
+    #     self.hdr_small["NAXIS1"] = self.data_small.shape[1]
+    #     self.hdr_small["NAXIS2"] = self.data_small.shape[0]
 
-        self.hdr_small["NAXIS1"] = self.data_small.shape[1]
-        self.hdr_small["NAXIS2"] = self.data_small.shape[0]
 
 class AlignementSpiceIterativeContextRaster(AlignmentSpice):
     def __init__(self, large_fov_list_paths: list, small_fov_to_correct: str, threshold_time: u.Quantity,
@@ -276,7 +336,7 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
     def _create_submap_of_large_data(self, data_large):
         return data_large
 
-    def align_using_helioprojective(self, method='correlation', index_amplitude=None, shift_hdr_solar_rotation=False,
+    def align_using_helioprojective(self, method='correlation', index_amplitude=None,
                                     extend_pixel_size=False):
         self.lonlims = None
         self.latlims = None
@@ -285,7 +345,6 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
         self.function_to_apply = self._interpolate_on_large_data_grid
         self.method = method
         self.coordinate_frame = "helioprojective"
-        self.shift_hdr_solar_rotation = shift_hdr_solar_rotation
         self.extend_pixel_size = extend_pixel_size
 
         level = None
