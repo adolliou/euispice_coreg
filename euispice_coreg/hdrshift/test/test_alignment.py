@@ -29,7 +29,7 @@ def test_alignement_helioprojective_shift():
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
-                  parallelism=True, use_tqdm=True, counts_cpu_max=20, small_fov_value_min=min_value,
+                  parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
                   small_fov_value_max=max_value, )
 
     corr = A.align_using_helioprojective(method='correlation')
@@ -105,7 +105,7 @@ def test_alignement_carrington():
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
-                  parallelism=parallelism, use_tqdm=True,
+                  parallelism=parallelism, display_progress_bar=True,
                   small_fov_value_min=min_value,
                   small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
     corr = A.align_using_carrington(method='correlation', shape=shape, lonlims=lonlims, latlims=latlims,
@@ -138,7 +138,7 @@ def test_alignement_minimal_header():
 
     A = Alignment(large_fov_known_pointing=path_eis, small_fov_to_correct=path_aia, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
-                  parallelism=True, use_tqdm=True, counts_cpu_max=20, small_fov_value_min=min_value,
+                  parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
                   small_fov_value_max=max_value,force_crota_0=True )
 
     corr = A.align_using_helioprojective(method='correlation')

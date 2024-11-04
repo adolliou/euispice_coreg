@@ -45,7 +45,7 @@ class AlignmentSpice(Alignment):
         """
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
-                         lag_crota=lag_crota, use_tqdm=display_progress_bar,
+                         lag_crota=lag_crota, display_progress_bar=display_progress_bar,
                          lag_solar_r=lag_solar_r, parallelism=parallelism,
                          counts_cpu_max=counts_cpu_max,
                          large_fov_window=large_fov_window, small_fov_window=small_fov_window,
