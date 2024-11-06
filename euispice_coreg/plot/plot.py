@@ -15,8 +15,8 @@ import os
 import warnings
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
-from inspect import signature
 from astropy.coordinates import SkyCoord
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
@@ -247,10 +247,10 @@ class PlotFunctions:
         if ax is None:
             ax = fig.add_subplot()
         if norm is None:
-            norm = ImageNormalize(stretch=LogStretch(5))
+            norm = PlotFits.get_range(image_on_regular_grid, stre=None)
         im = ax.imshow(image_on_regular_grid, origin="lower", interpolation="none", norm=norm, cmap=cmap,
-                       extent=(longitude_grid_arcsec[0, 0] - 0.5*dlon, longitude_grid_arcsec[-1, -1] + 0.5*dlon,
-                               latitude_grid_arcsec[0, 0] - 0.5*dlat, latitude_grid_arcsec[-1, -1] + 0.5*dlat))
+                       extent=(longitude_grid_arcsec[0, 0] - 0.5 * dlon, longitude_grid_arcsec[-1, -1] + 0.5 * dlon,
+                               latitude_grid_arcsec[0, 0] - 0.5 * dlat, latitude_grid_arcsec[-1, -1] + 0.5 * dlat))
         # im = ax.imshow(data_main, origin="lower", interpolation="none", norm=norm,)
 
         if show_xlabel:
@@ -279,7 +279,7 @@ class PlotFunctions:
             longitude_main, latitude_main = AlignEUIUtil.extract_EUI_coordinates(header_coordinates_plot, dsun=False)
 
         longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude=longitude_main,
-                                                                          latitude=latitude_main)
+                                                                                latitude=latitude_main)
 
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
@@ -487,7 +487,8 @@ class PlotFunctions:
                           lag_crota: np.array = None, lag_cdelta1: np.array = None,
                           lag_cdelta2: np.array = None,
                           levels_percentile: list | None = None,
-                          show: bool = False
+                          show: bool = False,
+                          type_plot="compare_plot"
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -506,6 +507,7 @@ class PlotFunctions:
         :param lag_cdelta2: shift array for CDELTA2  [arcsec].
         :param levels_percentile: percentiles of the contours to be plotted for the to align figure.
         :param show: True to plt.show() figure.
+        :param type_plot: "compare_plot" (default) or "successive_plots"
 
 
         """
@@ -595,37 +597,60 @@ class PlotFunctions:
                     lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
 
-                fig = plt.figure(figsize=(12, 6))
-                fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
-                    PlotFunctions.compare_plot(header_reference, data_reference, header_to_align, data_to_align,
-                                               header_to_align_shifted, data_to_align,
-                                               show=False, norm=norm, levels=levels, return_axes=True,
-                                               fig=fig, lmin=lmin, lmax=lmax,
-                                               cmap1="plasma", cmap2="viridis", path_save=None)
-                detector = header_reference["DETECTOR"]
-                wave = header_reference["WAVELNTH"]
+                if type_plot == "compare_plot":
+                    fig = plt.figure(figsize=(12, 6))
+                    fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
+                        PlotFunctions.compare_plot(header_reference, data_reference, header_to_align, data_to_align,
+                                                   header_to_align_shifted, data_to_align,
+                                                   show=False, norm=norm, levels=levels, return_axes=True,
+                                                   fig=fig, lmin=lmin, lmax=lmax,
+                                                   cmap1="plasma", cmap2="viridis", path_save=None)
+                    detector = header_reference["DETECTOR"]
+                    wave = header_reference["WAVELNTH"]
 
-                ax1.set_title(f"{detector} {wave} & Small FOV (contour) NA ")
-                ax2.set_title(f"{detector} {wave} & Small FOV (contour) A ")
-                ax2.set_yticklabels([])
-                ax3.set_yticklabels([])
+                    ax1.set_title(f"{detector} {wave} & Small FOV (contour) NA ")
+                    ax2.set_title(f"{detector} {wave} & Small FOV (contour) A ")
+                    ax2.set_yticklabels([])
+                    ax3.set_yticklabels([])
 
-                ax3.set_title("Small FOV (%s) aligned " % image_to_align_window)
-                date = Time(hdul_to_align[image_to_align_window].header["DATE-AVG"]).fits[:19]
-                date = date.replace(":", "_")
-                date = date.replace("-", "_")
+                    ax3.set_title("Small FOV (%s) aligned " % image_to_align_window)
+                    date = Time(hdul_to_align[image_to_align_window].header["DATE-AVG"]).fits[:19]
+                    date = date.replace(":", "_")
+                    date = date.replace("-", "_")
 
-                date_str = header_to_align["DATE-OBS"][:19]
-                fig.suptitle(f"Small FOV {date_str} aligned with {detector} {wave}. Aligned (A) ; Not Aligned (NA) ; ")
-                # fig.suptitle("Alignement of SPICE  using a synthetic raster of HRIEUV images")
-                if path_save_figure is not None:
-                    fig.savefig(path_save_figure)
-                if show:
-                    fig.show()
+                    date_str = header_to_align["DATE-OBS"][:19]
+                    fig.suptitle(
+                        f"Image to align  {date_str} aligned with {detector} {wave}. Aligned (A) ; Not Aligned (NA) ; ")
+                    # fig.suptitle("Alignement of SPICE  using a synthetic raster of HRIEUV images")
+                    if path_save_figure is not None:
+                        fig.savefig(path_save_figure)
+                    if show:
+                        fig.show()
 
+                elif type_plot == "successive_plot":
+                    with PdfPages(path_save_figure) as pdf:
 
+                        for data, header, title in zip([data_reference, data_to_align, data_to_align],
+                                                       [header_reference, header_to_align_shifted, header_to_align],
+                                                       ["Reference image", "to align image shifted",
+                                                        "to align not Shifted"], ):
+                            w_ = WCS(header)
+                            if use_sunpy:
+                                x, y = np.meshgrid(np.arange(1), np.arange(1))
+                                coords_tmp = w_.pixel_to_world(x, y)
+                                coords = SkyCoord(longitude_grid, latitude_grid, frame=coords_tmp.frame)
+                                x, y = w_.world_to_pixel(coords)
 
+                            else:
+                                x, y = w_.world_to_pixel(longitude_grid, latitude_grid)
 
+                            data_rep = AlignCommonUtil.interpol2d(image=data, x=x, y=y, fill=np.nan,
+                                                                  order=3, )
+                            fig = plt.figure(figsize=(6, 6))
+                            ax = fig.add_subplot()
+                            PlotFunctions.simple_plot(hdr_main=header_to_align, data_main=data_rep, fig=fig, ax=ax, )
+                            ax.set_title(title)
+                            pdf.savefig(fig)
     #
     #
     # @staticmethod
