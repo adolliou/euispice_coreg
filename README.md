@@ -200,7 +200,7 @@ The header values that can be shifted are CRVAL1, CRVAL2, CROTA, CDELT1  and CDE
 import numpy as np
 from euispice_coreg.hdrshift.alignment_spice import AlignmentSpice
 from euispice_coreg.plot.plot import PlotFunctions
-from euispice_coreg.utils.Util import AlignSpiceUtil
+from euispice_coreg.utils.Util import AlignCommonUtil
 
 
 path_to_synthetic_raster_fits = "path/to/input/synthetic_raster.fits"
@@ -234,9 +234,9 @@ A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small
 
 corr = A.align_using_helioprojective(method='correlation')
 PlotFunctions.plot_correlation(corr, **param_alignment)
-AlignSpiceUtil.write_corrected_fits(path_spice_l2_input=path_spice_input, 
-                               path_spice_l2_output="path/where/to/save/corrected/fits", corr=corr,
-                                    window_spice_list=windows_spice, 
+AlignCommonUtil.write_corrected_fits(path_l2_input=path_spice_input, 
+                               path_l3_output="path/where/to/save/corrected/fits", corr=corr,
+                                    window_list=windows_spice, 
                                     **param_alignment)
 
 PlotFunctions.plot_co_alignment(reference_image_window=-1, reference_image_path=path_to_synthetic_raster_fits,
