@@ -188,7 +188,7 @@ output_L3_fits = "path/to/output/synthetic_raster_folder"
 C = SPICEComposedMapBuilder(path_to_spectro=path_spice, list_imager_paths=path_to_imager_list,
                                window_imager=window_imager, window_spectro=window_spice,
                                threshold_time=threshold_time)
-C.process(folder_path_output=output_L3_fits)
+path_to_synras = C.process(folder_path_output=output_L3_fits, return_synras_name=True)
 ```
 #### Alignment of the SPICE raster with the synthetic raster
 

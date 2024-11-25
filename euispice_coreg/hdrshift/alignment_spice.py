@@ -209,17 +209,18 @@ class AlignmentSpice(Alignment):
         # ylim = np.array([ymin, ylen - ymax - 1]).max()
         data_small[:, :, :ymin, :] = np.nan
         data_small[:, :, ymax:, :] = np.nan
-
+        print(self.wavelength_interval_to_sum)
         if self.wavelength_interval_to_sum is "all":
             self.data_small = np.nansum(data_small[0, :, :, :], axis=0)
-        elif self.wavelength_interval_to_sum is list:
+        elif type(self.wavelength_interval_to_sum).__name__ == "list":
             z = np.arange(data_small.shape[1])
             wave = w_wave.pixel_to_world(z)
             selection_wave = np.logical_and(wave >= self.wavelength_interval_to_sum[0],
                                             wave <= self.wavelength_interval_to_sum[1])
             self.data_small = np.nansum(data_small[0, selection_wave, :, :], axis=0)
         else:
-            ValueError("wavelength_interval_to_sum must be a [wave_min * u.angstrom, wave_max * u.angstrom] or None")
+            raise ValueError("wavelength_interval_to_sum must be a [wave_min * u.angstrom, wave_max * u.angstrom] "
+                             "or 'all' str ")
         self.data_small[:ymin, :] = np.nan
         self.data_small[ymax:, :] = np.nan
 
