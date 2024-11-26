@@ -578,7 +578,6 @@ class PlotFunctions:
                         raise ValueError(
                             "wavelength_interval_to_sum must be a [wave_min * u.angstrom, wave_max * u.angstrom] "
                             "or 'all' str ")
-                    data_to_align = np.nansum(data_to_align_tmp[0, :, :, :], axis=0)
                     data_to_align[:ymin, :] = np.nan
                     data_to_align[ymax:, :] = np.nan
 
