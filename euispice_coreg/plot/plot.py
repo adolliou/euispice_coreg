@@ -488,12 +488,17 @@ class PlotFunctions:
                           lag_cdelta2: np.array = None,
                           levels_percentile: list | None = None,
                           show: bool = False,
-                          type_plot="compare_plot"
+                          type_plot="compare_plot",
+                          wavelength_interval_to_sum="all",
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
         correction is applied.
 
+        :param wavelength_interval_to_sum: has the form [wave_min * u.angstrom, wave_max * u.angstrom].
+        for the given SPICE window, set the wavelength interval over which
+        the sum is performed, to obtain image (X, Y) from the SPICE L2 data (X, Y, lambda).
+        Default is "all" for the entire window.
         :param reference_image_path: path to the FITS file of the reference image. Must end with ".fits".
         :param image_to_align_path: path to the FITS file of the image which must be aligned. Must end with ".fits".
         :param corr: correlation array resulting from the Alignment class.
@@ -548,8 +553,11 @@ class PlotFunctions:
                 elif "SPICE" in header_to_align_original["TELESCOP"]:
                     # AlignSpiceUtil.recenter_crpix_in_header_L2(header_spice)
                     w_to_align = WCS(header_to_align_original)
+                    w_wave = w_to_align.sub(['spectral'])
+
                     ymin, ymax = AlignSpiceUtil.vertical_edges_limits(header_to_align_original)
                     w_xyt = w_to_align.dropaxis(2)
+
                     w_xyt.wcs.pc[2, 0] = 0
                     w_xy = w_xyt.dropaxis(2)
                     header_to_align = w_xy.to_header().copy()
@@ -558,6 +566,18 @@ class PlotFunctions:
                     data_to_align_tmp[:, :, :ymin, :] = np.nan
                     data_to_align_tmp[:, :, ymax:, :] = np.nan
 
+                    if wavelength_interval_to_sum is "all":
+                        data_to_align = np.nansum(data_to_align_tmp[0, :, :, :], axis=0)
+                    elif type(wavelength_interval_to_sum).__name__ == "list":
+                        z = np.arange(data_to_align_tmp.shape[1])
+                        wave = w_wave.pixel_to_world(z)
+                        selection_wave = np.logical_and(wave >= wavelength_interval_to_sum[0],
+                                                        wave <= wavelength_interval_to_sum[1])
+                        data_to_align = np.nansum(data_to_align_tmp[0, selection_wave, :, :], axis=0)
+                    else:
+                        raise ValueError(
+                            "wavelength_interval_to_sum must be a [wave_min * u.angstrom, wave_max * u.angstrom] "
+                            "or 'all' str ")
                     data_to_align = np.nansum(data_to_align_tmp[0, :, :, :], axis=0)
                     data_to_align[:ymin, :] = np.nan
                     data_to_align[ymax:, :] = np.nan
