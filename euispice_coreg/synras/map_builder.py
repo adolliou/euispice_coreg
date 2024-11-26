@@ -23,15 +23,16 @@ class MapBuilder(ABC):
 class ComposedMapBuilder(MapBuilder):
 
     def __init__(self, path_to_spectro: str, list_imager_paths: list, threshold_time: u.Quantity,
-                 window_imager=-1, window_spectro=0, ):
+                 window_imager=-1, window_spectro=0,):
         """
 
-        @param path_to_spectro: path to the reference spectrometer L2 fits
-        @param list_imager_paths: list of L2 imager paths used to create the synthetic raster
-        @param threshold_time: if can not find imager fits file with date-avg time lower than threshold_time
+        :param path_to_spectro: path to the reference spectrometer L2 fits
+        :param list_imager_paths: list of L2 imager paths used to create the synthetic raster
+        :param threshold_time: if can not find imager fits file with date-avg time lower than threshold_time
         for a given raster step, raise an error.
-        @param window_imager: chosen window for the imager HDULIST
-        @param window_spectro: chosen window for the spectro HDULIST
+        :param window_imager: chosen window for the imager HDULIST
+        :param window_spectro: chosen window for the spectro HDULIST
+        # :param divide_exposure: divide the imager data by the exposure time
         """
         super().__init__()
         self.path_to_spectro = path_to_spectro
@@ -50,8 +51,7 @@ class ComposedMapBuilder(MapBuilder):
                 # import sunpy.map
         self.use_sunpy = use_sunpy
         self.skycoord_spice = None
-
-
+        # self.divide_exposure = divide_exposure
 
     def process(self, folder_path_output=None, basename_output=None, print_filename=True, level=2,
                 keep_original_imager_pixel_size=False, return_synras_name=False):
@@ -71,7 +71,7 @@ class ComposedMapBuilder(MapBuilder):
             output_synras_name = self._create_map_from_hdu(hdr_spice, basename_output, folder_path_output,
                                                            print_filename=print_filename,
                                                            level=level,
-                                                        keep_original_imager_pixel_size=keep_original_imager_pixel_size)
+                                                    keep_original_imager_pixel_size=keep_original_imager_pixel_size)
             hdul_spice.close()
 
         if return_synras_name:
@@ -107,10 +107,17 @@ class ComposedMapBuilder(MapBuilder):
                 hdu_imager = hdul_imager[self.window_imager]
                 hdr_imager = hdu_imager.header
                 data_imager = hdu_imager.data
+
+                # if self.divide_exposure:
+                #     if ('DN/s' in hdr_imager["BUNIT"]) or
+                #     pass
+                # else:
+                #     pass
+
                 w_im = WCS(hdr_imager)
                 if self.use_sunpy:
 
-                    coords_tmp = SkyCoord(longitude_spice[:, ii, 0],latitude_spice[:, ii, 0],
+                    coords_tmp = SkyCoord(longitude_spice[:, ii, 0], latitude_spice[:, ii, 0],
                                           frame=self.skycoord_spice.frame)
                     x_fsi, y_fsi = w_im.world_to_pixel(coords_tmp)
 
@@ -227,8 +234,6 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
     def __init__(self, path_to_spectro: str, list_imager_paths: list, threshold_time: u.Quantity,
                  window_imager=-1, window_spectro=0, ):
 
-
-
         super().__init__(path_to_spectro=path_to_spectro, list_imager_paths=list_imager_paths,
                          threshold_time=threshold_time,
                          window_imager=window_imager, window_spectro=window_spectro, )
@@ -306,7 +311,6 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
                 x, y, z = np.meshgrid(np.arange(w_xyt.pixel_shape[idx_lon]), np.arange(w_xyt.pixel_shape[idx_lat]),
                                       np.arange(w_xyt.pixel_shape[idx_utc]), )
                 naxis_long = hdr_spice["NAXIS2"]
-
 
             if self.use_sunpy:
                 coords_spice = w_xyt.pixel_to_world(x, y, z)

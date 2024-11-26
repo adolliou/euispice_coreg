@@ -241,8 +241,8 @@ class AlignmentSpice(Alignment):
             pass
         elif type(self.sub_fov_window).__name__ == "list":
 
-            x, y = np.meshgrid(np.arange(self.data_small.shape[idx_lon]),
-                               np.arange(self.data_small.shape[idx_lat]))
+            x, y = np.meshgrid(np.arange(w_xy.pixel_shape[idx_lon]),
+                               np.arange(w_xy.pixel_shape[idx_lat]))
 
             if self.use_sunpy:
                 coords_spice = w_xy.pixel_to_world(x, y)
