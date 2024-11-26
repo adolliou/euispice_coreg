@@ -15,9 +15,11 @@ class AlignmentSpice(Alignment):
                  lag_cdelta1: np.array = None, lag_cdelta2: np.array = None,
                  lag_crota: np.array = None, lag_solar_r: np.array = None,
                  large_fov_window: int | str = -1, small_fov_window: int | str = -1,
-                 wavelength_interval_to_sum: list[u.Quantity] | str = "all",
                  parallelism: bool = False, counts_cpu_max: int = 40,
-                 display_progress_bar: bool = False, path_save_figure: str | None = None):
+                 display_progress_bar: bool = False, path_save_figure: str | None = None,
+                 wavelength_interval_to_sum: list[u.Quantity] | str = "all",
+                 sub_fov_window: list[u.Quantity] | str = "all",
+                 ):
         """
 
         :param large_fov_known_pointing: path to the reference image or synthetic raster FITS file with knwown pointing
@@ -42,6 +44,8 @@ class AlignmentSpice(Alignment):
         :param counts_cpu_max: choose the maximum number of CPU used.
         :param display_progress_bar: choose to display the progress bar or not.
         :param path_save_figure: path where to save the figures.
+        :param sub_fov_window: for SPICE only. if "all", select the entire SPICE window. Else enter a list of the form
+        [lon_min * u.arcsec, lon_max * u.arcsec, lat_min * u.arcsec, lat_max * u.arcsec].
         """
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
@@ -51,6 +55,7 @@ class AlignmentSpice(Alignment):
                          large_fov_window=large_fov_window, small_fov_window=small_fov_window,
                          path_save_figure=path_save_figure, )
 
+        self.sub_fov_window = sub_fov_window
         self.function_to_apply = None
         self.coordinate_frame = None
         self.extend_pixel_size = None
@@ -230,6 +235,33 @@ class AlignmentSpice(Alignment):
             self.data_small[:, :(xmid - xlen // 2 - 1)] = np.nan
             self.data_small[:, (xmid + xlen // 2):] = np.nan
 
+        idx_lon = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+        idx_lat = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+        if self.sub_fov_window == "all":
+            pass
+        elif type(self.sub_fov_window).__name__ == "list":
+
+            x, y = np.meshgrid(np.arange(self.data_small.shape[idx_lon]),
+                               np.arange(self.data_small.shape[idx_lat]))
+
+            if self.use_sunpy:
+                coords_spice = w_xy.pixel_to_world(x, y)
+                lon_spice = coords_spice.Tx
+                lat_spice = coords_spice.Ty
+            else:
+                lon_spice, lat_spice = w_xy.pixel_to_world(x, y)
+
+            selection_subfov_lon = np.logical_and(lon_spice >= self.sub_fov_window[0],
+                                                  lon_spice <= self.sub_fov_window[1], )
+            selection_subfov_lat = np.logical_and(lat_spice >= self.sub_fov_window[2],
+                                                  lat_spice <= self.sub_fov_window[3], )
+
+            selection_subfov = np.logical_and(selection_subfov_lon, selection_subfov_lat)
+            self.data_small[~selection_subfov] = np.nan
+        else:
+            raise ValueError("sub_fov_window must be a [lon_min * u.arcsec, lon_max * u.arcsec,"
+                             " lat_min * u.arcsec, lat_max * u.arcsec] "
+                             "or 'all' str ")
         #
         # self.hdr_small["CRPIX1"] = (self.data_small.shape[1] + 1) / 2
         # self.hdr_small["CRPIX2"] = (self.data_small.shape[0] + 1) / 2

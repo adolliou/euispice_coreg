@@ -488,17 +488,16 @@ class PlotFunctions:
                           lag_cdelta2: np.array = None,
                           levels_percentile: list | None = None,
                           show: bool = False,
-                          type_plot="compare_plot",
-                          wavelength_interval_to_sum="all",
+                          type_plot: str = "compare_plot",
+                          wavelength_interval_to_sum: list[u.Quantity] | str = "all",
+                          sub_fov_window: list[u.Quantity] | str = "all",
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
         correction is applied.
 
-        :param wavelength_interval_to_sum: has the form [wave_min * u.angstrom, wave_max * u.angstrom].
-        for the given SPICE window, set the wavelength interval over which
-        the sum is performed, to obtain image (X, Y) from the SPICE L2 data (X, Y, lambda).
-        Default is "all" for the entire window.
+
+
         :param reference_image_path: path to the FITS file of the reference image. Must end with ".fits".
         :param image_to_align_path: path to the FITS file of the image which must be aligned. Must end with ".fits".
         :param corr: correlation array resulting from the Alignment class.
@@ -513,7 +512,12 @@ class PlotFunctions:
         :param levels_percentile: percentiles of the contours to be plotted for the to align figure.
         :param show: True to plt.show() figure.
         :param type_plot: "compare_plot" (default) or "successive_plots"
-
+                :param sub_fov_window: for SPICE only. if "all", select the entire SPICE window. Else enter a list of the form
+        [lon_min * u.arcsec, lon_max * u.arcsec, lat_min * u.arcsec, lat_max * u.arcsec].
+        :param wavelength_interval_to_sum: has the form [wave_min * u.angstrom, wave_max * u.angstrom].
+        for the given SPICE window, set the wavelength interval over which
+        the sum is performed, to obtain image (X, Y) from the SPICE L2 data (X, Y, lambda).
+        Default is "all" for the entire window.
 
         """
         if levels_percentile is None:
@@ -578,6 +582,36 @@ class PlotFunctions:
                         raise ValueError(
                             "wavelength_interval_to_sum must be a [wave_min * u.angstrom, wave_max * u.angstrom] "
                             "or 'all' str ")
+
+                    idx_lon = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                    idx_lat = np.where(np.array(w_xy.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+
+                    if sub_fov_window == "all":
+                        pass
+                    elif type(sub_fov_window).__name__ == "list":
+
+                        x, y = np.meshgrid(np.arange(data_to_align.shape[idx_lon]),
+                                           np.arange(data_to_align.shape[idx_lat]))
+
+                        if use_sunpy:
+                            coords_spice = w_xy.pixel_to_world(x, y)
+                            lon_spice = coords_spice.Tx
+                            lat_spice = coords_spice.Ty
+                        else:
+                            lon_spice, lat_spice = w_xy.pixel_to_world(x, y)
+
+                        selection_subfov_lon = np.logical_and(lon_spice >= sub_fov_window[0],
+                                                              lon_spice <= sub_fov_window[1], )
+                        selection_subfov_lat = np.logical_and(lat_spice >= sub_fov_window[2],
+                                                              lat_spice <= sub_fov_window[3], )
+
+                        selection_subfov = np.logical_and(selection_subfov_lon, selection_subfov_lat)
+                        data_to_align[~selection_subfov] = np.nan
+                    else:
+                        raise ValueError("sub_fov_window must be a [lon_min * u.arcsec, lon_max * u.arcsec,"
+                                         " lat_min * u.arcsec, lat_max * u.arcsec] "
+                                         "or 'all' str ")
+
                     data_to_align[:ymin, :] = np.nan
                     data_to_align[ymax:, :] = np.nan
 
