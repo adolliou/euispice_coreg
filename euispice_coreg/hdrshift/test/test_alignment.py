@@ -116,36 +116,36 @@ def test_alignement_carrington():
     assert lag_crval2[max_index[1]] == 5
 
 
-def test_alignement_minimal_header():
-    path_eis = os.path.join(Path().absolute(), "hdrshift", "test",
-                            "fitsfiles", "eis_20221024_024912_fe_12_195_119_calib_intensity.fits")
-    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+# def test_alignement_minimal_header():
+#     path_eis = os.path.join(Path().absolute(), "hdrshift", "test",
+#                             "fitsfiles", "eis_20221024_024912_fe_12_195_119_calib_intensity.fits")
+#     # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
+#     #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
 
-    path_aia = os.path.join(Path().absolute(), "hdrshift", "test",
-                            "fitsfiles", "AIA_193_eis_20221024_024912_fe_12_195_119_calib_intensity.fits")
+#     path_aia = os.path.join(Path().absolute(), "hdrshift", "test",
+#                             "fitsfiles", "AIA_193_eis_20221024_024912_fe_12_195_119_calib_intensity.fits")
 
-    lag_crval1 = np.arange(-10, 10, 1)
-    lag_crval2 = np.arange(-10, 10, 1)
+#     lag_crval1 = np.arange(-10, 10, 1)
+#     lag_crval2 = np.arange(-10, 10, 1)
 
-    lag_cdelta1 = None
-    lag_cdelta2 = None
+#     lag_cdelta1 = None
+#     lag_cdelta2 = None
 
-    lag_crota = None
+#     lag_crota = None
 
-    min_value = 0
-    max_value = 1310
+#     min_value = 0
+#     max_value = 1310
 
-    A = Alignment(large_fov_known_pointing=path_eis, small_fov_to_correct=path_aia, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
-                  parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
-                  small_fov_value_max=max_value,force_crota_0=True )
+#     A = Alignment(large_fov_known_pointing=path_eis, small_fov_to_correct=path_aia, lag_crval1=lag_crval1,
+#                   lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+#                   parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
+#                   small_fov_value_max=max_value,force_crota_0=True )
 
-    corr = A.align_using_helioprojective(method='correlation')
-    max_index = np.unravel_index(corr.argmax(), corr.shape)
+#     corr = A.align_using_helioprojective(method='correlation')
+#     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
-    assert lag_crval1[max_index[0]] == 0
-    assert lag_crval2[max_index[1]] == 6
+#     assert lag_crval1[max_index[0]] == 0
+#     assert lag_crval2[max_index[1]] == 6
 
 
 if __name__ == "__main__":

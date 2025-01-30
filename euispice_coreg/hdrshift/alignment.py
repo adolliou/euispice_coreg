@@ -14,6 +14,7 @@ import astropy.units as u
 from ..plot import plot
 import warnings
 from ..utils import Util
+import os
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
@@ -34,7 +35,7 @@ class Alignment:
                  parallelism: object = False, display_progress_bar: bool = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
-                 path_save_figure: object = None, reprojection_order=2, force_crota_0=False):
+                 path_save_figure: str = None, reprojection_order=2, force_crota_0=False):
         """
 
         @param large_fov_known_pointing: (str) path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -53,7 +54,7 @@ class Alignment:
         @param counts_cpu_max: allow max number of cpu for the parallelism.
         @param large_fov_window: (str or int) HDULIST window for the reference file
         @param small_fov_window: (str or int) HDULIST window for the fits to align
-        @param path_save_figure: folder where to save figs following the alignement (optional, will increase computational time)
+        @param path_save_figure (str): folder where to save figs following the alignement (optional, will increase computational time)
         @param reprojection_order: (int) order of the spline interpolation. Default is 2.
         @param force_crota_0: if no CROTA, CROTA2 or Pci_j matrix, force the CROTA parameter to 0.
         """
@@ -570,8 +571,16 @@ class Alignment:
         image = np.where(image == -32762, np.nan, image)
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
             if self.path_save_figure is not None:
-                plot.PlotFunctions.plot_fov(image, show=False,
-                                            path_save='%s/image_large.pdf' % (self.path_save_figure))
+                date_avg = hdr["DATE-AVG"]
+                dlon = (self.lonlims[1] - self.lonlims[0])/self.shape[0]
+                dlat = self.latlims[1] - self.lonlims[0]/self.shape[1]
+
+                plot.PlotFunctions.plot_fov(hdr, show=False,
+                                            path_save=os.path.join((self.path_save_figure,f'/image_large_{date_avg.fits[:14]}.pdf')), 
+                                            extent=(
+                                                self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
+                                                self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
+                                            ))
                 spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
                                                         reference_date=self.reference_date,
                                                         rate_wave=self.rat_wave[
@@ -581,9 +590,14 @@ class Alignment:
                 image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, opencv=False,
                                         order=self.order, fill=-32762)
                 image_small = np.where(image_small == -32762, np.nan, image_small)
+                date_avg = self.hdr_small["DATE-AVG"]
 
                 plot.PlotFunctions.plot_fov(image_small, show=False,
-                                            path_save='%s/image_small.pdf' % (self.path_save_figure))
+                                            path_save=os.path.join((self.path_save_figure,f'/image_small_{date_avg.fits[:14]}.pdf')), 
+                                            extent=(
+                                                self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
+                                                self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
+                                            ))
 
         return image
 
