@@ -576,11 +576,12 @@ class Alignment:
                 dlat = self.latlims[1] - self.lonlims[0]/self.shape[1]
 
                 plot.PlotFunctions.plot_fov(hdr, show=False,
-                                            path_save=os.path.join((self.path_save_figure,f'/image_large_{date_avg.fits[:14]}.pdf')), 
+                                            path_save=os.path.join((self.path_save_figure,f'/image_large_{date_avg[:14]}.pdf')), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
-                                                self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
-                                            ))
+                                                self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, ), 
+                                            xlabel= "carrington longitude [°]", ylabel="carrington latitude [°]"
+                                            )
                 spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
                                                         reference_date=self.reference_date,
                                                         rate_wave=self.rat_wave[
@@ -593,11 +594,14 @@ class Alignment:
                 date_avg = self.hdr_small["DATE-AVG"]
 
                 plot.PlotFunctions.plot_fov(image_small, show=False,
-                                            path_save=os.path.join((self.path_save_figure,f'/image_small_{date_avg.fits[:14]}.pdf')), 
+                                            path_save=os.path.join((self.path_save_figure,f'/image_small_{date_avg[:14]}.pdf')), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
                                                 self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
-                                            ))
+                                            ), 
+                                            xlabel= "carrington longitude [°]", ylabel="carrington latitude [°]"
+
+                                            )
 
         return image
 
