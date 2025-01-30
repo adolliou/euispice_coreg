@@ -179,7 +179,7 @@ class PlotFunctions:
 
     @staticmethod
     def plot_fov(data, slc=None, path_save=None, show=True, plot_colorbar=True, fig=None, ax=None, norm=None,
-                 cmap="plasma", xlabel="X [px]", ylabel="Y [px]", aspect=1, return_im=False):
+                 cmap="plasma", xlabel="X [px]", ylabel="Y [px]", aspect=1, return_im=False, extent=None,):
         if fig is None:
             fig = plt.figure()
         if ax is None:
@@ -188,9 +188,9 @@ class PlotFunctions:
             norm = ImageNormalize(stretch=LogStretch(5))
         if slc is not None:
             im = ax.imshow(data[slc[0], slc[1]], origin="lower", interpolation="none", norm=norm, aspect=aspect,
-                           cmap=cmap)
+                           cmap=cmap, extent=extent)
         else:
-            im = ax.imshow(data, cmap=cmap, origin="lower", interpolation="None", norm=norm, aspect=aspect)
+            im = ax.imshow(data, cmap=cmap, origin="lower", interpolation="None", norm=norm, aspect=aspect, extent=extent)
         if plot_colorbar:
             fig.colorbar(im, label="DN/s")
         ax.set_xlabel(xlabel)
