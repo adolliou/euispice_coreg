@@ -573,9 +573,9 @@ class Alignment:
             if self.path_save_figure is not None:
                 date_avg = hdr["DATE-AVG"]
                 dlon = (self.lonlims[1] - self.lonlims[0])/self.shape[0]
-                dlat = self.latlims[1] - self.lonlims[0]/self.shape[1]
+                dlat = (self.latlims[1] - self.lonlims[0])/self.shape[1]
 
-                plot.PlotFunctions.plot_fov(hdr, show=False,
+                plot.PlotFunctions.plot_fov(data=image, show=False,
                                             path_save=os.path.join(self.path_save_figure,f'image_large_{date_avg[:14]}.pdf'), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
@@ -593,7 +593,7 @@ class Alignment:
                 image_small = np.where(image_small == -32762, np.nan, image_small)
                 date_avg = self.hdr_small["DATE-AVG"]
 
-                plot.PlotFunctions.plot_fov(image_small, show=False,
+                plot.PlotFunctions.plot_fov(data=image_small, show=False,
                                             path_save=os.path.join(self.path_save_figure,f'image_small_{date_avg[:14]}.pdf'), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
