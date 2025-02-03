@@ -575,14 +575,14 @@ class Alignment:
         image = np.where(image == -32762, np.nan, image)
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
             if self.path_save_figure is not None:
-                date_avg = hdr["DATE-AVG"]
+                date_obs = hdr["DATE-OBS"]
                 dlon = (self.lonlims[1] - self.lonlims[0])/self.shape[0]
                 dlat = (self.latlims[1] - self.lonlims[0])/self.shape[1]
 
 
 
                 plot.PlotFunctions.plot_fov(data=image, show=False,
-                                            path_save=os.path.join(self.path_save_figure,f'image_large_{date_avg[:14]}.pdf'), 
+                                            path_save=os.path.join(self.path_save_figure,f'image_large_{date_obs[:14]}.pdf'), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
                                                 self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, ), 
@@ -596,10 +596,10 @@ class Alignment:
                 image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, opencv=False,
                                         order=self.order, fill=-32762)
                 image_small = np.where(image_small == -32762, np.nan, image_small)
-                date_avg = self.hdr_small["DATE-AVG"]
+                date_obs = self.hdr_small["DATE-OBS"]
 
                 plot.PlotFunctions.plot_fov(data=image_small, show=False,
-                                            path_save=os.path.join(self.path_save_figure,f'image_small_{date_avg[:14]}.pdf'), 
+                                            path_save=os.path.join(self.path_save_figure,f'image_small_{date_obs[:14]}.pdf'), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
                                                 self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
