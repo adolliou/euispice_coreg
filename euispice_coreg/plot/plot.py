@@ -658,8 +658,14 @@ class PlotFunctions:
                                                    show=False, norm=norm, levels=levels, return_axes=True,
                                                    fig=fig, lmin=lmin, lmax=lmax,
                                                    cmap1="plasma", cmap2="viridis", path_save=None)
-                    detector = header_reference["DETECTOR"]
-                    wave = header_reference["WAVELNTH"]
+                    if "DETECTOR" in header_reference.keys():
+                        detector = header_reference["DETECTOR"]
+                    else :
+                        detector = " UNKOWN"
+                    if "WAVELNTH" in header_reference.keys():
+                        wave = header_reference["WAVELNTH"]
+                    else:
+                        wave = "UNKNOWN"
 
                     ax1.set_title(f"{detector} {wave} & Small FOV (contour) NA ")
                     ax2.set_title(f"{detector} {wave} & Small FOV (contour) A ")
