@@ -582,7 +582,7 @@ class Alignment:
 
 
                 plot.PlotFunctions.plot_fov(data=image, show=False,
-                                            path_save=os.path.join(self.path_save_figure,f'image_large_{date_obs[:14]}.pdf'), 
+                                            path_save=os.path.join(self.path_save_figure,f'image_large_{date_obs[:19]}.pdf'), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
                                                 self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, ), 
@@ -599,7 +599,7 @@ class Alignment:
                 date_obs = self.hdr_small["DATE-OBS"]
 
                 plot.PlotFunctions.plot_fov(data=image_small, show=False,
-                                            path_save=os.path.join(self.path_save_figure,f'image_small_{date_obs[:14]}.pdf'), 
+                                            path_save=os.path.join(self.path_save_figure,f'image_small_{date_obs[:19]}.pdf'), 
                                             extent=(
                                                 self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
                                                 self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
