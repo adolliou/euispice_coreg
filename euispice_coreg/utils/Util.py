@@ -701,6 +701,9 @@ class PlotFits:
         """
         isnan = np.isnan(data)
         data = data[~isnan]
+
+        if data.size == 0:
+            return None
         do = False
         if imax > 100:
             vmin, vmax = AsymmetricPercentileInterval(imin, 100).get_limits(data)
