@@ -561,11 +561,15 @@ class Alignment:
         return data_correlation_cp
 
     def _carrington_transform(self, d_solar_r, data, hdr):
-
+        rate_wave_ = None
+        if self.hdr_large['WAVELNTH'] not in self.rat_wave.keys():
+            rate_wave_ = None
+        else:
+            rate_wave_ = self.rat_wave['%i' % (self.hdr_large['WAVELNTH'])]
+        
         spherical = rectify.CarringtonTransform(hdr, radius_correction=d_solar_r,
                                                 reference_date=self.reference_date,
-                                                rate_wave=self.rat_wave[
-                                                    '%i' % (self.hdr_large['WAVELNTH'])])
+                                                rate_wave=rate_wave_)
         spherizer = rectify.Rectifier(spherical)
         image = spherizer(data, self.shape, self.lonlims, self.latlims, opencv=False, order=self.order, fill=-32762)
         image = np.where(image == -32762, np.nan, image)
@@ -574,6 +578,8 @@ class Alignment:
                 date_avg = hdr["DATE-AVG"]
                 dlon = (self.lonlims[1] - self.lonlims[0])/self.shape[0]
                 dlat = (self.latlims[1] - self.lonlims[0])/self.shape[1]
+
+
 
                 plot.PlotFunctions.plot_fov(data=image, show=False,
                                             path_save=os.path.join(self.path_save_figure,f'image_large_{date_avg[:14]}.pdf'), 
@@ -584,8 +590,7 @@ class Alignment:
                                             )
                 spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
                                                         reference_date=self.reference_date,
-                                                        rate_wave=self.rat_wave[
-                                                            '%i' % (self.hdr_large['WAVELNTH'])])
+                                                        rate_wave=rate_wave_)
                 spherizer = rectify.Rectifier(spherical)
 
                 image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, opencv=False,
