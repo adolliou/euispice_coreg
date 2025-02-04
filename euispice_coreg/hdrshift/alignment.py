@@ -670,7 +670,7 @@ class Alignment:
                     date_obs = hdr["DATE-OBS"]
                     
                     plot.PlotFunctions.simple_plot_sunpy(map_to_align,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_large_{date_obs[:19]}.pdf"))
+                                                  path_save=os.path.join(self.path_save_figure, f"image_small_{date_obs[:19]}.pdf"))
                     date_obs = self.hdr_small["DATE-OBS"]
                     plot.PlotFunctions.simple_plot_sunpy(map_ref,show=False, 
                                                   path_save=os.path.join(self.path_save_figure, f"image_large_{date_obs[:19]}.pdf"))
