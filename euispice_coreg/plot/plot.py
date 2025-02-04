@@ -814,10 +814,10 @@ class PlotFunctions:
                                                        [header_reference, header_to_align_shifted, header_to_align],
                                                        ["Reference image", "to align image shifted",
                                                         "to align not Shifted"], ):
-   
+                            hdu = fits.PrimaryHDU(data=data, header=header)
+                            hdu.verify('fix')
                             fig = plt.figure(figsize=(6, 6))
-                            header.verify('fix')
-                            m = Map(data, header)
+                            m = Map(hdu.data, hdu.header)
                             m.meta["rsun_ref"] = rsun
                             m_rep = m.reproject_to(w_to_align)
                             ax = fig.add_subplot(projection=m_rep)
