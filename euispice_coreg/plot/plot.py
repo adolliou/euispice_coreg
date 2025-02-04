@@ -584,7 +584,9 @@ class PlotFunctions:
                           type_plot: str = "compare_plot",
                           wavelength_interval_to_sum: list[u.Quantity] | str = "all",
                           sub_fov_window: list[u.Quantity] | str = "all",
-                          rsun: u.Quantity=1.004*astropy.constants.R_sun
+                          rsun: u.Quantity=1.004*astropy.constants.R_sun, 
+                          small_fov_value_min: float = None,
+                          small_fov_value_max: float = None,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -612,6 +614,8 @@ class PlotFunctions:
         for the given SPICE window, set the wavelength interval over which
         the sum is performed, to obtain image (X, Y) from the SPICE L2 data (X, Y, lambda).
         Default is "all" for the entire window.
+        :param small_fov_value_min: add a minimal threshold on the absolute values of the to align image
+        :param small_fov_value_max: add a maximal threshold on the absolute values of the to align image
 
         """
         if levels_percentile is None:
@@ -722,6 +726,16 @@ class PlotFunctions:
                     header_to_align = w_xy.to_header().copy()
                     data_to_align = np.array(hdul_to_align[image_to_align_window].data.copy(), dtype=float)
 
+                condition_1 = np.ones(self.data_small.shape, dtype='bool')
+                condition_2 = np.ones(self.data_small.shape, dtype='bool')
+
+                if small_fov_value_min is not None:
+                    condition_1 = np.array(np.abs(data_to_align) > small_fov_value_min, dtype='bool')
+                if small_fov_value_max is not None:
+                    condition_2 = np.array(np.abs(data_to_align) < small_fov_value_max, dtype='bool')
+                set_to_nan = np.logical_not(np.logical_or(condition_1,condition_2))
+                data_to_align[set_to_nan] = np.nan
+                
                 header_to_align["NAXIS1"] = data_to_align.shape[1]
                 header_to_align["NAXIS2"] = data_to_align.shape[0]
 
