@@ -816,6 +816,7 @@ class PlotFunctions:
                                                         "to align not Shifted"], ):
    
                             fig = plt.figure(figsize=(6, 6))
+                            header.verify('fix')
                             m = Map(data, header)
                             m.meta["rsun_ref"] = rsun
                             m_rep = m.reproject_to(w_to_align)
