@@ -342,14 +342,16 @@ class Alignment:
 
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
 
-        if reference_date is None:
-            if "DATE-AVG":
-                raise ValueError("Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
-            self.reference_date = self.hdr_large["DATE-AVG"]
-        else:
-            self.reference_date = reference_date
+
 
         if method_carrington_reprojection == "fa":
+
+            if reference_date is None:
+                if "DATE-AVG":
+                    raise ValueError("Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
+                self.reference_date = self.hdr_large["DATE-AVG"]
+            else:
+                self.reference_date = reference_date
 
             if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
 
