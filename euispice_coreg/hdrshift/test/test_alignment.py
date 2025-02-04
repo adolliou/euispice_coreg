@@ -109,7 +109,7 @@ def test_alignement_carrington():
                   small_fov_value_min=min_value,
                   small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
     corr = A.align_using_carrington(method='correlation', shape=shape, lonlims=lonlims, latlims=latlims,
-                                    reference_date=reference_date)
+                                    reference_date=reference_date,  method_carrington_reprojection="fa")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
     assert lag_crval1[max_index[0]] == 22
@@ -117,13 +117,11 @@ def test_alignement_carrington():
 
 
 # def test_alignement_minimal_header():
-#     path_eis = os.path.join(Path().absolute(), "hdrshift", "test",
-#                             "fitsfiles", "eis_20221024_024912_fe_12_195_119_calib_intensity.fits")
+#     path_eis = "./euispice_coreg/euispice_coreg/hdrshift/test/fitsfiles/eis_20221024_024912_fe_12_195_119_calib_intensity.fits"
 #     # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-#     #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+#                             # "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
 
-#     path_aia = os.path.join(Path().absolute(), "hdrshift", "test",
-#                             "fitsfiles", "AIA_193_eis_20221024_024912_fe_12_195_119_calib_intensity.fits")
+#     path_aia = "./fitsfiles/AIA_193_eis_20221024_024912_fe_12_195_119_calib_intensity.fits"
 
 #     lag_crval1 = np.arange(-10, 10, 1)
 #     lag_crval2 = np.arange(-10, 10, 1)
@@ -146,6 +144,49 @@ def test_alignement_carrington():
 
 #     assert lag_crval1[max_index[0]] == 0
 #     assert lag_crval2[max_index[1]] == 6
+
+
+
+
+def test_alignement_carrington_sunpy():
+    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
+    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
+    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
+    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+    path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
+                "-image_20220317T095045281_V01.fits")
+    path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
+                "-image_20220317T095045277_V01.fits")
+
+    parallelism = True
+
+    lag_crval1 = np.arange(20, 30, 2)
+    lag_crval2 = np.arange(5, 15, 2)
+    reference_date = "2022-03-17T09:50:45"
+    lag_solar_r = [1.004]
+
+    lag_cdelta1 = None
+    lag_cdelta2 = [0]
+
+    # lag_crota = [0.75]
+
+    lag_crota = [0.75]
+
+    min_value = 0
+    max_value = 1310
+
+    A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
+                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  parallelism=parallelism, display_progress_bar=True,
+                  small_fov_value_min=min_value,
+                  small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
+    corr = A.align_using_carrington(method='correlation', 
+                                    reference_date=reference_date,   method_carrington_reprojection="sunpy")
+    max_index = np.unravel_index(corr.argmax(), corr.shape)
+    print(f"{lag_crval1[max_index[0]]=}")
+    print(f"{lag_crval2[max_index[1]]=}")
+    assert lag_crval1[max_index[0]] == 24
+    assert lag_crval2[max_index[1]] == 7
 
 
 if __name__ == "__main__":

@@ -16,7 +16,10 @@ import warnings
 from ..utils import Util
 import os
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
-
+from sunpy.map import Map
+import astropy.constants
+from sunpy.coordinates import propagate_with_solar_surface
+from matplotlib import pyplot as plt
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 
 
@@ -95,7 +98,7 @@ class Alignment:
         self.force_crota_0 = force_crota_0
         self._large = None
         self._small = None
-
+        self.method_carrington_reprojection = None
         self.use_pcij = True
         if (lag_crota is None) and (lag_cdelta1 is None) and (lag_cdelta2 is None):
             self.use_pcij = False
@@ -289,17 +292,46 @@ class Alignment:
         else:
             raise NotImplementedError
 
-    def align_using_carrington(self, lonlims: tuple[int, int], latlims: tuple[int, int],
+    def align_using_carrington(self, lonlims: tuple[int, int]=None, latlims: tuple[int, int]=None,
                                size_deg_carrington=None, shape=None,
-                               reference_date=None, method='correlation'):
+                               reference_date=None, method='correlation', 
+                               method_carrington_reprojection = "sunpy"):
+        """_summary_
 
-        self.reference_date = reference_date
-        self.function_to_apply = self._carrington_transform
+        Args:
+            lonlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington longitude grid where 
+            all data will be reprojected before alignment (in degrees)
+            latlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington latitude grid (in degrees)
+            size_deg_carrington (_type_, optional): Tuple of length 2 The size of a carrington pixel for the grid. If set, then
+            shape is ignored. Defaults to None.
+            shape (_type_, optional): Typle of length 2. Shape of the carrington grid. Defaults to None.
+            reference_date (_type_, optional): Reference date when the carrington reprojection is performed, 
+            to take into account for the solar rotation (and differential rotation). Defaults to None.
+            method (str, optional): method to co-align to imgages. either "correlation" or "residues". Defaults to 'correlation'.
+            method_carrington_reprojection (str, optional): Method to use for the carrington reprojection. Either "fa" or "sunpy". 
+            If set to "sunpy", then no lonlims, latlims, size_deg or shape is required. 
+            Defaults to "sunpy".
+
+        Raises:
+            ValueError: If some input value is incorrect or if the reference date is not manually implemented,
+              while the  
+
+        Returns:
+            _type_: _description_
+        """
+        
         self.method = method
         self.coordinate_frame = "carrington"
-
+        self.method_carrington_reprojection = method_carrington_reprojection
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
+        if self.method_carrington_reprojection == "fa":
+            self.function_to_apply = self._carrington_transform_fa
+        elif self.method_carrington_reprojection == "sunpy":
+            self.function_to_apply = self._carrington_transform_sunpy
+        else:
+            raise ValueError("method_carrington_reprojection must be either 'fa' or 'sunpy")
+
 
         self.data_large = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
         self.hdr_large = f_large[self.large_fov_window].header.copy()
@@ -310,23 +342,32 @@ class Alignment:
 
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
 
-        if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
-
-            CRLN_OBS = self.hdr_small["CRLN_OBS"]
-            CRLT_OBS = self.hdr_small["CRLT_OBS"]
-
-            self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
-            self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
-            self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
-            print(f"{self.lonlims=}")
-
-        elif (lonlims is not None) and (latlims is not None) & (shape is not None):
-
-            self.lonlims = lonlims
-            self.latlims = latlims
-            self.shape = shape
+        if reference_date is None:
+            if "DATE-AVG":
+                raise ValueError("Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
+            self.reference_date = self.hdr_large["DATE-AVG"]
         else:
-            raise ValueError("either set lonlims as None, or not. no in between.")
+            self.reference_date = reference_date
+
+        if method_carrington_reprojection == "fa":
+
+            if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
+
+                CRLN_OBS = self.hdr_small["CRLN_OBS"]
+                CRLT_OBS = self.hdr_small["CRLT_OBS"]
+
+                self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
+                self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
+                self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
+                print(f"{self.lonlims=}")
+
+            elif (lonlims is not None) and (latlims is not None) & (shape is not None):
+
+                self.lonlims = lonlims
+                self.latlims = latlims
+                self.shape = shape
+            else:
+                raise ValueError("either set lonlims as None, or not. no in between.")
 
         # if self.use_pcij:
         self._check_ant_create_pcij_matrix(self.hdr_small)
@@ -454,8 +495,7 @@ class Alignment:
                 Processes = []
 
                 if self.coordinate_frame == "carrington":
-                    self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
-                                                             hdr=self.hdr_large)
+                    self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,hdr=self.hdr_large)
                 elif self.coordinate_frame == "helioprojective":
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
 
@@ -560,7 +600,7 @@ class Alignment:
 
         return data_correlation_cp
 
-    def _carrington_transform(self, d_solar_r, data, hdr):
+    def _carrington_transform_fa(self, d_solar_r, data, hdr):
         rate_wave_ = None
         if self.hdr_large['WAVELNTH'] not in self.rat_wave.keys():
             rate_wave_ = None
@@ -609,6 +649,49 @@ class Alignment:
                                             )
 
         return image
+
+    def _carrington_transform_sunpy(self, d_solar_r, data, hdr, data_large=None):
+        rsun = (d_solar_r * astropy.constants.R_sun).to("m").value
+
+        if Fits.HeaderDiff(hdr, self.hdr_large).identical:
+
+            map_ref = Map(data, hdr)
+            map_to_align = Map(self.data_small, self.hdr_small)
+            map_to_align.meta["rsun_ref"] = rsun
+            map_ref.meta["rsun_ref"] = rsun
+            with propagate_with_solar_surface(): 
+                map_ref_rep = map_ref.reproject_to(map_to_align.wcs)
+            image = copy.deepcopy(map_ref_rep.data)
+            self.hdr_large = copy.deepcopy(self.hdr_small)
+
+            if self.path_save_figure is not None:
+                    date_obs = hdr["DATE-OBS"]
+                    plot.PlotFunctions.simple_plot(hdr_main=hdr, data_main=data,show=False, 
+                                                  path_save=os.path.join((self.path_save_figure, f"image_large_{date_obs[:19]}")))
+                    date_obs = self.hdr_small["DATE-OBS"]
+                    plot.PlotFunctions.simple_plot(hdr_main=self.hdr_small, data_main=map_ref_rep.data,show=False, 
+                                                  path_save=os.path.join((self.path_save_figure, f"image_large_rep_{date_obs[:19]}")))
+                    
+                    map_to_align = Map(self.data_small, self.hdr_small)
+                    map_to_align.meta["rsun_ref"] = rsun
+                    with propagate_with_solar_surface(): 
+                        map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
+                    plot.PlotFunctions.simple_plot(hdr_main=hdr, data_main=map_to_align_rep.data,show=False, 
+                                                  path_save=os.path.join((self.path_save_figure, f"image_small_{date_obs[:19]}")))
+            
+        else:
+            map_to_align = Map(data, hdr)
+            map_to_align.meta["rsun_ref"] = rsun
+            hdr_large = copy.deepcopy(self.hdr_large)
+            hdr_large["RSUN_REF"] = rsun
+            w_large = WCS(hdr_large)
+            with propagate_with_solar_surface(): 
+                map_to_align_rep = map_to_align.reproject_to(w_large)
+            image = copy.deepcopy(map_to_align_rep.data)
+
+
+        return image
+
 
     def _create_submap_of_large_data(self, data_large):
         if self.path_save_figure is not None:
