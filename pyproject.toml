@@ -15,8 +15,9 @@ opencv-python = ">=4.9.0.80"
 scipy = ">=1.13.0"
 pytest = ">=8.1.1"
 multiprocess = ">=0.70.15"
-sunpy = ">=5.1.2"
+sunpy = {extras = ["visualization"], version = "^6.0.4"}
 beautifulsoup4 = ">=4.12.3"
+reproject = "^0.14.1"
 
 
 [build-system]
