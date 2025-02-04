@@ -730,10 +730,10 @@ class PlotFunctions:
                 condition_2 = np.ones(data_to_align.shape, dtype='bool')
 
                 if small_fov_value_min is not None:
-                    condition_1 = np.array(np.abs(data_to_align) > small_fov_value_min, dtype='bool')
+                    condition_1 = np.array(np.abs(data_to_align) <= small_fov_value_min, dtype='bool')
                 if small_fov_value_max is not None:
-                    condition_2 = np.array(np.abs(data_to_align) < small_fov_value_max, dtype='bool')
-                set_to_nan = np.logical_not(np.logical_or(condition_1,condition_2))
+                    condition_2 = np.array(np.abs(data_to_align) >= small_fov_value_max, dtype='bool')
+                set_to_nan = np.logical_or(condition_1,condition_2)
                 data_to_align[set_to_nan] = np.nan
                 
                 header_to_align["NAXIS1"] = data_to_align.shape[1]
