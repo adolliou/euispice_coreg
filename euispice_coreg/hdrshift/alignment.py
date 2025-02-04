@@ -668,18 +668,19 @@ class Alignment:
 
             if self.path_save_figure is not None:
                     date_obs = hdr["DATE-OBS"]
-                    plot.PlotFunctions.simple_plot(hdr_main=hdr, data_main=data,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_large_{date_obs[:19]}"))
+                    
+                    plot.PlotFunctions.simple_plot_sunpy(map_to_align,show=False, 
+                                                  path_save=os.path.join(self.path_save_figure, f"image_large_{date_obs[:19]}.pdf"))
                     date_obs = self.hdr_small["DATE-OBS"]
-                    plot.PlotFunctions.simple_plot(hdr_main=self.hdr_small, data_main=map_ref_rep.data,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_large_rep_{date_obs[:19]}"))
+                    plot.PlotFunctions.simple_plot_sunpy(map_ref,show=False, 
+                                                  path_save=os.path.join(self.path_save_figure, f"image_large_{date_obs[:19]}.pdf"))
                     
                     map_to_align = Map(self.data_small, self.hdr_small)
                     map_to_align.meta["rsun_ref"] = rsun
                     with propagate_with_solar_surface(): 
                         map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
-                    plot.PlotFunctions.simple_plot(hdr_main=hdr, data_main=map_to_align_rep.data,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_small_{date_obs[:19]}"))
+                    plot.PlotFunctions.simple_plot_sunpy(map_ref_rep,show=False, 
+                                                  path_save=os.path.join(self.path_save_figure, f"image_large_rep_{date_obs[:19]}.pdf"))
             
         else:
             map_to_align = Map(data, hdr)
