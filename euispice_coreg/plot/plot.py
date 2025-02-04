@@ -843,7 +843,8 @@ class PlotFunctions:
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
                             m.meta["rsun_ref"] = rsun
-                            m_rep = m.reproject_to(w_to_align)
+                            with propagate_with_solar_surface():
+                                m_rep = m.reproject_to(w_to_align)
                             ax = fig.add_subplot(projection=m_rep)
                             PlotFunctions.simple_plot_sunpy(m_main=m_rep, fig=fig, ax=ax, norm=norm, cmap=cmap)
                             ax.set_title(title)
