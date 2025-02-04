@@ -57,7 +57,6 @@ def test_alignement_helioprojective_noparallelism_shift():
     lag_cdelta2 = [0]
 
     lag_crota = [0.75]
-
     min_value = 0
     max_value = 1310
 

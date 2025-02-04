@@ -207,12 +207,10 @@ class PlotFunctions:
         
 
     @staticmethod
-    def simple_plot_sunpy(hdr_main, data_main, path_save=None, show=False, ax=None, fig=None, norm=None,
+    def simple_plot_sunpy(m_main: Map, path_save=None, show=False, ax=None, fig=None, norm=None,
                     show_xlabel=True, show_ylabel=True, plot_colorbar=True, cmap="plasma",  rsun = 1.004*astropy.constants.R_sun):
 
         rsun = rsun.to("m").value
-        m_main = Map(data_main, hdr_main)
-
         return_im = False
         if fig is None:
             fig = plt.figure()
@@ -230,10 +228,10 @@ class PlotFunctions:
         if show_ylabel:
             ax.set_ylabel("Solar-Y [arcsec]")
         if plot_colorbar:
-            if "BUNIT" in hdr_main:
-                fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), label=hdr_main["BUNIT"])
+            if "bunit" in m_main.meta:
+                fig.colorbar(ax=ax, mappable=plt.cm.ScalarMappable(norm=norm, cmap=cmap), label=m_main.meta["bunit"])
             else:
-                fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), )
+                fig.colorbar(ax=ax, mappable=plt.cm.ScalarMappable(norm=norm, cmap=cmap), )
         if show:
             fig.show()
         if path_save is not None:
@@ -820,9 +818,9 @@ class PlotFunctions:
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(data, header)
                             m.meta["rsun_ref"] = rsun
-                            m.reproject_to(w_to_align)
-                            ax = fig.add_subplot(reprojection=m)
-                            PlotFunctions.simple_plot_sunpy(hdr_main=m.header, data_main=m.data, fig=fig, ax=ax, )
+                            m_rep = m.reproject_to(w_to_align)
+                            ax = fig.add_subplot(projection=m_rep)
+                            PlotFunctions.simple_plot_sunpy(m_main=m_rep, fig=fig, ax=ax, )
                             ax.set_title(title)
                             pdf.savefig(fig)
     
