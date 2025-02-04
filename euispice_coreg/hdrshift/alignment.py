@@ -502,13 +502,13 @@ class Alignment:
                 elif self.coordinate_frame == "helioprojective":
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
 
-                    condition_1 = np.ones(self.data_small.shape, dtype='bool')
-                    condition_2 = np.ones(self.data_small.shape, dtype='bool')
+                condition_1 = np.ones(self.data_small.shape, dtype='bool')
+                condition_2 = np.ones(self.data_small.shape, dtype='bool')
 
-                    if self.small_fov_value_min is not None:
-                        condition_1 = np.array(np.abs(self.data_small) > self.small_fov_value_min, dtype='bool')
-                    if self.small_fov_value_max is not None:
-                        condition_2 = np.array(np.abs(self.data_small) < self.small_fov_value_max, dtype='bool')
+                if self.small_fov_value_min is not None:
+                    condition_1 = np.array(np.abs(self.data_small) > self.small_fov_value_min, dtype='bool')
+                if self.small_fov_value_max is not None:
+                    condition_2 = np.array(np.abs(self.data_small) < self.small_fov_value_max, dtype='bool')
                 set_to_nan = np.logical_not(np.logical_or(condition_1,condition_2))
                 self.data_small[set_to_nan] = np.nan
                 shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_large))
