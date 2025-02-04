@@ -235,8 +235,8 @@ class Alignment:
             is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
                                | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
                               dtype='bool')
-            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan) & (condition_1) & (condition_2)],
-                                        data_small_interp.ravel()[(~is_nan) & (condition_1) & (condition_2)],
+            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan)],
+                                        data_small_interp.ravel()[(~is_nan)],
                                         lags=lag)
             # print(f'{data_large=}')
             # l = data_small_interp.shape
@@ -252,7 +252,7 @@ class Alignment:
         elif method == 'residus':
             norm = np.sqrt(data_large.ravel())
             diff = (data_large.ravel() - data_small_interp.ravel()) / norm
-            return np.std(diff[(condition_1) & (condition_2)])
+            return np.std(diff)
         else:
             raise NotImplementedError
 
@@ -267,13 +267,6 @@ class Alignment:
 
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
 
-        condition_1 = np.ones(len(data_small_interp.ravel()), dtype='bool')
-        condition_2 = np.ones(len(data_small_interp.ravel()), dtype='bool')
-
-        if self.small_fov_value_min is not None:
-            condition_1 = np.array(data_small_interp.ravel() > self.small_fov_value_min, dtype='bool')
-        if self.small_fov_value_max is not None:
-            condition_2 = np.array(data_small_interp.ravel() < self.small_fov_value_max, dtype='bool')
 
         if method == 'correlation':
 
@@ -281,15 +274,15 @@ class Alignment:
             is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
                                | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
                               dtype='bool')
-            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan) & (condition_1) & (condition_2)],
-                                        data_small_interp.ravel()[(~is_nan) & (condition_1) & (condition_2)],
+            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan)],
+                                        data_small_interp.ravel()[(~is_nan)],
                                         lags=lag)
             return c
 
         elif method == 'residus':
             norm = np.sqrt(data_large.ravel())
             diff = (data_large.ravel() - data_small_interp.ravel()) / norm
-            return np.std(diff[(condition_1) & (condition_2)])
+            return np.std(diff)
         else:
             raise NotImplementedError
 
