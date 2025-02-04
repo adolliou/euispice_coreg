@@ -20,6 +20,7 @@ from astropy.coordinates import SkyCoord
 from matplotlib.backends.backend_pdf import PdfPages
 import astropy.constants
 from sunpy.coordinates import propagate_with_solar_surface
+from matplotlib.colors import CenteredNorm
 
 
 def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
@@ -810,18 +811,25 @@ class PlotFunctions:
                         header_to_align_ = copy.deepcopy(header_to_align)
                         header_to_align_["RSUN_REF"] = rsun
                         w_to_align = WCS(header_to_align_)
+                        
+                        
                         for data, header, title in zip([data_reference, data_to_align, data_to_align],
                                                        [header_reference, header_to_align_shifted, header_to_align],
                                                        ["Reference image", "to align image shifted",
                                                         "to align not Shifted"], ):
                             hdu = fits.PrimaryHDU(data=data, header=header)
                             hdu.verify('fix')
+                            
+                            if "TELESCOP" in header:
+                                if ("PHI" in header["TELESCOP"]) or ("HMI" in header["TELESCOP"]):
+                                    norm = CenteredNorm(0)
+                                    cmap = 'Greys'
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
                             m.meta["rsun_ref"] = rsun
                             m_rep = m.reproject_to(w_to_align)
                             ax = fig.add_subplot(projection=m_rep)
-                            PlotFunctions.simple_plot_sunpy(m_main=m_rep, fig=fig, ax=ax, )
+                            PlotFunctions.simple_plot_sunpy(m_main=m_rep, fig=fig, ax=ax, norm=norm, cmap=cmap)
                             ax.set_title(title)
                             pdf.savefig(fig)
     
