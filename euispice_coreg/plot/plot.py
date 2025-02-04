@@ -836,7 +836,9 @@ class PlotFunctions:
                             
                             if "TELESCOP" in header:
                                 if ("PHI" in header["TELESCOP"]) or ("HMI" in header["TELESCOP"]):
-                                    norm = CenteredNorm(0, halfrange=0.9*np.nanmax(np.abs(data)))
+                                    isnan = np.isnan(data)
+                                    p = np.percentile(data, 97)
+                                    norm = CenteredNorm(0, halfrange=p)
                                     cmap = 'Greys'
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
