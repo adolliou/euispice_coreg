@@ -21,8 +21,16 @@ import astropy.constants
 from sunpy.coordinates import propagate_with_solar_surface
 from matplotlib import pyplot as plt
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
+import sys
 
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
 def divide_chunks(l, n):
     # looping till length l
     for i in range(0, len(l), n):
@@ -678,7 +686,8 @@ class Alignment:
                     map_to_align = Map(self.data_small, self.hdr_small)
                     map_to_align.meta["rsun_ref"] = rsun
                     with propagate_with_solar_surface(): 
-                        map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
+                        with HiddenPrints():
+                            map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
                     plot.PlotFunctions.simple_plot_sunpy(map_ref_rep,show=False, 
                                                   path_save=os.path.join(self.path_save_figure, f"image_large_rep_{date_obs[:19]}.pdf"))
             
