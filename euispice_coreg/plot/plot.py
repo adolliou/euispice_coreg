@@ -738,9 +738,9 @@ class PlotFunctions:
                 
                 header_to_align["NAXIS1"] = data_to_align.shape[1]
                 header_to_align["NAXIS2"] = data_to_align.shape[0]
-
-                not_nan = np.isnan(data_to_align)
-                levels = [np.percentile(data_to_align[~not_nan], n) for n in levels_percentile]
+                data_to_align_ravel = data_to_align.flatten()
+                not_nan = np.logical_not(np.isnan(data_to_align_ravel))
+                levels = [np.percentile(data_to_align_ravel[not_nan], n) for n in levels_percentile]
 
                 header_to_align_shifted = header_to_align.copy()
                 AlignCommonUtil.correct_pointing_header(header=header_to_align_shifted, max_index=max_index,
