@@ -840,6 +840,9 @@ class PlotFunctions:
                                     p = np.percentile(np.abs(data[np.logical_not(isnan)]), 97)
                                     norm = CenteredNorm(0, halfrange=p)
                                     cmap = 'Greys'
+                                else:
+                                    norm = PlotFits.get_range(data, stre=None)
+                                    cmap = "viridis"
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
                             m.meta["rsun_ref"] = rsun
