@@ -833,16 +833,17 @@ class PlotFunctions:
                                                         "to align not Shifted"], ):
                             hdu = fits.PrimaryHDU(data=data, header=header)
                             hdu.verify('fix')
-                            
+                            norm = PlotFits.get_range(data, stre=None, imin=2, imax=98)
+                            cmap = "viridis"                            
                             if "TELESCOP" in header:
                                 if ("PHI" in header["TELESCOP"]) or ("HMI" in header["TELESCOP"]):
                                     isnan = np.isnan(data)
                                     p = np.percentile(np.abs(data[np.logical_not(isnan)]), 97)
                                     norm = CenteredNorm(0, halfrange=p)
                                     cmap = 'Greys'
-                                else:
-                                    norm = PlotFits.get_range(data, stre=None)
-                                    cmap = "viridis"
+                                # else:
+                                #     norm = PlotFits.get_range(data, stre=None)
+                                #     cmap = "viridis"
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
                             m.meta["rsun_ref"] = rsun
