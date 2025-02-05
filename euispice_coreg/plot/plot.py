@@ -726,8 +726,8 @@ class PlotFunctions:
                     header_to_align = w_xy.to_header().copy()
                     data_to_align = np.array(hdul_to_align[image_to_align_window].data.copy(), dtype=float)
 
-                condition_1 = np.ones(data_to_align.shape, dtype='bool')
-                condition_2 = np.ones(data_to_align.shape, dtype='bool')
+                condition_1 = np.zeros(data_to_align.shape, dtype='bool')
+                condition_2 = np.zeros(data_to_align.shape, dtype='bool')
 
                 if small_fov_value_min is not None:
                     condition_1 = np.array(np.abs(data_to_align) <= small_fov_value_min, dtype='bool')
