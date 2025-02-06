@@ -289,7 +289,7 @@ class Alignment:
     def align_using_carrington(self, lonlims: tuple[int, int]=None, latlims: tuple[int, int]=None,
                                size_deg_carrington=None, shape=None,
                                reference_date=None, method='correlation', 
-                               method_carrington_reprojection = "sunpy"):
+                               method_carrington_reprojection = "fa"):
         """_summary_
 
         Args:
@@ -304,14 +304,14 @@ class Alignment:
             method (str, optional): method to co-align to imgages. either "correlation" or "residues". Defaults to 'correlation'.
             method_carrington_reprojection (str, optional): Method to use for the carrington reprojection. Either "fa" or "sunpy". 
             If set to "sunpy", then no lonlims, latlims, size_deg or shape is required. 
-            Defaults to "sunpy".
+            Defaults to "fa".
 
         Raises:
             ValueError: If some input value is incorrect or if the reference date is not manually implemented,
               while the  
 
         Returns:
-            _type_: _description_
+            _type_: correlation matrix 
         """
         
         self.method = method
