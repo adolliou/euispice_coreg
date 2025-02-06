@@ -7,12 +7,13 @@ from ..synras import map_builder
 from . import c_correlate
 import copy
 from ..utils import Util
+from.AlignmentResults import AlignmentResults
 
 
 class AlignmentSpice(Alignment):
     def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str,
                  lag_crval1: np.array = None, lag_crval2: np.array = None,
-                 lag_cdelta1: np.array = None, lag_cdelta2: np.array = None,
+                 lag_cdelt1: np.array = None, lag_cdelt2: np.array = None,
                  lag_crota: np.array = None, lag_solar_r: np.array = None,
                  large_fov_window: int | str = -1, small_fov_window: int | str = -1,
                  parallelism: bool = False, counts_cpu_max: int = 40,
@@ -27,8 +28,8 @@ class AlignmentSpice(Alignment):
         :param lag_crval1: array of floats  (in arcsec) of shift applied to the CRVAL1 attribute
         in the SPICE Fits file header. Set to None if no shift.
         :param lag_crval2: array of floats  (in arcsec), same for CRVAL2
-        :param lag_cdelta1: array of floats (in arcsec), same for CDELT1
-        :param lag_cdelta2: array of floats (in arcsec), same for CDELT2
+        :param lag_cdelt1: array of floats (in arcsec), same for CDELT1
+        :param lag_cdelt2: array of floats (in arcsec), same for CDELT2
         :param lag_crota: array values (in degrees), same for CROTA
         :param lag_solar_r: used for carrington reprojections only. set an array if you want to change the
         radius of the sphere where the reprojection is done. by default equal to 1.004.
@@ -48,7 +49,7 @@ class AlignmentSpice(Alignment):
         [lon_min * u.arcsec, lon_max * u.arcsec, lat_min * u.arcsec, lat_max * u.arcsec].
         """
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
-                         lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
+                         lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2,
                          lag_crota=lag_crota, display_progress_bar=display_progress_bar,
                          lag_solar_r=lag_solar_r, parallelism=parallelism,
                          counts_cpu_max=counts_cpu_max,
@@ -63,7 +64,18 @@ class AlignmentSpice(Alignment):
         self.wavelength_interval_to_sum = wavelength_interval_to_sum
 
     def align_using_helioprojective(self, method='correlation', extend_pixel_size=False,
-                                    cut_from_center=None, ):
+                                    cut_from_center=None, return_type="AlignmentResults"):
+        """
+        Returns the results for the correlation algorithm in helioprojective frame
+
+        Args:
+            method (str, optional): Method to co align the data. Defaults to 'correlation'.
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+
+        Returns:
+            corr matrix or AlignmentResults depending on return_type
+        """
         self.lonlims = None
         self.latlims = None
         self.shape = None
@@ -84,11 +96,20 @@ class AlignmentSpice(Alignment):
 
         results = super()._find_best_header_parameters()
         # A
-        return results
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, unit_lag=self.unit_lag,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, 
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 
     def align_using_carrington(self, lonlims: tuple[int, int], latlims: tuple[int, int],
                                size_deg_carrington=None, shape=None,
-                               reference_date=None, method='correlation'):
+                               reference_date=None, method='correlation', 
+                               return_type="AlignmentResults"):
 
         if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
 
@@ -133,7 +154,15 @@ class AlignmentSpice(Alignment):
 
         results = super()._find_best_header_parameters()
 
-        return results
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, unit_lag=self.unit_lag,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, 
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 
     def _extract_imager_data_header(self, ):
         with fits.open(self.large_fov_known_pointing) as hdul_large:
@@ -288,12 +317,12 @@ class AlignmentSpice(Alignment):
 class AlignementSpiceIterativeContextRaster(AlignmentSpice):
     def __init__(self, large_fov_list_paths: list, small_fov_to_correct: str, threshold_time: u.Quantity,
                  lag_crval1: np.array,
-                 lag_crval2: np.array, lag_cdelta1, lag_cdelta2, lag_crota, small_fov_value_min=None,
+                 lag_crval2: np.array, lag_cdelt1, lag_cdelt2, lag_crota, small_fov_value_min=None,
                  parallelism=False, small_fov_value_max=None, counts_cpu_max=40, large_fov_window=-1,
                  small_fov_window=-1, use_tqdm=False, path_save_figure=None, ):
 
         super().__init__(large_fov_known_pointing="No_specific_path", small_fov_to_correct=small_fov_to_correct,
-                         lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
+                         lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2,
                          lag_crota=lag_crota, use_tqdm=use_tqdm,
                          lag_solar_r=None, small_fov_value_min=small_fov_value_min, parallelism=parallelism,
                          small_fov_value_max=small_fov_value_max, counts_cpu_max=counts_cpu_max,
@@ -304,17 +333,17 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
         self.small_fov_to_correct = small_fov_to_correct
         self.threshold_time = threshold_time
 
-    def _step(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
+    def _step(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str, ):
         hdr_small_shft = self.hdr_small.copy()
 
         self._shift_header(hdr_small_shft, d_crval1=d_crval1, d_crval2=d_crval2,
-                           d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2,
+                           d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2,
                            d_crota=d_crota)
         hdr_small_shft_unflattened = self.header_spice_unflattened.copy()
         Util.AlignSpiceUtil.recenter_crpix_in_header_L2(hdr_small_shft_unflattened)
 
         self._shift_header(hdr_small_shft_unflattened, d_crval1=d_crval1, d_crval2=d_crval2,
-                           d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2,
+                           d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2,
                            d_crota=d_crota)
         C = map_builder.SPICEComposedMapBuilder(path_to_spectro=self.small_fov_to_correct,
                                                 list_imager_paths=self.large_fov_list_paths,

@@ -11,7 +11,7 @@ from ..selector.selector_eui import SelectorEui
 class AlignmentSpiceSelector(AlignmentSpice):
     def __init__(self, path_to_spice_fits: str, lag_crval1: np.array, lag_crval2: np.array,
                  window_spice="Ly-gamma-CIII group (Merged)",
-                 lag_cdelta1=None, lag_cdelta2=None, lag_crota=None, small_fov_value_min=None,
+                 lag_cdelt1=None, lag_cdelt2=None, lag_crota=None, small_fov_value_min=None,
                  parallelism=False, counts_cpu_max=40,
                  small_fov_window=-1, use_tqdm=False, lag_solar_r=None, small_fov_value_max=None,
                  path_save_figure=None, threshold_time=1000 * u.s):
@@ -21,8 +21,8 @@ class AlignmentSpiceSelector(AlignmentSpice):
         :param lag_crval1:
         :param lag_crval2:
         :param window_spice:
-        :param lag_cdelta1:
-        :param lag_cdelta2:
+        :param lag_cdelt1:
+        :param lag_cdelt2:
         :param lag_crota:
         :param small_fov_value_min:
         :param parallelism:
@@ -48,7 +48,7 @@ class AlignmentSpiceSelector(AlignmentSpice):
         self.header_spice_unflattened = None
 
         super().__init__(large_fov_known_pointing="selector", small_fov_to_correct=path_to_spice_fits,
-                         lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2,
+                         lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2,
                          lag_crota=lag_crota, use_tqdm=use_tqdm,
                          lag_solar_r=lag_solar_r, small_fov_value_min=small_fov_value_min, parallelism=parallelism,
                          small_fov_value_max=small_fov_value_max, counts_cpu_max=counts_cpu_max,

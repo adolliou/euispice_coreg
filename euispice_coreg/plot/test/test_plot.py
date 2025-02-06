@@ -60,8 +60,8 @@ def param_alignment():
    return {
     "lag_crval1" : np.arange(20, 30, 2),
     "lag_crval2" : np.arange(5, 15, 2),
-    "lag_cdelta1" : None,
-    "lag_cdelta2" : [0],
+    "lag_cdelt1" : None,
+    "lag_cdelt2" : [0],
     "lag_crota" : [0.75],
     }
 
@@ -70,8 +70,8 @@ def test_plot_correlation(corr, ):
     params_alignment = {
     "lag_crval1" : np.arange(20, 30, 2),
     "lag_crval2" : np.arange(5, 15, 2),
-    "lag_cdelta1" : None,
-    "lag_cdelta2" : [0],
+    "lag_cdelt1" : None,
+    "lag_cdelt2" : [0],
     "lag_crota" : [0.75],
     }
     reference_date = "2022-03-17T09:50:45"

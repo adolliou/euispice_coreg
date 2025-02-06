@@ -15,8 +15,8 @@ def test_alignement_helioprojective_shift():
     lag_crval1 = np.arange(15, 26, 1)
     lag_crval2 = np.arange(5, 11, 1)
 
-    lag_cdelta1 = [0]
-    lag_cdelta2 = [0]
+    lag_cdelt1 = [0]
+    lag_cdelt2 = [0]
 
     lag_crota = [0.75]
 
@@ -25,11 +25,11 @@ def test_alignement_helioprojective_shift():
 
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
                   small_fov_value_max=max_value,)
 
-    corr = A.align_using_helioprojective(method='correlation')
+    corr = A.align_using_helioprojective(method='correlation', return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
     assert lag_crval1[max_index[0]] == 24
@@ -54,8 +54,8 @@ def test_alignement_carrington():
     reference_date = "2022-03-17T09:50:45"
     lag_solar_r = [1.004]
 
-    lag_cdelta1 = [0]
-    lag_cdelta2 = [0]
+    lag_cdelt1 = [0]
+    lag_cdelt2 = [0]
 
     # lag_crota = [0.75]
 
@@ -65,12 +65,12 @@ def test_alignement_carrington():
     max_value = 1310
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=parallelism, display_progress_bar=True,
                   small_fov_value_min=min_value,
                   small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
     corr = A.align_using_carrington(method='correlation', shape=shape, lonlims=lonlims, latlims=latlims,
-                                    reference_date=reference_date, method_carrington_reprojection="fa")
+                                    reference_date=reference_date, method_carrington_reprojection="fa", return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
     assert lag_crval1[max_index[0]] == 22

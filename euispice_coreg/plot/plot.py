@@ -76,9 +76,10 @@ def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
 
 class PlotFunctions:
     @staticmethod
-    def plot_correlation(corr, lag_crval1, lag_crval2, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
+    def plot_correlation(corr, lag_crval1, lag_crval2, lag_crota=None, lag_cdelt1=None, lag_cdelt2=None,
                          path_save_figure=None, fig=None, ax=None, show=False, lag_dx_label='CRVAL1 [arcsec]'
                          , lag_dy_label='CRVAL2 [arcsec]',
+                         shift: tuple=None,
                          unit='\'\'', ):
         """
 
@@ -87,13 +88,14 @@ class PlotFunctions:
         :param lag_crval1: (np.array): chosen lags for the CRVAL1 value on header. Must correspond to the correlation matrix
         :param lag_crval2: (np.array): chosen lags for the CRVAL2 value on header. Must correspond to the correlation matrix
         :param lag_crota: (np.array) (optional) chosen lags for the CROTA value on header. Must correspond to the correlation matrix
-        :param lag_cdelta1: (np.array) (optional) chosen lags for the CDELT1 value on header. Must correspond to the correlation matrix
-        :param lag_cdelta2: (np.array) (optional) chosen lags for the CDELT2 value on header. Must correspond to the correlation matrix
+        :param lag_cdelt1: (np.array) (optional) chosen lags for the CDELT1 value on header. Must correspond to the correlation matrix
+        :param lag_cdelt2: (np.array) (optional) chosen lags for the CDELT2 value on header. Must correspond to the correlation matrix
         :param path_save: (str) (optional) path to save the figure.
         :param fig: (matplotlib.figure.Figure) (optional) figure object where to plot the figure. If none, will create a new figure
         :param ax:  (matplotlib.axes.ax) (optional) ax where to plot the figure. If none, will create a new ax
         :param show: (bool) (optional) whether or not to show the figure.
         :param unit: (str) (optional) unit to use for the figure.
+        :param shift: (tuple) (optional) shift array computed for AlignmentResults
         :param lag_dy_label: label for the dy axis
         :param lag_dx_label: label for the dx axis
         """
@@ -109,6 +111,21 @@ class PlotFunctions:
         dx = lag_crval1[1] - lag_crval1[0]
         lag_dx = lag_crval1
         lag_dy = lag_crval2
+        if lag_cdelt1 is None:
+            lag_cdelt1_ = np.array([0])
+        else:
+            lag_cdelt1_ = lag_cdelt1
+        if lag_cdelt2 is None:
+            lag_cdelt2_ = np.array([0])
+        else:
+            lag_cdelt2_ = lag_cdelt2
+        if lag_crota is None:
+            lag_crota_ = np.array([0])
+        else:
+            lag_crota_ = lag_crota
+        if shift is None:
+            shift = (lag_dx[max_index[0]], lag_dy[max_index[1]], lag_cdelt1_[max_index[2]],
+                     lag_cdelt2_[max_index[3]], lag_crota_[max_index[4]])
         # norm = PowerNorm(gamma=2)
         isnan = np.isnan(corr)
         min = np.percentile(corr[~isnan], 30)
@@ -122,28 +139,28 @@ class PlotFunctions:
         rect = patches.Rectangle((lag_dx[max_index[0]] - 0.5 * dx, lag_dy[max_index[1]] - 0.5 * dy), dx, dy,
                                  edgecolor='r', linewidth=0.3, facecolor="none")
         ax.add_patch(rect)
-        ax.axhline(y=lag_dy[max_index[1]], color='r', linestyle='--', linewidth=0.5)
-        ax.axvline(x=lag_dx[max_index[0]], color='r', linestyle='--', linewidth=0.5)
-        if (lag_crota is not None) & (lag_cdelta1 is None):
+        ax.axhline(y=shift[1], color='r', linestyle='--', linewidth=0.5)
+        ax.axvline(x=shift[0], color='r', linestyle='--', linewidth=0.5)
+        if (lag_crota is not None) & (lag_cdelt1 is None):
             textstr = '\n'.join((
-                r'$dx=%.1f$ %s' % (lag_dx[max_index[0]], unit),
-                r'$dy=%.1f$ %s' % (lag_dy[max_index[1]], unit),
-                r'$drota=%.2f$ $^\circ$' % (lag_crota[max_index[4]]),
+                r'$dx=%.1f$ %s' % (shift[0], unit),
+                r'$dy=%.1f$ %s' % (shift[1], unit),
+                r'$drota=%.2f$ $^\circ$' % (shift[4]),
                 r'max_cc = %.2f' % (np.nanmax(corr))
             ))
-        elif (lag_crota is not None) & (lag_cdelta1 is not None):
+        elif (lag_crota is not None) & (lag_cdelt1 is not None):
             textstr = '\n'.join((
-                r'$dx=%.1f$ %s' % (lag_dx[max_index[0]], unit),
-                r'$dy=%.1f$ %s' % (lag_dy[max_index[1]], unit),
-                r'$drota=%.2f$ $^\circ$' % (lag_crota[max_index[4]]),
-                r'$cdelt1=%.2f$ $^\circ$' % (lag_cdelta1[max_index[2]]),
-                r'$cdelt2=%.2f$ $^\circ$' % (lag_cdelta2[max_index[3]]),
+                r'$dx=%.1f$ %s' % (shift[0], unit),
+                r'$dy=%.1f$ %s' % (shift[1], unit),
+                r'$drota=%.2f$ $^\circ$' % (shift[4]),
+                r'$cdelt1=%.2f$ $^\circ$' % (shift[2]),
+                r'$cdelt2=%.2f$ $^\circ$' % (shift[3]),
                 r'max_cc = %.2f' % (np.nanmax(corr))))
 
         else:
             textstr = '\n'.join((
-                r'$\delta CRVAL1=%.2f$ %s' % (lag_dx[max_index[0]], unit),
-                r'$\delta CRVAL2=%.2f$ %s' % (lag_dy[max_index[1]], unit),
+                r'$\delta CRVAL1=%.2f$ %s' % (shift[0], unit),
+                r'$\delta CRVAL2=%.2f$ %s' % (shift[1], unit),
                 r'max_cc = %.2f' % (np.nanmax(corr))))
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=7,
@@ -573,12 +590,13 @@ class PlotFunctions:
             return fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2
 
     @staticmethod
-    def plot_co_alignment(reference_image_path: str, image_to_align_path: str, corr: np.array,
+    def plot_co_alignment(reference_image_path: str, image_to_align_path: str,
                           reference_image_window: int | str, image_to_align_window: int | str,
+                          corr: np.array = None,
                           path_save_figure: str = None,
                           lag_crval1: np.array = None, lag_crval2: np.array = None,
-                          lag_crota: np.array = None, lag_cdelta1: np.array = None,
-                          lag_cdelta2: np.array = None,
+                          lag_crota: np.array = None, lag_cdelt1: np.array = None,
+                          lag_cdelt2: np.array = None,
                           levels_percentile: list | None = None,
                           show: bool = False,
                           type_plot: str = "compare_plot",
@@ -587,6 +605,7 @@ class PlotFunctions:
                           rsun: u.Quantity=1.004*astropy.constants.R_sun, 
                           small_fov_value_min: float = None,
                           small_fov_value_max: float = None,
+                          shift_arcsec: list = None,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -603,8 +622,8 @@ class PlotFunctions:
         :param lag_crval1: shift array for CRVAL1  [arcsec].
         :param lag_crval2: shift array for CRVAL2  [arcsec].
         :param lag_crota: shift array for CROTA [degree].
-        :param lag_cdelta1: shift array for CDELTA1  [arcsec].
-        :param lag_cdelta2: shift array for CDELTA2  [arcsec].
+        :param lag_cdelt1: shift array for cdelt1  [arcsec].
+        :param lag_cdelt2: shift array for cdelt2  [arcsec].
         :param levels_percentile: percentiles of the contours to be plotted for the to align figure.
         :param show: True to plt.show() figure.
         :param type_plot: "compare_plot" (default) or "successive_plots" or "sunpy"
@@ -616,6 +635,7 @@ class PlotFunctions:
         Default is "all" for the entire window.
         :param small_fov_value_min: add a minimal threshold on the absolute values of the to align image
         :param small_fov_value_max: add a maximal threshold on the absolute values of the to align image
+        :param shift_arcsec: param for AlignmentResults class
 
         """
         if levels_percentile is None:
@@ -628,18 +648,9 @@ class PlotFunctions:
             if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
                 use_sunpy = True
 
-        parameter_alignment = {
-            "lag_crval1": lag_crval1,
-            "lag_crval2": lag_crval2,
-            "lag_crota": lag_crota,
-            "lag_cdelta1": lag_cdelta1,
-            "lag_cdelta2": lag_cdelta2,
-
-        }
-
         # Load and prepare all the data.
-
-        max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
+        if shift_arcsec is None:
+            max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
         with fits.open(reference_image_path) as hdul_reference:
             header_reference = hdul_reference[reference_image_window].header.copy()
             data_reference = hdul_reference[reference_image_window].data.copy()
@@ -743,8 +754,37 @@ class PlotFunctions:
                 levels = [np.percentile(data_to_align_ravel[not_nan], n) for n in levels_percentile]
 
                 header_to_align_shifted = header_to_align.copy()
-                AlignCommonUtil.correct_pointing_header(header=header_to_align_shifted, max_index=max_index,
-                                                        **parameter_alignment)
+                parameter_alignment_values = None
+                if shift_arcsec is None:
+                    if lag_crval1 is None:
+                        lag_crval1 = np.array([0])
+                    if lag_crval2 is None:
+                        lag_crval2 = np.array([0])
+                    if lag_crota is None:
+                        lag_crota = np.array([0])
+                    if lag_cdelt1 is None:
+                        lag_cdelt1 = np.array([0])
+                    if lag_cdelt2 is None:
+                        lag_cdelt2 = np.array([0])
+
+                    parameter_alignment_values = {
+                        "lag_crval1": lag_crval1[max_index[0]],
+                        "lag_crval2": lag_crval2[max_index[1]],
+                        "lag_crota": lag_crota[max_index[4]],
+                        "lag_cdelt1": lag_cdelt1[max_index[2]],
+                        "lag_cdelt2": lag_cdelt2[max_index[3]],
+                    }
+                else:
+                    parameter_alignment_values = {
+                        "lag_crval1": shift_arcsec[0],
+                        "lag_crval2": shift_arcsec[1],
+                        "lag_crota": shift_arcsec[4],
+                        "lag_cdelt1": shift_arcsec[2],
+                        "lag_cdelt2": shift_arcsec[3],
+                    }
+
+                AlignCommonUtil.correct_pointing_header(header=header_to_align_shifted,
+                                                        **parameter_alignment_values)
 
                 norm = PlotFits.get_range(data=data_reference, stre=None, imin=2, imax=97)
                 longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_to_align.copy(), dsun=False)
@@ -859,7 +899,7 @@ class PlotFunctions:
     # @staticmethod
     # def plot_co_alignment_old(large_fov_window, large_fov_path: str, corr: np.array,
     #                           small_fov_window, small_fov_path: str, levels_percentile=None,
-    #                           lag_crval1=None, lag_crval2=None, lag_crota=None, lag_cdelta1=None, lag_cdelta2=None,
+    #                           lag_crval1=None, lag_crval2=None, lag_crota=None, lag_cdelt1=None, lag_cdelt2=None,
     #                           show=False, results_folder=None, cut_from_center=None, plot_all_figures=False
     #                           ):
     #     """
@@ -873,8 +913,8 @@ class PlotFunctions:
     #     :param lag_crval1: shift array for CRVAL1  [arcsec]
     #     :param lag_crval2: shift array for CRVAL2 [arcsce]
     #     :param lag_crota: shift array for CROTA [degree]
-    #     :param lag_cdelta1: shift array for CDELTA1  [arcsec]
-    #     :param lag_cdelta2: shift array for CDELTA2  [arcsec]
+    #     :param lag_cdelt1: shift array for cdelt1  [arcsec]
+    #     :param lag_cdelt2: shift array for cdelt2  [arcsec]
     #     :param show: if True, then show the figure
     #     :param results_folder: path where to save the figures
     #     :param cut_from_center: for spice only: cut the dumbells in the figure.
@@ -891,8 +931,8 @@ class PlotFunctions:
     #         "crval1": lag_crval1,
     #         "crval2": lag_crval2,
     #         "crota": lag_crota,
-    #         "cdelt1": lag_cdelta1,
-    #         "cdelt2": lag_cdelta2,
+    #         "cdelt1": lag_cdelt1,
+    #         "cdelt2": lag_cdelt2,
     #
     #     }
     #
