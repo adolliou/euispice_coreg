@@ -6,10 +6,6 @@ from pathlib import Path
 
 
 def test_alignement_helioprojective_shift():
-    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
-    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
 
     path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
                 "-image_20220317T095045281_V01.fits")
@@ -19,8 +15,8 @@ def test_alignement_helioprojective_shift():
     lag_crval1 = np.arange(15, 26, 1)
     lag_crval2 = np.arange(5, 11, 1)
 
-    lag_cdelta1 = None  #
-    lag_cdelta2 = [0]
+    lag_cdelt1 = None  #
+    lag_cdelt2 = [0]
 
     lag_crota = [0.75]
 
@@ -28,7 +24,7 @@ def test_alignement_helioprojective_shift():
     max_value = 1310
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
                   small_fov_value_max=max_value, )
 
@@ -53,15 +49,15 @@ def test_alignement_helioprojective_noparallelism_shift():
     lag_crval1 = np.arange(20, 26, 1)
     lag_crval2 = np.arange(5, 8, 1)
 
-    lag_cdelta1 = [0]
-    lag_cdelta2 = [0]
+    lag_cdelt1 = [0]
+    lag_cdelt2 = [0]
 
     lag_crota = [0.75]
     min_value = 0
     max_value = 1310
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=False, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
                   small_fov_value_max=max_value, )
 
@@ -92,8 +88,8 @@ def test_alignement_carrington():
     reference_date = "2022-03-17T09:50:45"
     lag_solar_r = [1.004]
 
-    lag_cdelta1 = None
-    lag_cdelta2 = [0]
+    lag_cdelt1 = None
+    lag_cdelt2 = [0]
 
     # lag_crota = [0.75]
 
@@ -103,7 +99,7 @@ def test_alignement_carrington():
     max_value = 1310
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=parallelism, display_progress_bar=True,
                   small_fov_value_min=min_value,
                   small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
@@ -125,8 +121,8 @@ def test_alignement_carrington():
 #     lag_crval1 = np.arange(-10, 10, 1)
 #     lag_crval2 = np.arange(-10, 10, 1)
 
-#     lag_cdelta1 = None
-#     lag_cdelta2 = None
+#     lag_cdelt1 = None
+#     lag_cdelt2 = None
 
 #     lag_crota = None
 
@@ -134,7 +130,7 @@ def test_alignement_carrington():
 #     max_value = 1310
 
 #     A = Alignment(large_fov_known_pointing=path_eis, small_fov_to_correct=path_aia, lag_crval1=lag_crval1,
-#                   lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+#                   lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
 #                   parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
 #                   small_fov_value_max=max_value,force_crota_0=True )
 
@@ -164,8 +160,8 @@ def test_alignement_carrington_sunpy():
     reference_date = "2022-03-17T09:50:45"
     lag_solar_r = [1.004]
 
-    lag_cdelta1 = None
-    lag_cdelta2 = [0]
+    lag_cdelt1 = None
+    lag_cdelt2 = [0]
 
     # lag_crota = [0.75]
 
@@ -175,7 +171,7 @@ def test_alignement_carrington_sunpy():
     max_value = 1310
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-                  lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+                  lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=parallelism, display_progress_bar=True,
                   small_fov_value_min=min_value,
                   small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )

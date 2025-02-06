@@ -65,14 +65,14 @@ folder_save_fig = "folder/where/to/save/figure" # path to the folder where to sa
 lag_crval1 = np.arange(15, 26, 1)
 lag_crval2 = np.arange(5, 11, 1)
 
-lag_cdelta1 = [0]
-lag_cdelta2 = [0]
+lag_cdelt1 = [0]
+lag_cdelt2 = [0]
 
 lag_crota = [0]
 
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-              lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+              lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
               parallelism=True, display_progress_bar=True, counts_cpu_max=20,
               )
 
@@ -84,8 +84,8 @@ parameter_alignment = {
 "lag_crval1": lag_crval1,
 "lag_crval2": lag_crval2,
 "lag_crota": lag_crota,
-"lag_cdelta1": lag_cdelta1,
-"lag_cdelta2": lag_cdelta2,
+"lag_cdelt1": lag_cdelt1,
+"lag_cdelt2": lag_cdelt2,
 
 }
 
@@ -133,13 +133,13 @@ latlims = (-20, 20)  # longitude min and max (degrees)
 shape = [2048, 2048]
 
 
-lag_cdelta1 = [0]
-lag_cdelta2 = [0]
+lag_cdelt1 = [0]
+lag_cdelt2 = [0]
 
 
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-          lag_crval2=lag_crval2, lag_cdelta1=lag_cdelta1, lag_cdelta2=lag_cdelta2, lag_crota=lag_crota,
+          lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
           parallelism=True, display_progress_bar=True,
           small_fov_window=-1, large_fov_window=-1)
 
@@ -149,8 +149,8 @@ parameter_alignment = {
 "lag_crval1": lag_crval1,
 "lag_crval2": lag_crval2,
 "lag_crota": lag_crota,
-"lag_cdelta1": lag_cdelta1,
-"lag_cdelta2": lag_cdelta2,
+"lag_cdelt1": lag_cdelt1,
+"lag_cdelt2": lag_cdelt2,
 
 }
 
@@ -219,8 +219,8 @@ param_alignment = {
     "lag_crval1": np.arange(-30, -15, 4), # lag crvals in the headers, in arcsec
     "lag_crval2": np.arange(30, 51, 4),  # in arcsec
     "lag_crota": np.array([0]), # in degrees
-    "lag_cdelta1": np.array([0]), # in arcsec
-    "lag_cdelta2": np.array([0]), # in arcsec
+    "lag_cdelt1": np.array([0]), # in arcsec
+    "lag_cdelt2": np.array([0]), # in arcsec
 }
 
 parallelism = True

@@ -22,6 +22,7 @@ from sunpy.coordinates import propagate_with_solar_surface
 from matplotlib import pyplot as plt
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
+from .AlignmentResults import AlignmentResults
 
 class HiddenPrints:
     def __enter__(self):
@@ -40,7 +41,7 @@ def divide_chunks(l, n):
 class Alignment:
 
     def __init__(self, large_fov_known_pointing: str, small_fov_to_correct: str, lag_crval1: np.array,
-                 lag_crval2: np.array, lag_cdelta1: object, lag_cdelta2: object, lag_crota: object,
+                 lag_crval2: np.array, lag_cdelt1: object, lag_cdelt2: object, lag_crota: object,
                  lag_solar_r: object = None,
                  small_fov_value_min: object = None,
                  parallelism: object = False, display_progress_bar: bool = False,
@@ -53,8 +54,8 @@ class Alignment:
         @param small_fov_to_correct: (str)  path to the fits file to align. Only the header values will be changed.
         @param lag_crval1: (arcsec) array of header CRVAL1 lags.
         @param lag_crval2: (arcsec) array of header CRVAL2 lags.
-        @param lag_cdelta1: (arcsec) array of header CDELT1 lags.
-        @param lag_cdelta2: (arcsec) array of header CDELT2 lags.
+        @param lag_cdelt1: (arcsec) array of header CDELT1 lags.
+        @param lag_cdelt2: (arcsec) array of header CDELT2 lags.
         @param lag_crota: (deg) array of header CROTA lags. the PC1_1/2 matrixes will be updated accordingly.
         @param lag_solar_r: ([1/Rsun]) set to 1.004 by default. Only needed if apply carrington transformation.
         Important: If you align PHI data, you should set it at 1.000 .
@@ -73,8 +74,8 @@ class Alignment:
         self.small_fov_to_correct = small_fov_to_correct
         self.lag_crval1 = lag_crval1
         self.lag_crval2 = lag_crval2
-        self.lag_cdelta1 = lag_cdelta1
-        self.lag_cdelta2 = lag_cdelta2
+        self.lag_cdelt1 = lag_cdelt1
+        self.lag_cdelt2 = lag_cdelt2
 
         self.lag_crota = lag_crota
         self.lag_solar_r = lag_solar_r
@@ -89,7 +90,7 @@ class Alignment:
         self.crval1_ref = None
         self.crval2_ref = None
         self.crota_ref = None
-        self.cdelta_ref = None
+        self.cdelt_ref = None
         self.data_large = None
         self.counts = counts_cpu_max
         self.data_small = None
@@ -108,7 +109,7 @@ class Alignment:
         self._small = None
         self.method_carrington_reprojection = None
         self.use_pcij = True
-        if (lag_crota is None) and (lag_cdelta1 is None) and (lag_cdelta2 is None):
+        if (lag_crota is None) and (lag_cdelt1 is None) and (lag_cdelt2 is None):
             self.use_pcij = False
 
         self._correlation = None
@@ -125,8 +126,8 @@ class Alignment:
                 # import sunpy.map
         self.use_sunpy = use_sunpy
         # set None values to np.array([0]) lags.
-        for lag_name, lag_value in zip(["lag_crval1", "lag_crval2", "lag_crota", "lag_cdelta1", "lag_cdelta2"],
-                                       [lag_crval1, lag_crval2, lag_crota, lag_cdelta1, lag_cdelta2]):
+        for lag_name, lag_value in zip(["lag_crval1", "lag_crval2", "lag_crota", "lag_cdelt1", "lag_cdelt2"],
+                                       [lag_crval1, lag_crval2, lag_crota, lag_cdelt1, lag_cdelt2]):
             if lag_value is None:
                 self.__setattr__(lag_name, np.array([0.0]))
 
@@ -148,18 +149,18 @@ class Alignment:
                                 + u.Quantity(kwargs["d_crval2"], self.unit_lag).to(hdr["CUNIT2"]).value
         change_pcij = False
 
-        if ('d_cdelta1' in kwargs.keys()):
-            if kwargs["d_cdelta1"] != 0.0:
+        if ('d_cdelt1' in kwargs.keys()):
+            if kwargs["d_cdelt1"] != 0.0:
                 change_pcij = True
-                cdelt1 = (u.Quantity(self.cdelta1_ref, self.unit_lag)
-                          + u.Quantity(kwargs["d_cdelta1"], self.unit_lag))
+                cdelt1 = (u.Quantity(self.cdelt1_ref, self.unit_lag)
+                          + u.Quantity(kwargs["d_cdelt1"], self.unit_lag))
                 hdr['CDELT1'] = cdelt1.to(hdr["CUNIT1"]).value
-        if 'd_cdelta2' in kwargs.keys():
-            if kwargs["d_cdelta2"] != 0.0:
+        if 'd_cdelt2' in kwargs.keys():
+            if kwargs["d_cdelt2"] != 0.0:
                 change_pcij = True
 
-                cdelt2 = (u.Quantity(self.cdelta2_ref, self.unit_lag)
-                          + u.Quantity(kwargs["d_cdelta2"], self.unit_lag))
+                cdelt2 = (u.Quantity(self.cdelt2_ref, self.unit_lag)
+                          + u.Quantity(kwargs["d_cdelt2"], self.unit_lag))
                 hdr['CDELT2'] = cdelt2.to(hdr["CUNIT2"]).value
         if 'd_crota' in kwargs.keys():
             if kwargs["d_crota"] != 0.0:
@@ -190,14 +191,14 @@ class Alignment:
             hdr["PC1_2"] = - lam * np.sin(rho)
             hdr["PC2_1"] = (1 / lam) * np.sin(rho)
 
-    def _iteration_step_along_crval2(self, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str,
+    def _iteration_step_along_crval2(self, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str,
                                      position: tuple, lock=None):
 
         results = np.zeros(len(self.lag_crval2), dtype=np.float64)
         if self.display_progress_bar:
             for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
                 results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
-                                         d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
+                                         d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2, d_crota=d_crota,
                                          method=method, d_solar_r=d_solar_r,
                                          )
 
@@ -205,7 +206,7 @@ class Alignment:
 
             for ii, d_crval2 in enumerate(self.lag_crval2):
                 results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
-                                         d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2, d_crota=d_crota,
+                                         d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2, d_crota=d_crota,
                                          method=method, d_solar_r=d_solar_r,
                                          )
 
@@ -215,14 +216,14 @@ class Alignment:
         lock.release()
         shmm_correlation.close()
 
-    def _step(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
+    def _step(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str, ):
 
         shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
         shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
 
         hdr_small_shft = self.hdr_small.copy()
         self._shift_header(hdr_small_shft, d_crval1=d_crval1, d_crval2=d_crval2,
-                           d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2,
+                           d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2,
                            d_crota=d_crota)
 
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
@@ -256,13 +257,13 @@ class Alignment:
         else:
             raise NotImplementedError
 
-    def _step_no_shmm(self, d_crval2, d_crval1, d_cdelta1, d_cdelta2, d_crota, d_solar_r, method: str, ):
+    def _step_no_shmm(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str, ):
 
         data_small = self.data_small.copy()
         data_large = self.data_large
         hdr_small_shft = self.hdr_small.copy()
         self._shift_header(hdr_small_shft, d_crval1=d_crval1, d_crval2=d_crval2,
-                           d_cdelta1=d_cdelta1, d_cdelta2=d_cdelta2,
+                           d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2,
                            d_crota=d_crota)
 
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
@@ -374,8 +375,19 @@ class Alignment:
         results = self._find_best_header_parameters()
         return results
 
-    def align_using_helioprojective(self, method='correlation', correct_shift_solar_rotation=False):
+    def align_using_helioprojective(self, method='correlation', 
+                                    return_type = 'corr'):
+        """
+        Returns the results for the correlation algorithm in helioprojective frame
 
+        Args:
+            method (str, optional): Method to co align the data. Defaults to 'correlation'.
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'corr'.
+
+        Returns:
+            _type_: _description_
+        """
         self.lonlims = None
         self.latlims = None
         self.shape = None
@@ -404,8 +416,15 @@ class Alignment:
         f_small.close()
 
         results = self._find_best_header_parameters()
-
-        return results
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, 
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, 
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 
     def _check_ant_create_pcij_matrix(self, hdr):
         if ("PC1_1" not in hdr):
@@ -455,8 +474,8 @@ class Alignment:
             self.crota_ref = np.rad2deg(np.arccos(self.hdr_small['PC1_1'])) * s
             self.hdr_small["CROTA"] = np.rad2deg(np.arccos(self.hdr_small['PC1_1']))
             # self.use_crota = False
-        self.cdelta1_ref = self.hdr_small['CDELT1']
-        self.cdelta2_ref = self.hdr_small['CDELT2']
+        self.cdelt1_ref = self.hdr_small['CDELT1']
+        self.cdelt2_ref = self.hdr_small['CDELT2']
 
         self.unit1 = self.hdr_small["CUNIT1"]
         self.unit2 = self.hdr_small["CUNIT2"]
@@ -468,19 +487,19 @@ class Alignment:
             warnings.warn("Units of headers in deg: Modyfying inputs units to deg.")
             self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1, "arcsec")).to("deg").value
             self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2, "arcsec")).to("deg").value
-            self.lag_cdelta1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelta1, "arcsec")).to("deg").value
-            self.lag_cdelta2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelta2, "arcsec")).to("deg").value
+            self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1, "arcsec")).to("deg").value
+            self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2, "arcsec")).to("deg").value
             self.unit_lag = "deg"
         if self.lag_solar_r is None:
             self.lag_solar_r = np.array([1.004])
 
-        for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelta1, self.lag_cdelta2, self.lag_crota]:
+        for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelt1, self.lag_cdelt2, self.lag_crota]:
             if lag is None:
                 lag = np.array([0])
 
         if self.parallelism:
             results = np.zeros(
-                (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
+                (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelt1), len(self.lag_cdelt2),
                  len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
 
             shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
@@ -512,14 +531,14 @@ class Alignment:
                 self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
                 del self.data_small
 
-                for ii, d_cdelta1 in enumerate(self.lag_cdelta1):
-                    for ll, d_cdelta2 in enumerate(self.lag_cdelta2):
+                for ii, d_cdelt1 in enumerate(self.lag_cdelt1):
+                    for ll, d_cdelt2 in enumerate(self.lag_cdelt2):
                         for jj, d_crota in enumerate(self.lag_crota):
                             for ff, d_crval1 in enumerate(self.lag_crval1):
                                 kwargs = {
                                     "d_crval1": d_crval1,
-                                    "d_cdelta1": d_cdelta1,
-                                    "d_cdelta2": d_cdelta2,
+                                    "d_cdelt1": d_cdelt1,
+                                    "d_cdelt2": d_cdelt2,
                                     "d_crota": d_crota,
                                     "d_solar_r": d_solar_r,
                                     "method": self.method,
@@ -569,7 +588,7 @@ class Alignment:
             shmm_correlation.unlink()
         else:
             data_correlation_cp = np.zeros(
-                (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelta1), len(self.lag_cdelta2),
+                (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelt1), len(self.lag_cdelt2),
                  len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
             for hh, d_solar_r in enumerate(self.lag_solar_r):
                 if self.coordinate_frame == "carrington":
@@ -590,13 +609,13 @@ class Alignment:
                 # shmm_small.close()
                 for ii, d_crval1 in enumerate(self.lag_crval1):
                     for jj, d_crval2 in enumerate(tqdm(self.lag_crval2)):
-                        for kk, d_cdelta1 in enumerate(self.lag_cdelta1):
-                            for mm, d_cdelta2 in enumerate(self.lag_cdelta2):
+                        for kk, d_cdelt1 in enumerate(self.lag_cdelt1):
+                            for mm, d_cdelt2 in enumerate(self.lag_cdelt2):
                                 for ll, d_crota in enumerate(self.lag_crota):
                                     data_correlation_cp[ii, jj, kk, mm, ll, hh] = self._step_no_shmm(d_crval2=d_crval2,
                                                                                                      d_crval1=d_crval1,
-                                                                                                     d_cdelta1=d_cdelta1,
-                                                                                                     d_cdelta2=d_cdelta2,
+                                                                                                     d_cdelt1=d_cdelt1,
+                                                                                                     d_cdelt2=d_cdelt2,
                                                                                                      d_crota=d_crota,
                                                                                                      method=self.method,
                                                                                                      d_solar_r=d_solar_r,

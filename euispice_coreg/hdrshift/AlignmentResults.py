@@ -1,16 +1,115 @@
+import numpy as np
+from ..plot.plot import PlotFunctions, PlotFits
+from ..utils.Util import AlignCommonUtil
+import warnings
+from scipy.optimize import curve_fit
+from astropy.io import fits
 
+
+# from https://stackoverflow.com/questions/21566379/fitting-a-2d-gaussian-function-using-scipy-optimize-curve-fit-valueerror-and-m
+def twoD_Gaussian(xy, amplitude, xo, yo, sigma_x, sigma_y, offset):
+    x, y = xy
+    x0 = float(xo)
+    y0 = float(yo)    
+
+    g = offset + amplitude*np.exp( - ( (((x - x0)**2)/(2 * sigma_x**2)) + (((y - y0)**2)/(2 * sigma_y**2)) ))
+    return g.ravel()
 
 class AlignmentResults:
 
-    def __init__(self):
-        raise NotImplementedError
+    def __init__(self,
+                 corr: np.array,
+                 lag_crval1: np.array, lag_crval2: np.array, 
+                 lag_cdelt1: np.array, lag_cdelt2: np.array, 
+                 lag_crota: np.array, 
+                 image_to_align_path: str=None, image_to_align_window=None, 
+                 reference_image_path: str=None, reference_image_window: int=None):
+        """
+        Initialize a AlignmentResults class, that simplyfies the treatment of the correlation results
+        resulting from the Alignment class
+        Args:
+            corr (np.array): correlation matrix
+            lag_crval1 (np.array): lag values in CRVAL1 header
+            lag_crval2 (np.array): lag values in CRVAL2 header
+            lag_cdelt1 (np.array): lag values in CDELT1 header
+            lag_cdelt2 (np.array): lag values in CDELT2 header
+            lag_crota (np.array): lag values in CROTA header
+            image_to_align_path (str, optional): Path to the image to align FITS file. Defaults to None.
+            image_to_align_window (_type_, optional): window to use for the to align FITS Hdulist. Defaults to None.
+            reference_image_path (str, optional): Path to the reference image FITS file with known pointing. Defaults to None.
+            reference_image_window (int, optional):  window to use for the reference FITS Hdulist. Defaults to None.
+        """        
+        
+        self.corr = corr
+        self.parameters_alignment = {
+            "lag_crval1": lag_crval1, 
+            "lag_crval2": lag_crval2,
+            "lag_cdelt1": lag_cdelt1,
+            "lag_cdelt2": lag_cdelt2, 
+            "lag_crota": lag_crota,
+        }
+        self.max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
+        
+        self.image_to_align_path = image_to_align_path
+        self.image_to_align_window = image_to_align_window
+        self.reference_image_path = reference_image_path
+        self.reference_image_window = reference_image_window
+        
+        self.shift = None
+        self._compute_shift()
 
-    def plot(self):
-        raise NotImplementedError
+    
+    def plot_correlation(self, path_save_figure: str = None, show=False, fig=None, ax=None):
+        """
+        Plot the correlation matrix. Calls the PlotFunctions.plot_correlation function from util.py
 
-    def savefits(self, filename: str):
-        # save  co-aligned fits
-        raise NotImplementedError
+        Args:
+            path_save_figure (str, optional): path where to save the figure. It is adviced that it ends with ".pdf". Defaults to None.
+            show (bool, optional): set True if you want to interactively show the plots. Defaults to False.
+            fig (_type_, optional): set a plt.figure object. Defaults to None.
+            ax (_type_, optional): set a Axes object. Defaults to None.
+
+        Returns:
+            _type_: returns the results from PlotFunctions.plot_correlation.
+        """        
+        return PlotFunctions.plot_correlation(corr=self.corr, 
+                                              show=show, path_save_figure=path_save_figure, 
+                                              fig=fig, ax=ax, shift=self.shift,
+                                              **self.parameters_alignment)
+
+    def write_corrected_fits(self, window_list_to_apply_shift: list, 
+                 path_to_l3_output: str,
+                 path_to_l2_input: str=None ):
+        """
+        Save the FITS with the corrected metadata in their headers. The hdu.data arrays are not changed, only the header values.
+        It is adviced to call this method instead of manually changing the header values.
+
+        Args:
+            window_list_to_apply_shift (list): windows of the HDULIST where correction to the header values will be applied
+            path_to_l3_output (str): path where the new corrected FITS will be saved.
+            path_to_l2_input (str, optional): path where the initial L2 uncorrected FITS file is. If None, Then take the  
+            image_to_align_path attribute of the class.
+            . Defaults to None.
+        """        
+        if path_to_l2_input is None:
+            if self.image_to_align_path is None:
+                raise ValueError("Please provide a path_to_l2_input parameter")
+            path_to_l2_input = self.image_to_align_path
+
+        with fits.open(path_to_l2_input) as hdul:
+            for window in window_list_to_apply_shift:
+                header = hdul[window].header
+                AlignCommonUtil.correct_pointing_header(header,
+                                                        lag_crval1=self.shift[0],
+                                                        lag_crval2=self.shift[1], 
+                                                        lag_cdelt1=self.shift[2], 
+                                                        lag_cdelt2=self.shift[3], 
+                                                        lag_crota = self.shift[4]
+                                                        )
+
+            hdul.writeto(path_to_l3_output, overwrite=True)
+            hdul.close()
+
 
     def savefig(self, filename: str):
         raise NotImplementedError
@@ -19,6 +118,67 @@ class AlignmentResults:
         # yaml with the correlation values
         raise NotImplementedError
 
-    def return_shift(self):
+    def _compute_shift(self, method="fitting_gaussian"):
+        
         # return the shift values after 3d polynomial computation.
-        raise NotImplementedError
+        corr2d = self.corr[:, :, self.max_index[2], self.max_index[3], self.max_index[4]]
+        p = [(self.max_index[0], self.max_index[1])]
+        px = [self.max_index[0]]
+        py = [self.max_index[1]]
+        # Find points around the maximum
+        lenx = corr2d.shape[0]
+        leny = corr2d.shape[1]
+        for ii, jj in zip([1, 1, -1, -1, 
+                           2, 2, -2, -2,
+                           1, 1, -1, -1,
+                           2, 2, -2, -2,],
+                          [1, -1, 1, -1, 
+                           2, -2, 2, -2,
+                           2, -2, 2, -2,
+                           1, -1, 1, -1,]):
+            x = self.max_index[0] + ii
+            y = self.max_index[1] + jj
+            if (x != -1) and (x < lenx) and (y != -1) and (y < leny):
+                p.append((x, y))
+                px.append(x)
+                py.append(y)
+        if method == "fitting_gaussian": 
+            if len(p) < 4:
+                warnings.warn(" Cannot compute shift with Gaussian fitting: not enough points")
+                self.shift = (self.max_index[0], self.max_index[1], self.max_index[2], self.max_index[3], self.max_index[4])
+                return None
+                  
+            A = (px, py)
+            B = corr2d[px, py].ravel()
+            
+            p0 = (np.float64(corr2d[self.max_index[0], self.max_index[1]][0]),
+                  np.float64(self.max_index[0]),
+                  np.float64(self.max_index[1]),
+                  np.float64(1), np.float64(1), np.float64(0.9))
+            bounds = (
+                [np.float64(0),  np.float64(self.max_index[0] - 5),  np.float64(self.max_index[1] - 5), 
+                 np.float64(0)    ,  np.float64(0)     ,   np.float64(-10)],
+                [ np.float64(10),  np.float64(self.max_index[0] + 5),  np.float64(self.max_index[1] + 5), 
+                 np.float64(1000) ,  np.float64(1000)  ,  np.float64(10)]
+                )
+            try:
+                popt, pcov = curve_fit(f= twoD_Gaussian,xdata=A,ydata=B,p0=p0, bounds=bounds)
+                self.shift = (popt[1], popt[2], self.max_index[2], self.max_index[3], self.max_index[4])
+                return self.shift
+            except ValueError:
+                warnings.warn("Gaussian fitting failed, setting shift params as the pixel of the maximal correlation")
+                self.shift = (self.max_index[0], self.max_index[1], self.max_index[2], self.max_index[3], self.max_index[4])
+                return None
+        elif method == "poly2d":
+            A = np.array([1, px, py, px**2, py**2, px*py]).T
+            B = corr2d[px, py]
+            coeff, r, rank, s = np.linalg.lstsq(A, B)
+            # But then I need to compute the maximum from the polynom points.
+            # I dont know how to do that
+            raise NotImplementedError      
+        
+    def __repr__(self):
+        print(f"\n Shift : \n x = {self.shift[0]} \n y = {self.shift[1]} \n dx = {self.shift[2]} \n dy = {self.shift[3]} \n dcrot = {self.shift[4]}")
+    
+    def __str__(self):
+        return f"\n Shift : \n x = {self.shift[0]} \n y = {self.shift[1]} \n dx = {self.shift[2]} \n dy = {self.shift[3]} \n dcrot = {self.shift[4]}"

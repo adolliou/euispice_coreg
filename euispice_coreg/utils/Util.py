@@ -98,20 +98,25 @@ class AlignCommonUtil:
     @staticmethod
     def write_corrected_fits(path_l2_input: str, window_list, path_l3_output: str, corr: np.array,
                              lag_crval1=None, lag_crval2=None, lag_crota=None,
-                             lag_cdelta1=None, lag_cdelta2=None,
+                             lag_cdelt1=None, lag_cdelt2=None,
                              ):
         max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
         with fits.open(path_l2_input) as hdul:
             for window in window_list:
                 header = hdul[window].header
-                AlignCommonUtil.correct_pointing_header(header, lag_cdelta1, lag_cdelta2, lag_crota, lag_crval1,
-                                                        lag_crval2, max_index)
+                AlignCommonUtil.correct_pointing_header(header,
+                                                        lag_crval1=lag_crval1[max_index[0]],
+                                                        lag_crval2=lag_crval2[max_index[1]], 
+                                                        lag_cdelt1=lag_cdelt1[max_index[2]], 
+                                                        lag_cdelt2=lag_cdelt2[max_index[3]], 
+                                                        lag_crota = lag_crota[max_index[4]]
+                                                        )
 
             hdul.writeto(path_l3_output, overwrite=True)
             hdul.close()
 
     @staticmethod
-    def correct_pointing_header(header, lag_cdelta1, lag_cdelta2, lag_crota, lag_crval1, lag_crval2, max_index):
+    def correct_pointing_header(header, lag_cdelt1, lag_cdelt2, lag_crota, lag_crval1, lag_crval2):
         AlignCommonUtil._check_and_create_pcij_crota_hdr(header)
         if header["PC1_1"] > 1.0:
             warnings.warn(f'{header["PC1_1"]=}, set it to 1.0')
@@ -123,12 +128,11 @@ class AlignCommonUtil:
         change_pcij = False
         if lag_crval1 is not None:
             header['CRVAL1'] = header['CRVAL1'
-                               ] + u.Quantity(lag_crval1[max_index[0]], "arcsec").to(
+                               ] + u.Quantity(lag_crval1, "arcsec").to(
                 header['CUNIT1']).value
         if lag_crval2 is not None:
             header['CRVAL2'] = header['CRVAL2'
-                               ] + u.Quantity(lag_crval2[max_index[1]],
-                                              "arcsec").to(
+                               ] + u.Quantity(lag_crval2,"arcsec").to(
                 header['CUNIT2']).value
         key_rota = None
         if "CROTA" in header:
@@ -143,20 +147,18 @@ class AlignCommonUtil:
             s = - np.sign(header["PC1_2"]) + (header["PC1_2"] == 0.0)
             crota = crota * s
         if lag_crota is not None:
-            crota += lag_crota[max_index[4]]
+            crota += lag_crota
             if key_rota is not None:
                 header[key_rota] = crota
             change_pcij = True
-        if lag_cdelta1 is not None:
+        if lag_cdelt1 is not None:
             header['CDELT1'] = header['CDELT1'] + u.Quantity(
-                lag_cdelta1[max_index[2]],
-                "arcsec").to(
+                lag_cdelt1, "arcsec").to(
                 header['CUNIT1']).value
             change_pcij = True
-        if lag_cdelta2 is not None:
+        if lag_cdelt2 is not None:
             header['CDELT2'] = header['CDELT2'] + u.Quantity(
-                lag_cdelta2[max_index[3]],
-                "arcsec").to(
+                lag_cdelt2, "arcsec").to(
                 header['CUNIT2']).value
             change_pcij = True
         if change_pcij:
@@ -170,7 +172,7 @@ class AlignCommonUtil:
     # @staticmethod
     # def write_corrected_fits(path_l2_input: str, window_list, path_l3_output: str, corr: np.array,
     #                          lag_crval1=None, lag_crval2=None, lag_crota=None,
-    #                          lag_cdelta1=None, lag_cdelta2=None,
+    #                          lag_cdelt1=None, lag_cdelt2=None,
     #                          ):
     #     max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
     #     with fits.open(path_l2_input) as hdul:
@@ -215,16 +217,16 @@ class AlignCommonUtil:
     #                     hdul[window].header[key_rota] = crota
     #                 change_pcij = True
     #
-    #             if lag_cdelta1 is not None:
+    #             if lag_cdelt1 is not None:
     #                 hdul[window].header['CDELT1'] = hdul[window].header['CDELT1'] + u.Quantity(
-    #                     lag_cdelta1[max_index[2]],
+    #                     lag_cdelt1[max_index[2]],
     #                     "arcsec").to(
     #                     hdul[window].header['CUNIT1']).value
     #                 change_pcij = True
     #
-    #             if lag_cdelta2 is not None:
+    #             if lag_cdelt2 is not None:
     #                 hdul[window].header['CDELT2'] = hdul[window].header['CDELT2'] + u.Quantity(
-    #                     lag_cdelta2[max_index[3]],
+    #                     lag_cdelt2[max_index[3]],
     #                     "arcsec").to(
     #                     hdul[window].header['CUNIT2']).value
     #                 change_pcij = True
@@ -383,7 +385,7 @@ class AlignEUIUtil:
     # @staticmethod
     # def write_corrected_fits(path_eui_l2_input: str, window_eui, path_eui_l2_output: str, corr: np.array,
     #                          lag_crval1=None, lag_crval2=None, lag_crota=None,
-    #                          lag_cdelta1=None, lag_cdelta2=None,
+    #                          lag_cdelt1=None, lag_cdelt2=None,
     #                          ):
     #     raise DeprecationWarning
     #
@@ -416,16 +418,16 @@ class AlignEUIUtil:
     #                 hdul[window_eui].header[key_rota] = crota
     #             change_pcij = True
     #
-    #         if lag_cdelta1 is not None:
+    #         if lag_cdelt1 is not None:
     #             hdul[window_eui].header['CDELT1'] = hdul[window_eui].header['CDELT1'] + u.Quantity(
-    #                 lag_cdelta1[max_index[2]],
+    #                 lag_cdelt1[max_index[2]],
     #                 "arcsec").to(
     #                 hdul[window_eui].header['CUNIT1']).value
     #             change_pcij = True
     #
-    #         if lag_cdelta2 is not None:
+    #         if lag_cdelt2 is not None:
     #             hdul[window_eui].header['CDELT2'] = hdul[window_eui].header['CDELT2'] + u.Quantity(
-    #                 lag_cdelta2[max_index[3]],
+    #                 lag_cdelt2[max_index[3]],
     #                 "arcsec").to(
     #                 hdul[window_eui].header['CUNIT2']).value
     #             change_pcij = True
@@ -632,7 +634,7 @@ class AlignSpiceUtil:
     # @staticmethod
     # def write_corrected_fits(path_spice_l2_input: str, window_spice_list, path_spice_l2_output: str, corr: np.array,
     #                          lag_crval1=None, lag_crval2=None, lag_crota=None,
-    #                          lag_cdelta1=None, lag_cdelta2=None,
+    #                          lag_cdelt1=None, lag_cdelt2=None,
     #                          ):
     #
     #     max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
@@ -665,16 +667,16 @@ class AlignSpiceUtil:
     #                     hdul[window_spice].header[key_rota] = crota
     #                 change_pcij = True
     #
-    #             if lag_cdelta1 is not None:
+    #             if lag_cdelt1 is not None:
     #                 hdul[window_spice].header['CDELT1'] = hdul[window_spice].header['CDELT1'] + u.Quantity(
-    #                     lag_cdelta1[max_index[2]],
+    #                     lag_cdelt1[max_index[2]],
     #                     "arcsec").to(
     #                     hdul[window_spice].header['CUNIT1']).value
     #                 change_pcij = True
     #
-    #             if lag_cdelta2 is not None:
+    #             if lag_cdelt2 is not None:
     #                 hdul[window_spice].header['CDELT2'] = hdul[window_spice].header['CDELT2'] + u.Quantity(
-    #                     lag_cdelta2[max_index[3]],
+    #                     lag_cdelt2[max_index[3]],
     #                     "arcsec").to(
     #                     hdul[window_spice].header['CUNIT2']).value
     #                 change_pcij = True
