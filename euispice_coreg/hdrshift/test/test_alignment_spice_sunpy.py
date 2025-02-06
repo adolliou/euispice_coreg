@@ -38,3 +38,14 @@ def test_alignement_helioprojective_spice():
 
     assert np.abs(results.shift_arcsec[0] + 22.736789342637366) < 1.0E-3
     assert np.abs(results.shift_arcsec[1] - 36.198098608759494) < 1.0E-3
+    windows_spice = ["Mg IX 706 - Peak", # The windows where the pointing will be corrected. It is adviced to correct the shift in all of the spectral windows. 
+            "Ne VIII 770 - Peak",
+            "S V 786 / O IV 787 - Peak",
+            "Ly-gamma-CIII group (Merged)",
+            "LyB- FeX group (Merged)",
+            "O VI 1032 - Peak"]
+    path_save_fits = "./euispice_coreg/hdrshift/test/test_SPICE.fits"
+    path_save_folder = "./euispice_coreg/hdrshift/test"
+    results.write_corrected_fits(windows_spice, path_to_l3_output=path_save_fits)
+    results.plot_correlation(path_save_figure=os.path.join(path_save_folder, "correlation_results.png"))
+    results.plot_co_alignment(path_save_figure=os.path.join(path_save_folder, "co_alignment_results.png"))

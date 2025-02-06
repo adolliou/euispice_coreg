@@ -198,7 +198,7 @@ A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small
                    **param_alignment)
 
 results = A.align_using_helioprojective(method='correlation')
-results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
+results.write_corrected_fits(windows_spice, path_to_l3_output=path_save_fits)
 results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"), show=True)
 results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), levels_percentile=[80, 90],  show=True)
 
