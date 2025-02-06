@@ -29,7 +29,7 @@ def test_alignement_helioprojective_shift():
                   parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
                   small_fov_value_max=max_value,)
 
-    corr = A.align_using_helioprojective(method='correlation')
+    corr = A.align_using_helioprojective(method='correlation', return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
     assert lag_crval1[max_index[0]] == 24
@@ -70,7 +70,7 @@ def test_alignement_carrington():
                   small_fov_value_min=min_value,
                   small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
     corr = A.align_using_carrington(method='correlation', shape=shape, lonlims=lonlims, latlims=latlims,
-                                    reference_date=reference_date, method_carrington_reprojection="fa")
+                                    reference_date=reference_date, method_carrington_reprojection="fa", return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
     assert lag_crval1[max_index[0]] == 22

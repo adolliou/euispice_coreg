@@ -48,9 +48,7 @@ Here, we co-register an HRIEUV image with an FSI 174 image. We start using Helio
 
 ```python
 import numpy as np
-from euispice_coreg.hdrshift.alignment import Alignment
-from euispice_coreg.plot.plot import PlotFunctions
-from euispice_coreg.utils.Util import AlignCommonUtil
+from euispice_coreg import Alignment
 import os
 
 path_hri = "path/to/HRIEUV.fits" # path to the HRI FITS file. It must end with a ".fits"
@@ -69,36 +67,20 @@ lag_cdelt1 = [0]
 lag_cdelt2 = [0]
 
 lag_crota = [0]
-
+windows = [-1]
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
               lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
               parallelism=True, display_progress_bar=True, counts_cpu_max=20,
               )
 
-corr = A.align_using_helioprojective(method='correlation')
-max_index = np.unravel_index(corr.argmax(), corr.shape)
+results = A.align_using_helioprojective(method='correlation')
+
+results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
+results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
+results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
 
 
-parameter_alignment = {
-"lag_crval1": lag_crval1,
-"lag_crval2": lag_crval2,
-"lag_crota": lag_crota,
-"lag_cdelt1": lag_cdelt1,
-"lag_cdelt2": lag_cdelt2,
-
-}
-
-PlotFunctions.plot_correlation(corr,  show=True,
-                           path_save_figure=os.path.join(folder_save_fig, "correlation.pdf"), **parameter_alignment)
-PlotFunctions.plot_co_alignment(image_to_align_window=-1, reference_image_window=-1, corr=corr, show=True,
-                            image_to_align_path=path_hri, reference_image_path=path_fsi,
-                            path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), 
-                                levels_percentile=[95],
-                            **parameter_alignment)
-AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
-                                 path_l3_output=path_save_fits, corr=corr,
-                                 **parameter_alignment)
 
 ```
 
@@ -108,10 +90,8 @@ You can also co-register HRIEUV fits files with FSI 174 images within a common C
 
 ```python
 import os.path
-from euispice_coreg.hdrshift.alignment import Alignment
+from euispice_coreg import Alignment
 import numpy as np
-from euispice_coreg.plot.plot import PlotFunctions
-from euispice_coreg.utils.Util import AlignCommonUtil
 
 
 path_fsi = "path/to/FSI174.fits"
@@ -136,34 +116,20 @@ shape = [2048, 2048]
 lag_cdelt1 = [0]
 lag_cdelt2 = [0]
 
-
+windows = [-1]
 
 A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
           lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
           parallelism=True, display_progress_bar=True,
           small_fov_window=-1, large_fov_window=-1)
 
-corr = A.align_using_carrington(method='correlation', lonlims=lonlims, latlims=latlims, shape=shape)
+results = A.align_using_carrington(method='correlation', lonlims=lonlims, latlims=latlims, shape=shape)
 
-parameter_alignment = {
-"lag_crval1": lag_crval1,
-"lag_crval2": lag_crval2,
-"lag_crota": lag_crota,
-"lag_cdelt1": lag_cdelt1,
-"lag_cdelt2": lag_cdelt2,
 
-}
+results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
+results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
+results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
 
-PlotFunctions.plot_correlation(corr, show=True,
-                           path_save_figure=os.path.join(folder_save_fig, "correlation.pdf"), **parameter_alignment)
-PlotFunctions.plot_co_alignment(reference_image_window=-1, image_to_align_window=-1, corr=corr,
-                            image_to_align_path=path_hri, reference_image_path=path_fsi, 
-                            path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"),
-                                levels_percentile=[95],
-                            **parameter_alignment)
-AlignCommonUtil.write_corrected_fits(path_l2_input=path_hri, window_list=[-1],
-                                 path_l3_output=path_save_fits, corr=corr,
-                                 **parameter_alignment)
 ```
 
 ### Alignment of a SPICE raster  
@@ -173,7 +139,7 @@ We show here a typical example to align SPICE data with a synthetic raster creat
 ####  Creation of a SPICE synthetic raster 
 First of all, we need to create a synthetic raster for the SPICE raster using a list of FSI 304 FITS files.
 ```python
-from euispice_coreg.synras.map_builder import SPICEComposedMapBuilder
+from euispice_coreg import SPICEComposedMapBuilder
 from glob import glob
 import astropy.units as u
 
@@ -198,9 +164,8 @@ The header values that can be shifted are CRVAL1, CRVAL2, CROTA, CDELT1  and CDE
 
 ```python
 import numpy as np
-from euispice_coreg.hdrshift.alignment_spice import AlignmentSpice
-from euispice_coreg.plot.plot import PlotFunctions
-from euispice_coreg.utils.Util import AlignCommonUtil
+from euispice_coreg import AlignmentSpice
+
 
 
 path_to_synthetic_raster_fits = "path/to/input/synthetic_raster.fits"
@@ -232,18 +197,10 @@ A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small
                         path_save_figure=path_save_figure,
                    **param_alignment)
 
-corr = A.align_using_helioprojective(method='correlation')
-PlotFunctions.plot_correlation(corr, **param_alignment)
-AlignCommonUtil.write_corrected_fits(path_l2_input=path_spice_input, 
-                               path_l3_output="path/where/to/save/corrected/fits", corr=corr,
-                                    window_list=windows_spice, 
-                                    **param_alignment)
-
-PlotFunctions.plot_co_alignment(reference_image_window=-1, reference_image_path=path_to_synthetic_raster_fits,
-                                           corr=corr, image_to_align_window= window_spice_to_align, 
-                                levels_percentile=[80, 90], 
-                                           path_save_figure=None, image_to_align_path=path_spice_input, show=True,
-                                           **param_alignment)
+results = A.align_using_helioprojective(method='correlation')
+results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
+results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"), show=True)
+results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), levels_percentile=[80, 90],  show=True)
 
 
 ```

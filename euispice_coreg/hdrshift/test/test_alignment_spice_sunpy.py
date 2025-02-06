@@ -34,8 +34,7 @@ def test_alignement_helioprojective_spice():
                        path_save_figure=None, wavelength_interval_to_sum=wave_interval,
                        )
 
-    corr = A.align_using_helioprojective(method='correlation')
-    max_index = np.unravel_index(corr.argmax(), corr.shape)
+    results = A.align_using_helioprojective(method='correlation', )
 
-    assert lag_crval1[max_index[0]] == -23
-    assert lag_crval2[max_index[1]] == 36
+    assert np.abs(results.shift_arcsec[0] + 22.736789342637366) < 1.0E-3
+    assert np.abs(results.shift_arcsec[1] - 36.198098608759494) < 1.0E-3

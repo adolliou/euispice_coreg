@@ -7,6 +7,7 @@ from ..synras import map_builder
 from . import c_correlate
 import copy
 from ..utils import Util
+from.AlignmentResults import AlignmentResults
 
 
 class AlignmentSpice(Alignment):
@@ -63,7 +64,18 @@ class AlignmentSpice(Alignment):
         self.wavelength_interval_to_sum = wavelength_interval_to_sum
 
     def align_using_helioprojective(self, method='correlation', extend_pixel_size=False,
-                                    cut_from_center=None, ):
+                                    cut_from_center=None, return_type="AlignmentResults"):
+        """
+        Returns the results for the correlation algorithm in helioprojective frame
+
+        Args:
+            method (str, optional): Method to co align the data. Defaults to 'correlation'.
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+
+        Returns:
+            corr matrix or AlignmentResults depending on return_type
+        """
         self.lonlims = None
         self.latlims = None
         self.shape = None
@@ -84,11 +96,20 @@ class AlignmentSpice(Alignment):
 
         results = super()._find_best_header_parameters()
         # A
-        return results
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, unit_lag=self.unit_lag,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, 
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 
     def align_using_carrington(self, lonlims: tuple[int, int], latlims: tuple[int, int],
                                size_deg_carrington=None, shape=None,
-                               reference_date=None, method='correlation'):
+                               reference_date=None, method='correlation', 
+                               return_type="AlignmentResults"):
 
         if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
 
@@ -133,7 +154,15 @@ class AlignmentSpice(Alignment):
 
         results = super()._find_best_header_parameters()
 
-        return results
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, unit_lag=self.unit_lag,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, 
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 
     def _extract_imager_data_header(self, ):
         with fits.open(self.large_fov_known_pointing) as hdul_large:

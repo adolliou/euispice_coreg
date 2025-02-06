@@ -290,8 +290,9 @@ class Alignment:
     def align_using_carrington(self, lonlims: tuple[int, int]=None, latlims: tuple[int, int]=None,
                                size_deg_carrington=None, shape=None,
                                reference_date=None, method='correlation', 
-                               method_carrington_reprojection = "fa"):
-        """_summary_
+                               method_carrington_reprojection = "fa", 
+                               return_type = 'AlignmentResults'):
+        """Align the two images. 
 
         Args:
             lonlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington longitude grid where 
@@ -306,7 +307,8 @@ class Alignment:
             method_carrington_reprojection (str, optional): Method to use for the carrington reprojection. Either "fa" or "sunpy". 
             If set to "sunpy", then no lonlims, latlims, size_deg or shape is required. 
             Defaults to "fa".
-
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
         Raises:
             ValueError: If some input value is incorrect or if the reference date is not manually implemented,
               while the  
@@ -373,20 +375,29 @@ class Alignment:
         f_large.close()
         f_small.close()
         results = self._find_best_header_parameters()
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, 
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
         return results
 
     def align_using_helioprojective(self, method='correlation', 
-                                    return_type = 'corr'):
+                                    return_type = 'AlignmentResults'):
         """
         Returns the results for the correlation algorithm in helioprojective frame
 
         Args:
             method (str, optional): Method to co align the data. Defaults to 'correlation'.
             return_type (str, optional): Determinates the output object of the method 
-            either 'corr' or "AlignmentResults". Defaults to 'corr'.
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
 
         Returns:
-            _type_: _description_
+            corr matrix or AlignmentResults depending on return_type
         """
         self.lonlims = None
         self.latlims = None
@@ -422,7 +433,7 @@ class Alignment:
             return AlignmentResults(corr=results, 
                                     lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
                                     lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
-                                    lag_crota=self.lag_crota, 
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
                                     image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
                                     reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 

@@ -33,7 +33,7 @@ def test_alignement_helioprojective_spice():
                        path_save_figure=None, wavelength_interval_to_sum=wave_interval,
                        )
 
-    corr = A.align_using_helioprojective(method='correlation')
+    corr = A.align_using_helioprojective(method='correlation', return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
 
     assert lag_crval1[max_index[0]] == -23

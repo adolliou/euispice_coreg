@@ -155,6 +155,7 @@ def path_fsi():
     )
 
 
+
 class TestAlignmentResults:
 
     def test_compute_shift(self, corr, params_alignment, path_hri, path_fsi):
@@ -162,13 +163,14 @@ class TestAlignmentResults:
         R = AlignmentResults(
             corr=corr,
             **params_alignment,
+            unit_lag="arcsec",
             image_to_align_path=path_hri,
             image_to_align_window=-1,
             reference_image_path=path_fsi,
             reference_image_window=-1
         )
-        assert np.abs(R.shift[0] - 9.33682107) < 1.0e-2
-        assert np.abs(R.shift[1] - 1.42187891) < 1.0e-2
+        assert np.abs(R.shift_pixels[0] - 9.33682107) < 1.0e-2
+        assert np.abs(R.shift_pixels[1] - 1.42187891) < 1.0e-2
         save_fits = "./euispice_coreg/hdrshift/test/test.fits"
         windows = [-1]
         R.write_corrected_fits(windows, path_to_l3_output=save_fits)
@@ -178,11 +180,37 @@ class TestAlignmentResults:
         R = AlignmentResults(
             corr=corr,
             **params_alignment,
+            unit_lag="arcsec",
             image_to_align_path=path_hri,
             image_to_align_window=-1,
             reference_image_path=path_fsi,
             reference_image_window=-1
         )
 
-        save_plot = "./euispice_coreg/hdrshift/test/test.jpeg"
+        save_plot = "./euispice_coreg/hdrshift/test/plot_correlation1.jpeg"
+        save_plot_ref = "./euispice_coreg/hdrshift/test/plot_correlation2.jpeg"
+
         R.plot_correlation(path_save_figure=save_plot, show=False)
+        base_image = Image.open(save_plot)
+        ref_image = Image.open(save_plot_ref)
+        assert(image_pixel_differences(base_image, ref_image))
+
+    def test_plot_co_alignment(self, corr, params_alignment, path_hri, path_fsi):
+        
+        R = AlignmentResults(
+            corr=corr,
+            **params_alignment,
+            unit_lag="arcsec",
+            image_to_align_path=path_hri,
+            image_to_align_window=-1,
+            reference_image_path=path_fsi,
+            reference_image_window=-1
+        )
+
+        save_plot = "./euispice_coreg/hdrshift/test/plot_co_alignment1.jpeg"
+        save_plot_ref = "./euispice_coreg/hdrshift/test/plot_co_alignment2.jpeg"
+        R.plot_co_alignment(path_save_figure=save_plot, show=False)
+        base_image = Image.open(save_plot)
+        ref_image = Image.open(save_plot_ref)
+        assert(image_pixel_differences(base_image, ref_image))
+
