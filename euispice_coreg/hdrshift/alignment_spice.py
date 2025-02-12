@@ -64,7 +64,8 @@ class AlignmentSpice(Alignment):
         self.wavelength_interval_to_sum = wavelength_interval_to_sum
 
     def align_using_helioprojective(self, method='correlation', extend_pixel_size=False,
-                                    cut_from_center=None, return_type="AlignmentResults"):
+                                    cut_from_center=None, return_type="AlignmentResults", 
+                                    coefficient_l3: int = None):
         """
         Returns the results for the correlation algorithm in helioprojective frame
 
@@ -72,6 +73,8 @@ class AlignmentSpice(Alignment):
             method (str, optional): Method to co align the data. Defaults to 'correlation'.
             return_type (str, optional): Determinates the output object of the method 
             either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+            coefficient_l3 (int, optional). Only if level = 3. Which coefficient to use
+            in the L3 file for the coalignment. 
 
         Returns:
             corr matrix or AlignmentResults depending on return_type
@@ -92,7 +95,7 @@ class AlignmentSpice(Alignment):
             level = 2
         elif "L3" in self.small_fov_to_correct:
             level = 3
-        self._extract_spice_data_header(level=level, )
+        self._extract_spice_data_header(level=level, coeff=coefficient_l3)
 
         results = super()._find_best_header_parameters()
         # A
@@ -109,8 +112,9 @@ class AlignmentSpice(Alignment):
     def align_using_carrington(self, lonlims: tuple[int, int], latlims: tuple[int, int],
                                size_deg_carrington=None, shape=None,
                                reference_date=None, method='correlation', 
-                               return_type="AlignmentResults"):
-
+                               return_type="AlignmentResults", 
+                               coefficient_l3: int = None):
+            
         if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
 
             CRLN_OBS = self.hdr_small["CRLN_OBS"]
@@ -140,7 +144,7 @@ class AlignmentSpice(Alignment):
             level = 2
         elif "L3" in self.small_fov_to_correct:
             level = 3
-        self._extract_spice_data_header(level=level)
+        self._extract_spice_data_header(level=level, coeff=coefficient_l3)
         self.hdr_small["CRVAL1"] = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.hdr_small["CRVAL1"],
                                                                             self.hdr_small["CUNIT1"])).to(
             "arcsec").value
@@ -171,13 +175,22 @@ class AlignmentSpice(Alignment):
             # super()._recenter_crpix_in_header(self.hdr_large)
             hdul_large.close()
 
-    def _extract_spice_data_header(self, level: int, ):
+    def _extract_spice_data_header(self, level: int, coeff: int = None,):
+        """prepare the SPICE data for the colalignement. Accepts L2 or L3 files.
+
+        Args:
+            level (int): Level of the input SPICE data. Must be 2 or 3.
+            coeff (int, optional): only if L3. Coefficient that will be use for the co-alignment. Defaults to None.
+
+        Raises:
+            ValueError: raise Error if incorrect input level.
+        """        
         with fits.open(self.small_fov_to_correct) as hdul_small:
             dt = hdul_small[self.small_fov_window].header.copy()["PC4_1"]
             if level == 2:
                 self._prepare_spice_from_l2(hdul_small)
             elif level == 3:
-                raise NotImplementedError
+                self._prepare_spice_from_l3(hdul_small, coeff)
             else:
                 raise ValueError("level must be 2 or 3")
 
@@ -313,6 +326,22 @@ class AlignmentSpice(Alignment):
     #     self.hdr_small["NAXIS1"] = self.data_small.shape[1]
     #     self.hdr_small["NAXIS2"] = self.data_small.shape[0]
 
+    def _prepare_spice_from_l3(self, hdul_small, coeff: int):
+
+        data_small = np.array(hdul_small[self.small_fov_window].data.copy(), dtype=np.float64)
+        header_spice = hdul_small[self.small_fov_window].header
+
+        self.data_small = data_small[coeff, ...]
+        ymin, ymax = Util.AlignSpiceUtil.vertical_edges_limits(header_spice)
+        self.data_small[:ymin, :] = np.nan
+        self.data_small[ymax:, :] = np.nan       
+        
+        w_spice = WCS(header_spice)
+
+        w_xyt = w_spice.dropaxis(0)
+        w_xyt.wcs.pc[2, 0] = 0
+        w_xy = w_xyt.dropaxis(2)
+        self.hdr_small = w_xy.to_header().copy()
 
 class AlignementSpiceIterativeContextRaster(AlignmentSpice):
     def __init__(self, large_fov_list_paths: list, small_fov_to_correct: str, threshold_time: u.Quantity,

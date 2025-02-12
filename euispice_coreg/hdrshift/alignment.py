@@ -133,6 +133,157 @@ class Alignment:
 
     # def __del__(self):
 
+    def align_using_carrington(self, lonlims: tuple[int, int]=None, latlims: tuple[int, int]=None,
+                               size_deg_carrington=None, shape=None,
+                               reference_date=None, method='correlation', 
+                               method_carrington_reprojection = "fa", 
+                               return_type = 'AlignmentResults'):
+        """Align the two images. 
+
+        Args:
+            lonlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington longitude grid where 
+            all data will be reprojected before alignment (in degrees)
+            latlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington latitude grid (in degrees)
+            size_deg_carrington (_type_, optional): Tuple of length 2 The size of a carrington pixel for the grid. If set, then
+            shape is ignored. Defaults to None.
+            shape (_type_, optional): Typle of length 2. Shape of the carrington grid. Defaults to None.
+            reference_date (_type_, optional): Reference date when the carrington reprojection is performed, 
+            to take into account for the solar rotation (and differential rotation). Defaults to None.
+            method (str, optional): method to co-align to imgages. either "correlation" or "residues". Defaults to 'correlation'.
+            method_carrington_reprojection (str, optional): Method to use for the carrington reprojection. Either "fa" or "sunpy". 
+            If set to "sunpy", then no lonlims, latlims, size_deg or shape is required. 
+            Defaults to "fa".
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+        Raises:
+            ValueError: If some input value is incorrect or if the reference date is not manually implemented,
+              while the  
+
+        Returns:
+            _type_: correlation matrix 
+        """
+        
+        self.method = method
+        self.coordinate_frame = "carrington"
+        self.method_carrington_reprojection = method_carrington_reprojection
+        f_large = Fits.open(self.large_fov_known_pointing)
+        f_small = Fits.open(self.small_fov_to_correct)
+        if self.method_carrington_reprojection == "fa":
+            self.function_to_apply = self._carrington_transform_fa
+        elif self.method_carrington_reprojection == "sunpy":
+            self.function_to_apply = self._carrington_transform_sunpy
+        else:
+            raise ValueError("method_carrington_reprojection must be either 'fa' or 'sunpy")
+
+
+        self.data_large = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
+        self.hdr_large = f_large[self.large_fov_window].header.copy()
+        # self._recenter_crpix_in_header(self.hdr_large)
+
+        self.hdr_small = f_small[self.small_fov_window].header.copy()
+        # self._recenter_crpix_in_header(self.hdr_small)
+
+        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
+
+
+
+        if method_carrington_reprojection == "fa":
+
+            if reference_date is None:
+                if "DATE-AVG":
+                    raise ValueError("Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
+                self.reference_date = self.hdr_large["DATE-AVG"]
+            else:
+                self.reference_date = reference_date
+
+            if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
+
+                CRLN_OBS = self.hdr_small["CRLN_OBS"]
+                CRLT_OBS = self.hdr_small["CRLT_OBS"]
+
+                self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
+                self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
+                self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
+                print(f"{self.lonlims=}")
+
+            elif (lonlims is not None) and (latlims is not None) & (shape is not None):
+
+                self.lonlims = lonlims
+                self.latlims = latlims
+                self.shape = shape
+            else:
+                raise ValueError("either set lonlims as None, or not. no in between.")
+
+        # if self.use_pcij:
+        self._check_ant_create_pcij_matrix(self.hdr_small)
+        self._check_ant_create_pcij_matrix(self.hdr_large)
+
+        f_large.close()
+        f_small.close()
+        results = self._find_best_header_parameters()
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, 
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
+        return results
+
+    def align_using_helioprojective(self, method='correlation', 
+                                    return_type = 'AlignmentResults'):
+        """
+        Returns the results for the correlation algorithm in helioprojective frame
+
+        Args:
+            method (str, optional): Method to co align the data. Defaults to 'correlation'.
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+
+        Returns:
+            corr matrix or AlignmentResults depending on return_type
+        """
+        self.lonlims = None
+        self.latlims = None
+        self.shape = None
+        self.reference_date = None
+        self.function_to_apply = self._interpolate_on_large_data_grid
+
+        self.method = method
+        self.coordinate_frame = "helioprojective"
+        f_large = Fits.open(self.large_fov_known_pointing)
+        f_small = Fits.open(self.small_fov_to_correct)
+        dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
+        self.data_large = dat_large_var
+
+        self.hdr_large = f_large[self.large_fov_window].header.copy()
+        # self._recenter_crpix_in_header(self.hdr_large)
+
+        self.hdr_small = f_small[self.small_fov_window].header.copy()
+
+        # if self.use_pcij:
+        self._check_ant_create_pcij_matrix(self.hdr_small)
+        self._check_ant_create_pcij_matrix(self.hdr_large)
+
+        # self._recenter_crpix_in_header(self.hdr_small)
+        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
+        f_large.close()
+        f_small.close()
+
+        results = self._find_best_header_parameters()
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results, 
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
+                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
+                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
+
+
     def _shift_header(self, hdr, **kwargs):
         if 'd_crval1' in kwargs.keys():
             if self.unit_lag == hdr["CUNIT1"]:
@@ -287,155 +438,6 @@ class Alignment:
         else:
             raise NotImplementedError
 
-    def align_using_carrington(self, lonlims: tuple[int, int]=None, latlims: tuple[int, int]=None,
-                               size_deg_carrington=None, shape=None,
-                               reference_date=None, method='correlation', 
-                               method_carrington_reprojection = "fa", 
-                               return_type = 'AlignmentResults'):
-        """Align the two images. 
-
-        Args:
-            lonlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington longitude grid where 
-            all data will be reprojected before alignment (in degrees)
-            latlims (tuple[int, int]): tuple of length 2, containing the the limits on the carrington latitude grid (in degrees)
-            size_deg_carrington (_type_, optional): Tuple of length 2 The size of a carrington pixel for the grid. If set, then
-            shape is ignored. Defaults to None.
-            shape (_type_, optional): Typle of length 2. Shape of the carrington grid. Defaults to None.
-            reference_date (_type_, optional): Reference date when the carrington reprojection is performed, 
-            to take into account for the solar rotation (and differential rotation). Defaults to None.
-            method (str, optional): method to co-align to imgages. either "correlation" or "residues". Defaults to 'correlation'.
-            method_carrington_reprojection (str, optional): Method to use for the carrington reprojection. Either "fa" or "sunpy". 
-            If set to "sunpy", then no lonlims, latlims, size_deg or shape is required. 
-            Defaults to "fa".
-            return_type (str, optional): Determinates the output object of the method 
-            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
-        Raises:
-            ValueError: If some input value is incorrect or if the reference date is not manually implemented,
-              while the  
-
-        Returns:
-            _type_: correlation matrix 
-        """
-        
-        self.method = method
-        self.coordinate_frame = "carrington"
-        self.method_carrington_reprojection = method_carrington_reprojection
-        f_large = Fits.open(self.large_fov_known_pointing)
-        f_small = Fits.open(self.small_fov_to_correct)
-        if self.method_carrington_reprojection == "fa":
-            self.function_to_apply = self._carrington_transform_fa
-        elif self.method_carrington_reprojection == "sunpy":
-            self.function_to_apply = self._carrington_transform_sunpy
-        else:
-            raise ValueError("method_carrington_reprojection must be either 'fa' or 'sunpy")
-
-
-        self.data_large = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
-        self.hdr_large = f_large[self.large_fov_window].header.copy()
-        # self._recenter_crpix_in_header(self.hdr_large)
-
-        self.hdr_small = f_small[self.small_fov_window].header.copy()
-        # self._recenter_crpix_in_header(self.hdr_small)
-
-        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
-
-
-
-        if method_carrington_reprojection == "fa":
-
-            if reference_date is None:
-                if "DATE-AVG":
-                    raise ValueError("Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
-                self.reference_date = self.hdr_large["DATE-AVG"]
-            else:
-                self.reference_date = reference_date
-
-            if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
-
-                CRLN_OBS = self.hdr_small["CRLN_OBS"]
-                CRLT_OBS = self.hdr_small["CRLT_OBS"]
-
-                self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
-                self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
-                self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
-                print(f"{self.lonlims=}")
-
-            elif (lonlims is not None) and (latlims is not None) & (shape is not None):
-
-                self.lonlims = lonlims
-                self.latlims = latlims
-                self.shape = shape
-            else:
-                raise ValueError("either set lonlims as None, or not. no in between.")
-
-        # if self.use_pcij:
-        self._check_ant_create_pcij_matrix(self.hdr_small)
-        self._check_ant_create_pcij_matrix(self.hdr_large)
-
-        f_large.close()
-        f_small.close()
-        results = self._find_best_header_parameters()
-        if return_type == "corr":
-            return results
-        elif return_type == "AlignmentResults":
-            return AlignmentResults(corr=results, 
-                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
-                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
-                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
-                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
-                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
-        return results
-
-    def align_using_helioprojective(self, method='correlation', 
-                                    return_type = 'AlignmentResults'):
-        """
-        Returns the results for the correlation algorithm in helioprojective frame
-
-        Args:
-            method (str, optional): Method to co align the data. Defaults to 'correlation'.
-            return_type (str, optional): Determinates the output object of the method 
-            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
-
-        Returns:
-            corr matrix or AlignmentResults depending on return_type
-        """
-        self.lonlims = None
-        self.latlims = None
-        self.shape = None
-        self.reference_date = None
-        self.function_to_apply = self._interpolate_on_large_data_grid
-
-        self.method = method
-        self.coordinate_frame = "helioprojective"
-        f_large = Fits.open(self.large_fov_known_pointing)
-        f_small = Fits.open(self.small_fov_to_correct)
-        dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
-        self.data_large = dat_large_var
-
-        self.hdr_large = f_large[self.large_fov_window].header.copy()
-        # self._recenter_crpix_in_header(self.hdr_large)
-
-        self.hdr_small = f_small[self.small_fov_window].header.copy()
-
-        # if self.use_pcij:
-        self._check_ant_create_pcij_matrix(self.hdr_small)
-        self._check_ant_create_pcij_matrix(self.hdr_large)
-
-        # self._recenter_crpix_in_header(self.hdr_small)
-        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
-        f_large.close()
-        f_small.close()
-
-        results = self._find_best_header_parameters()
-        if return_type == "corr":
-            return results
-        elif return_type == "AlignmentResults":
-            return AlignmentResults(corr=results, 
-                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
-                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
-                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
-                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
-                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
 
     def _check_ant_create_pcij_matrix(self, hdr):
         if ("PC1_1" not in hdr):
