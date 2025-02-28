@@ -103,7 +103,9 @@ class AlignCommonUtil:
         max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
         with fits.open(path_l2_input) as hdul:
             for window in window_list:
-                header = hdul[window].header
+                header = hdul[window].header.copy()
+                data = hdul[window].data.copy()
+
                 AlignCommonUtil.correct_pointing_header(header,
                                                         lag_crval1=lag_crval1[max_index[0]],
                                                         lag_crval2=lag_crval2[max_index[1]], 
@@ -112,6 +114,13 @@ class AlignCommonUtil:
                                                         lag_crota = lag_crota[max_index[4]]
                                                         )
 
+                if isinstance(hdul[window], astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
+                    hdu = fits.CompImageHDU(data=data, header=header)
+                elif isinstance(hdul[window], astropy.io.fits.hdu.image.ImageHDU):
+                    hdu = fits.ImageHDU(data=data, header=header)
+                elif isinstance(hdul[window], astropy.io.fits.hdu.image.PrimaryHDU):
+                    hdu = fits.PrimaryHDU(data=data, header=header)
+                hdul[window] = hdu
             hdul.writeto(path_l3_output, overwrite=True)
             hdul.close()
 
