@@ -48,7 +48,7 @@ Here, we co-register an HRIEUV image with an FSI 174 image. We start using Helio
 
 ```python
 import numpy as np
-from euispice_coreg import Alignment
+from euispice_coreg.hdrshift import Alignment
 import os
 
 path_hri = "path/to/HRIEUV.fits" # path to the HRI FITS file. It must end with a ".fits"
@@ -60,18 +60,21 @@ path_save_fits = "path/where/to/save/aligned_fits/fits.fits"  # path to FITS fil
 folder_save_fig = "folder/where/to/save/figure" # path to the folder where to save the figure illustrating the alignment.
 
 
-lag_crval1 = np.arange(15, 26, 1)
-lag_crval2 = np.arange(5, 11, 1)
 
-lag_cdelt1 = [0]
-lag_cdelt2 = [0]
+param_alignment = {
+    "lag_crval1": np.arange(15, 26, 1), # lag crvals in the headers, in arcsec
+    "lag_crval2": np.arange(5, 11, 1),  # in arcsec
+    "lag_crota": np.array([0]), # in degrees
+    "lag_cdelt1": np.array([0]), # in arcsec
+    "lag_cdelt2": np.array([0]), # in arcsec
+}
 
-lag_crota = [0]
+
 windows = [-1]
 
-A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-              lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
+A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, 
               parallelism=True, display_progress_bar=True, counts_cpu_max=20,
+              **param_alignment,
               )
 
 results = A.align_using_helioprojective(method='correlation')
@@ -90,7 +93,7 @@ You can also co-register HRIEUV fits files with FSI 174 images within a common C
 
 ```python
 import os.path
-from euispice_coreg import Alignment
+from euispice_coreg.hdrshift import Alignment
 import numpy as np
 
 
@@ -102,10 +105,13 @@ folder_save_fig = "folder/where/to/save/figure"
 path_save_fits = "path/where/to/save/aligned_fits"
 
 parallelism = True
-
-lag_crval1 = np.arange(55, 62, 1)
-lag_crval2 = np.arange(-28, -22, 1)
-lag_crota = [-39.25]
+param_alignment = {
+    "lag_crval1": np.arange(55, 62, 1), # lag crvals in the headers, in arcsec
+    "lag_crval2": np.arange(-28, -22, 1),  # in arcsec
+    "lag_crota": np.array([-39.25]), # in degrees
+    "lag_cdelt1": np.array([0]), # in arcsec
+    "lag_cdelt2": np.array([0]), # in arcsec
+}
 
 # Here, we build a common Carrington grid where the alignment will be performed.
 lonlims = (200, 300)
@@ -113,15 +119,11 @@ latlims = (-20, 20)  # longitude min and max (degrees)
 shape = [2048, 2048]
 
 
-lag_cdelt1 = [0]
-lag_cdelt2 = [0]
-
 windows = [-1]
 
-A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
-          lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
+A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri,
           parallelism=True, display_progress_bar=True,
-          small_fov_window=-1, large_fov_window=-1)
+          small_fov_window=-1, large_fov_window=-1, **param_alignment)
 
 results = A.align_using_carrington(method='correlation', lonlims=lonlims, latlims=latlims, shape=shape)
 
@@ -139,7 +141,7 @@ We show here a typical example to align SPICE data with a synthetic raster creat
 ####  Creation of a SPICE synthetic raster 
 First of all, we need to create a synthetic raster for the SPICE raster using a list of FSI 304 FITS files.
 ```python
-from euispice_coreg import SPICEComposedMapBuilder
+from euispice_coreg.synras import SPICEComposedMapBuilder
 from glob import glob
 import astropy.units as u
 
@@ -164,7 +166,7 @@ The header values that can be shifted are CRVAL1, CRVAL2, CROTA, CDELT1  and CDE
 
 ```python
 import numpy as np
-from euispice_coreg import AlignmentSpice
+from euispice_coreg.hdrshift import AlignmentSpice
 
 
 
