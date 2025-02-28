@@ -148,7 +148,8 @@ class AlignmentResults:
 
         with fits.open(path_to_l2_input) as hdul:
             for window in window_list_to_apply_shift:
-                header = hdul[window].header
+                header = hdul[window].header.copy()
+                data = hdul[window].data.copy()
                 AlignCommonUtil.correct_pointing_header(
                     header,
                     lag_crval1=self.shift_arcsec[0],
@@ -157,9 +158,8 @@ class AlignmentResults:
                     lag_cdelt2=self.shift_arcsec[3],
                     lag_crota=self.shift_arcsec[4],
                 )
-
-            hdul.writeto(path_to_l3_output, overwrite=True)
-            hdul.close()
+                hdu = fits.CompImageHDU(data=data, header=header)
+                hdul[window] = hdu
 
     def savefig(self, filename: str):
         raise NotImplementedError
