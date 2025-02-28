@@ -5,7 +5,7 @@ import warnings
 from scipy.optimize import curve_fit
 from astropy.io import fits
 import astropy.units as u
-
+import astropy
 
 # from https://stackoverflow.com/questions/21566379/fitting-a-2d-gaussian-function-using-scipy-optimize-curve-fit-valueerror-and-m
 def twoD_Gaussian(xy, amplitude, xo, yo, sigma_x, sigma_y, offset):
@@ -158,7 +158,12 @@ class AlignmentResults:
                     lag_cdelt2=self.shift_arcsec[3],
                     lag_crota=self.shift_arcsec[4],
                 )
-                hdu = fits.CompImageHDU(data=data, header=header)
+                if isinstance(hdul[window], astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
+                    hdu = fits.CompImageHDU(data=data, header=header)
+                elif isinstance(hdul[window], astropy.io.fits.hdu.image.ImageHDU):
+                    hdu = fits.ImageHDU(data=data, header=header)
+                elif isinstance(hdul[window], astropy.io.fits.hdu.image.PrimaryHDU):
+                    hdu = fits.PrimaryHDU(data=data, header=header)
                 hdul[window] = hdu
             hdul.writeto(path_to_l3_output, overwrite=True)
 
