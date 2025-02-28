@@ -160,6 +160,7 @@ class AlignmentResults:
                 )
                 hdu = fits.CompImageHDU(data=data, header=header)
                 hdul[window] = hdu
+            hdul.writeto(path_to_l3_output, overwrite=True)
 
     def savefig(self, filename: str):
         raise NotImplementedError
