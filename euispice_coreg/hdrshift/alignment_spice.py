@@ -401,10 +401,11 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
             is_nan = np.array((np.isnan(self.data_large.ravel(), dtype='bool')
                                | (np.isnan(data_small.ravel(), dtype='bool'))),
                               dtype='bool')
-            corr = c_correlate.c_correlate(self.data_large.ravel()[(~is_nan) & (condition_1) & (condition_2)],
-                                           data_small.ravel()[(~is_nan) & (condition_1) & (condition_2)],
-                                           lags=lag)
-
+            A = self.data_large.ravel()[(~is_nan) & (condition_1) & (condition_2)]
+            B = data_small.ravel()[(~is_nan) & (condition_1) & (condition_2)]
+            
+            corr = self.correlation_function(A, B, lags=lag)
+            # corr = np.corrcoef(A, B)
             return corr
 
         elif method == 'residus':

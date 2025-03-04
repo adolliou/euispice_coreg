@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from astropy.io import fits
 from ..utils import rectify
-from ..utils import c_correlate
+from . import c_correlate
 from tqdm import tqdm
 from ..utils import matrix_transform
 import astropy.units as u

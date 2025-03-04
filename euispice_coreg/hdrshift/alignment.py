@@ -24,6 +24,8 @@ warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
 from .AlignmentResults import AlignmentResults
 
+from scipy.stats import linregress
+
 class HiddenPrints:
     def __enter__(self):
         self._original_stdout = sys.stdout
@@ -109,6 +111,7 @@ class Alignment:
         self._small = None
         self.method_carrington_reprojection = None
         self.use_pcij = True
+        self.correlation_function = c_correlate.c_correlate
         if (lag_crota is None) and (lag_cdelt1 is None) and (lag_cdelt2 is None):
             self.use_pcij = False
 
@@ -344,7 +347,10 @@ class Alignment:
 
     def _iteration_step_along_crval2(self, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str,
                                      position: tuple, lock=None):
-
+        A = np.array([1, 2], dtype="float")
+        B = np.array([1, 2], dtype="float")
+        lag = [0]
+        c = self.correlation_function(A, B, lag)        
         results = np.zeros(len(self.lag_crval2), dtype=np.float64)
         if self.display_progress_bar:
             for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
@@ -367,7 +373,7 @@ class Alignment:
         lock.release()
         shmm_correlation.close()
 
-    def _step(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str, ):
+    def _step(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str):
 
         shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
         shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
@@ -387,15 +393,18 @@ class Alignment:
             is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
                                | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
                               dtype='bool')
-            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan)],
-                                        data_small_interp.ravel()[(~is_nan)],
-                                        lags=lag)
+            # if data_large.ravel()[(~is_nan)].shape == data_small_interp.ravel()[(~is_nan)].shape:
+                # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
+            A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
+            B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
+            c = self.correlation_function(A, B, lags=lag)
+
             # print(f'{data_large=}')
             # l = data_small_interp.shape
             # print(f'{data_small_interp[l[0]//2, l[1]//2]=}')
             # print(f'{c=}')
 
-            c = copy.deepcopy(c)
+            # c = copy.deepcopy(c)
             shmm_large.close()
             shmm_small.close()
 
@@ -408,7 +417,7 @@ class Alignment:
         else:
             raise NotImplementedError
 
-    def _step_no_shmm(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str, ):
+    def _step_no_shmm(self, d_crval2, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str):
 
         data_small = self.data_small.copy()
         data_large = self.data_large
@@ -426,9 +435,11 @@ class Alignment:
             is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
                                | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
                               dtype='bool')
-            c = c_correlate.c_correlate(data_large.ravel()[(~is_nan)],
-                                        data_small_interp.ravel()[(~is_nan)],
-                                        lags=lag)
+            A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
+            B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
+            c = self.correlation_function(A, B, lags=lag)
+            # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
+            
             return c
 
         elif method == 'residus':
@@ -509,6 +520,10 @@ class Alignment:
         for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelt1, self.lag_cdelt2, self.lag_crota]:
             if lag is None:
                 lag = np.array([0])
+        A = np.array([1, 2], dtype="float")
+        B = np.array([1, 2], dtype="float")
+        lag = [0]
+        c = self.correlation_function(A, B, lag)
 
         if self.parallelism:
             results = np.zeros(
@@ -557,7 +572,6 @@ class Alignment:
                                     "method": self.method,
                                     "lock": self.lock,
                                     "position": (ff, ii, ll, jj, kk),
-
                                 }
 
                                 Processes.append(Process(target=self._iteration_step_along_crval2, kwargs=kwargs))
@@ -620,6 +634,7 @@ class Alignment:
                 #
                 # shmm_large.close()
                 # shmm_small.close()
+
                 for ii, d_crval1 in enumerate(self.lag_crval1):
                     for jj, d_crval2 in enumerate(tqdm(self.lag_crval2)):
                         for kk, d_cdelt1 in enumerate(self.lag_cdelt1):
@@ -632,7 +647,7 @@ class Alignment:
                                                                                                      d_crota=d_crota,
                                                                                                      method=self.method,
                                                                                                      d_solar_r=d_solar_r,
-
+                                                                                                    
                                                                                                      )
 
         return data_correlation_cp
@@ -814,9 +829,9 @@ class Alignment:
 
         else:
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
-        image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype=np.float64),
+        image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype="float"),
                                                            x=x_large, y=y_large, order=self.order,
-                                                           fill=-32768)
+                                                           fill=-32768,)
         image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
 
         return image_small_shft
