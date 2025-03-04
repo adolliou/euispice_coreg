@@ -829,9 +829,9 @@ class Alignment:
 
         else:
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
-        image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype=np.float64),
+        image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype="float"),
                                                            x=x_large, y=y_large, order=self.order,
-                                                           fill=-32768)
+                                                           fill=-32768,)
         image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
 
         return image_small_shft
