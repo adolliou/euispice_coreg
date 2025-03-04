@@ -36,6 +36,7 @@ def c_correlate3D(s_1, s_2, lags):
 
     return correlation
 
+
 @jit(nopython=True, inline='always', cache=True)
 def c_correlate(s_1, s_2, lags):
     """
@@ -43,60 +44,20 @@ def c_correlate(s_1, s_2, lags):
     """
     # ensure signals are of equal length
     n_s = s_1.shape[0]
-    
     # center both signals
-    mean1 = float(np.mean(s_1))
-    mean2 = float(np.mean(s_2))
-    s_1_center = np.zeros((n_s), dtype="float")
-    s_2_center = np.zeros((n_s), dtype="float")
-
-    for i in range(n_s):
-        s_1_center[i] = s_1[i] - mean1
-        s_2_center[i] = s_2[i] - mean2
+    s_1_center = s_1 - s_1.mean()
+    s_2_center = s_2 - s_2.mean()
     # allocate space for correlation
-    correlation = np.zeros(len(lags), dtype="float")
+    correlation = np.zeros(len(lags), dtype="float32")
     # iterate over lags
     for i in range(len(lags)):
         l = lags[i]
-        tmp = np.zeros((n_s - l), dtype="float")
         if l >= 0:
-            for jj in range(n_s - l):
-                tmp[jj] = s_1_center[jj] * s_2_center[l+jj]
+            tmp = s_1_center[:(n_s - l)] * s_2_center[l:]
         else:
-            for jj in range(n_s - l):
-                tmp[jj] = s_1_center[-l+jj] * s_2_center[jj]
-        correlation[i] = np.sum(tmp)
+            tmp = s_1_center[-l:] * s_2_center[:(n_s + l)]
+        correlation[i] = tmp.sum()
     # Divide by standard deviation of both
     correlation = correlation/np.sqrt((s_1_center ** 2).sum() * (s_2_center ** 2).sum())
 
     return correlation
-
-
-
-# @jit(nopython=True, inline='always', cache=False)
-# def c_correlate(s_1, s_2, lags):
-#     """
-#     Numpy implementation of c_correlate.pro IDL routine
-#     """
-#     # ensure signals are of equal length
-#     n_s = s_1.shape[0]
-#     # center both signals
-#     mean1 = np.mean(s_1)
-#     mean2 = np.mean(s_2)
-
-#     s_1_center = s_1 - mean1
-#     s_2_center = s_2 - mean2
-#     # allocate space for correlation
-#     correlation = np.zeros(len(lags), dtype="float32")
-#     # iterate over lags
-#     for i in range(len(lags)):
-#         l = lags[i]
-#         if l >= 0:
-#             tmp = s_1_center[:(n_s - l)] * s_2_center[l:]
-#         else:
-#             tmp = s_1_center[-l:] * s_2_center[:(n_s + l)]
-#         correlation[i] = tmp.sum()
-#     # Divide by standard deviation of both
-#     correlation = correlation/np.sqrt((s_1_center ** 2).sum() * (s_2_center ** 2).sum())
-
-#     return correlation

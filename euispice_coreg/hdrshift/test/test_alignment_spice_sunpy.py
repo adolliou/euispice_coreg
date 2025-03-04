@@ -28,7 +28,7 @@ def test_alignement_helioprojective_spice():
     # sub_fov_window = [400 * u.arcsec, 600 * u.arcsec, -300 * u.arcsec, 0 * u.arcsec]
 
     A = AlignmentSpice(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_spice,
-                       lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_crota=lag_crota, display_progress_bar=True,
+                       lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_crota=lag_crota, display_progress_bar=False,
                        lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, parallelism=parallelism,
                        large_fov_window=-1, small_fov_window=small_fov_window,
                        path_save_figure=None, wavelength_interval_to_sum=wave_interval,

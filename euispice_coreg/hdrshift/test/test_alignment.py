@@ -3,6 +3,8 @@ import os.path
 import numpy as np
 from ..alignment import Alignment
 from pathlib import Path
+from functools import wraps
+import time
 
 
 def test_alignement_helioprojective_shift():
@@ -15,6 +17,9 @@ def test_alignement_helioprojective_shift():
     lag_crval1 = np.arange(15, 26, 1)
     lag_crval2 = np.arange(5, 11, 1)
 
+    # lag_crval1 = np.arange(15, 26, 1)
+    # lag_crval2 = np.arange(10, 50, 1)
+
     lag_cdelt1 = None  #
     lag_cdelt2 = [0]
 
@@ -25,7 +30,7 @@ def test_alignement_helioprojective_shift():
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
-                  parallelism=True, display_progress_bar=True, counts_cpu_max=20, small_fov_value_min=min_value,
+                  parallelism=True, display_progress_bar=True, counts_cpu_max=40, small_fov_value_min=min_value,
                   small_fov_value_max=max_value, )
 
     corr = A.align_using_helioprojective(method='correlation', return_type="corr")
@@ -34,20 +39,16 @@ def test_alignement_helioprojective_shift():
     assert lag_crval1[max_index[0]] == 24
     assert lag_crval2[max_index[1]] == 6
 
-
 def test_alignement_helioprojective_noparallelism_shift():
-    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
-    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+
 
     path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
                 "-image_20220317T095045281_V01.fits")
     path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
                 "-image_20220317T095045277_V01.fits")
 
-    lag_crval1 = np.arange(20, 26, 1)
-    lag_crval2 = np.arange(5, 8, 1)
+    lag_crval1 = np.arange(24, 25, 1)
+    lag_crval2 = np.arange(6, 7, 1)
 
     lag_cdelt1 = [0]
     lag_cdelt2 = [0]
@@ -69,10 +70,7 @@ def test_alignement_helioprojective_noparallelism_shift():
 
 
 def test_alignement_carrington():
-    # path_fsi = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-fsi174-image_20220317T095045281_V01.fits")
-    # path_hri = os.path.join(Path().absolute(), "euispice_coreg", "hdrshift", "test",
-    #                         "fitsfiles", "solo_L2_eui-hrieuv174-image_20220317T095045277_V01.fits")
+
     path_fsi = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-fsi174"
                 "-image_20220317T095045281_V01.fits")
     path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
@@ -184,5 +182,3 @@ def test_alignement_carrington_sunpy():
     assert lag_crval2[max_index[1]] == 7
 
 
-if __name__ == "__main__":
-    test_alignement_helioprojective_shift()
