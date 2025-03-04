@@ -20,11 +20,13 @@ from sunpy.map import Map
 import astropy.constants
 from sunpy.coordinates import propagate_with_solar_surface
 from matplotlib import pyplot as plt
+
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
 from .AlignmentResults import AlignmentResults
 
 from scipy.stats import linregress
+
 
 class HiddenPrints:
     def __enter__(self):
@@ -34,6 +36,8 @@ class HiddenPrints:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
+
+
 def divide_chunks(l, n):
     # looping till length l
     for i in range(0, len(l), n):
@@ -49,7 +53,8 @@ class Alignment:
                  parallelism: object = False, display_progress_bar: bool = False,
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
-                 path_save_figure: str = None, reprojection_order=2, force_crota_0=False):
+                 path_save_figure: str = None, reprojection_order=2, force_crota_0=False,
+                 opencv=False):
         """
 
         @param large_fov_known_pointing: (str) path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -114,7 +119,7 @@ class Alignment:
         self.correlation_function = c_correlate.c_correlate
         if (lag_crota is None) and (lag_cdelt1 is None) and (lag_cdelt2 is None):
             self.use_pcij = False
-
+        self.opencv = opencv
         self._correlation = None
 
         self.order = reprojection_order
@@ -136,11 +141,11 @@ class Alignment:
 
     # def __del__(self):
 
-    def align_using_carrington(self, lonlims: tuple[int, int]=None, latlims: tuple[int, int]=None,
+    def align_using_carrington(self, lonlims: tuple[int, int] = None, latlims: tuple[int, int] = None,
                                size_deg_carrington=None, shape=None,
-                               reference_date=None, method='correlation', 
-                               method_carrington_reprojection = "fa", 
-                               return_type = 'AlignmentResults'):
+                               reference_date=None, method='correlation',
+                               method_carrington_reprojection="fa",
+                               return_type='AlignmentResults'):
         """Align the two images. 
 
         Args:
@@ -165,7 +170,7 @@ class Alignment:
         Returns:
             _type_: correlation matrix 
         """
-        
+
         self.method = method
         self.coordinate_frame = "carrington"
         self.method_carrington_reprojection = method_carrington_reprojection
@@ -178,7 +183,6 @@ class Alignment:
         else:
             raise ValueError("method_carrington_reprojection must be either 'fa' or 'sunpy")
 
-
         self.data_large = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
         self.hdr_large = f_large[self.large_fov_window].header.copy()
         # self._recenter_crpix_in_header(self.hdr_large)
@@ -188,13 +192,12 @@ class Alignment:
 
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
 
-
-
         if method_carrington_reprojection == "fa":
 
             if reference_date is None:
                 if "DATE-AVG":
-                    raise ValueError("Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
+                    raise ValueError(
+                        "Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
                 self.reference_date = self.hdr_large["DATE-AVG"]
             else:
                 self.reference_date = reference_date
@@ -227,16 +230,18 @@ class Alignment:
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
-            return AlignmentResults(corr=results, 
-                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
-                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+            return AlignmentResults(corr=results,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2,
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2,
                                     lag_crota=self.lag_crota, unit_lag=self.unit_lag,
-                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
-                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
+                                    image_to_align_path=self.small_fov_to_correct,
+                                    image_to_align_window=self.small_fov_window,
+                                    reference_image_path=self.large_fov_known_pointing,
+                                    reference_image_window=self.large_fov_window)
         return results
 
-    def align_using_helioprojective(self, method='correlation', 
-                                    return_type = 'AlignmentResults'):
+    def align_using_helioprojective(self, method='correlation',
+                                    return_type='AlignmentResults'):
         """
         Returns the results for the correlation algorithm in helioprojective frame
 
@@ -279,13 +284,14 @@ class Alignment:
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
-            return AlignmentResults(corr=results, 
-                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
-                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 
+            return AlignmentResults(corr=results,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2,
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2,
                                     lag_crota=self.lag_crota, unit_lag=self.unit_lag,
-                                    image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
-                                    reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
-
+                                    image_to_align_path=self.small_fov_to_correct,
+                                    image_to_align_window=self.small_fov_window,
+                                    reference_image_path=self.large_fov_known_pointing,
+                                    reference_image_window=self.large_fov_window)
 
     def _shift_header(self, hdr, **kwargs):
         if 'd_crval1' in kwargs.keys():
@@ -350,7 +356,7 @@ class Alignment:
         A = np.array([1, 2], dtype="float")
         B = np.array([1, 2], dtype="float")
         lag = [0]
-        c = self.correlation_function(A, B, lag)        
+        c = self.correlation_function(A, B, lag)
         results = np.zeros(len(self.lag_crval2), dtype=np.float64)
         if self.display_progress_bar:
             for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
@@ -386,7 +392,6 @@ class Alignment:
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
         data_small_interp = copy.deepcopy(data_small_interp)
 
-
         if method == 'correlation':
 
             lag = [0]
@@ -394,7 +399,7 @@ class Alignment:
                                | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
                               dtype='bool')
             # if data_large.ravel()[(~is_nan)].shape == data_small_interp.ravel()[(~is_nan)].shape:
-                # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
+            # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
             A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
             B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
             c = self.correlation_function(A, B, lags=lag)
@@ -428,7 +433,6 @@ class Alignment:
 
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
 
-
         if method == 'correlation':
 
             lag = [0]
@@ -439,7 +443,7 @@ class Alignment:
             B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
             c = self.correlation_function(A, B, lags=lag)
             # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
-            
+
             return c
 
         elif method == 'residus':
@@ -448,7 +452,6 @@ class Alignment:
             return np.std(diff)
         else:
             raise NotImplementedError
-
 
     def _check_ant_create_pcij_matrix(self, hdr):
         if ("PC1_1" not in hdr):
@@ -532,13 +535,14 @@ class Alignment:
 
             shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=True, ndarray=results)
             self._correlation = {"name": shmm_correlation.name, "size": data_correlation.size,
-                                 "shape": data_correlation.shape}
+                                 "shape": data_correlation.shape, "dtype": data_correlation.dtype}
             del results
             for kk, d_solar_r in enumerate(self.lag_solar_r):
                 Processes = []
 
                 if self.coordinate_frame == "carrington":
-                    self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,hdr=self.hdr_large)
+                    self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
+                                                             hdr=self.hdr_large)
                 elif self.coordinate_frame == "helioprojective":
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
 
@@ -549,14 +553,16 @@ class Alignment:
                     condition_1 = np.array(np.abs(self.data_small) > self.small_fov_value_min, dtype='bool')
                 if self.small_fov_value_max is not None:
                     condition_2 = np.array(np.abs(self.data_small) < self.small_fov_value_max, dtype='bool')
-                set_to_nan = np.logical_not(np.logical_or(condition_1,condition_2))
+                set_to_nan = np.logical_not(np.logical_or(condition_1, condition_2))
                 self.data_small[set_to_nan] = np.nan
                 shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_large))
-                self._large = {"name": shmm_large.name, "dtype": data_large.dtype, "shape": data_large.shape}
+                self._large = {"name": shmm_large.name,  "shape": data_large.shape,
+                               "dtype": data_large.dtype, "size": data_large.size,}
                 del self.data_large
 
                 shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_small))
-                self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
+                self._small = {"name": shmm_small.name, "size": data_small.size, "shape": data_small.shape,
+                               "dtype": data_small.dtype}
                 del self.data_small
 
                 for ii, d_cdelt1 in enumerate(self.lag_cdelt1):
@@ -647,7 +653,7 @@ class Alignment:
                                                                                                      d_crota=d_crota,
                                                                                                      method=self.method,
                                                                                                      d_solar_r=d_solar_r,
-                                                                                                    
+
                                                                                                      )
 
         return data_correlation_cp
@@ -658,7 +664,7 @@ class Alignment:
             rate_wave_ = None
         else:
             rate_wave_ = self.rat_wave['%i' % (self.hdr_large['WAVELNTH'])]
-        
+
         spherical = rectify.CarringtonTransform(hdr, radius_correction=d_solar_r,
                                                 reference_date=self.reference_date,
                                                 rate_wave=rate_wave_)
@@ -668,17 +674,16 @@ class Alignment:
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
             if self.path_save_figure is not None:
                 date_obs = hdr["DATE-OBS"]
-                dlon = (self.lonlims[1] - self.lonlims[0])/self.shape[0]
-                dlat = (self.latlims[1] - self.lonlims[0])/self.shape[1]
-
-
+                dlon = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
+                dlat = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
 
                 plot.PlotFunctions.plot_fov(data=image, show=False,
-                                            path_save=os.path.join(self.path_save_figure,f'image_large_{date_obs[:19]}.pdf'), 
+                                            path_save=os.path.join(self.path_save_figure,
+                                                                   f'image_large_{date_obs[:19]}.pdf'),
                                             extent=(
-                                                self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
-                                                self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, ), 
-                                            xlabel= "carrington longitude [°]", ylabel="carrington latitude [°]"
+                                                self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
+                                                self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,),
+                                            xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
                                             )
                 spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
                                                         reference_date=self.reference_date,
@@ -686,17 +691,18 @@ class Alignment:
                 spherizer = rectify.Rectifier(spherical)
 
                 image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, opencv=False,
-                                        order=self.order, fill=-32762)
+                                        order=self.order, fill=-32762, )
                 image_small = np.where(image_small == -32762, np.nan, image_small)
                 date_obs = self.hdr_small["DATE-OBS"]
 
                 plot.PlotFunctions.plot_fov(data=image_small, show=False,
-                                            path_save=os.path.join(self.path_save_figure,f'image_small_{date_obs[:19]}.pdf'), 
+                                            path_save=os.path.join(self.path_save_figure,
+                                                                   f'image_small_{date_obs[:19]}.pdf'),
                                             extent=(
-                                                self.lonlims[0] - 0.5*dlon, self.lonlims[1] + 0.5*dlon, 
-                                                self.latlims[0] - 0.5*dlat, self.latlims[1] + 0.5*dlat, 
-                                            ), 
-                                            xlabel= "carrington longitude [°]", ylabel="carrington latitude [°]"
+                                                self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
+                                                self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,
+                                            ),
+                                            xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
 
                                             )
 
@@ -711,41 +717,42 @@ class Alignment:
             map_to_align = Map(self.data_small, self.hdr_small)
             map_to_align.meta["rsun_ref"] = rsun
             map_ref.meta["rsun_ref"] = rsun
-            with propagate_with_solar_surface(): 
+            with propagate_with_solar_surface():
                 map_ref_rep = map_ref.reproject_to(map_to_align.wcs)
             image = copy.deepcopy(map_ref_rep.data)
             self.hdr_large = copy.deepcopy(self.hdr_small)
 
             if self.path_save_figure is not None:
-                    date_obs = hdr["DATE-OBS"]
-                    
-                    plot.PlotFunctions.simple_plot_sunpy(map_to_align,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_small_{date_obs[:19]}.pdf"))
-                    date_obs = self.hdr_small["DATE-OBS"]
-                    plot.PlotFunctions.simple_plot_sunpy(map_ref,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_large_{date_obs[:19]}.pdf"))
-                    
-                    map_to_align = Map(self.data_small, self.hdr_small)
-                    map_to_align.meta["rsun_ref"] = rsun
-                    with propagate_with_solar_surface(): 
-                        with HiddenPrints():
-                            map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
-                    plot.PlotFunctions.simple_plot_sunpy(map_ref_rep,show=False, 
-                                                  path_save=os.path.join(self.path_save_figure, f"image_large_rep_{date_obs[:19]}.pdf"))
-            
+                date_obs = hdr["DATE-OBS"]
+
+                plot.PlotFunctions.simple_plot_sunpy(map_to_align, show=False,
+                                                     path_save=os.path.join(self.path_save_figure,
+                                                                            f"image_small_{date_obs[:19]}.pdf"))
+                date_obs = self.hdr_small["DATE-OBS"]
+                plot.PlotFunctions.simple_plot_sunpy(map_ref, show=False,
+                                                     path_save=os.path.join(self.path_save_figure,
+                                                                            f"image_large_{date_obs[:19]}.pdf"))
+
+                map_to_align = Map(self.data_small, self.hdr_small)
+                map_to_align.meta["rsun_ref"] = rsun
+                with propagate_with_solar_surface():
+                    with HiddenPrints():
+                        map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
+                plot.PlotFunctions.simple_plot_sunpy(map_ref_rep, show=False,
+                                                     path_save=os.path.join(self.path_save_figure,
+                                                                            f"image_large_rep_{date_obs[:19]}.pdf"))
+
         else:
             map_to_align = Map(data, hdr)
             map_to_align.meta["rsun_ref"] = rsun
             hdr_large = copy.deepcopy(self.hdr_large)
             hdr_large["RSUN_REF"] = rsun
             w_large = WCS(hdr_large)
-            with propagate_with_solar_surface(): 
+            with propagate_with_solar_surface():
                 map_to_align_rep = map_to_align.reproject_to(w_large)
             image = copy.deepcopy(map_to_align_rep.data)
 
-
         return image
-
 
     def _create_submap_of_large_data(self, data_large):
         if self.path_save_figure is not None:
@@ -772,12 +779,13 @@ class Alignment:
         else:
             longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
-        image_large_cut = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut, y=y_cut,
-                                                          order=self.order, fill=-32768)
+        image_large_cut = np.zeros_like(x_cut, dtype="float32")
+        Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
+                                        dst=image_large_cut,
+                                        order=self.order, fill=np.nan, opencv=self.opencv)
         # breakpoint()
         # image_large_cut_ = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut_, y=y_cut_,order=1,fill=-32768)
 
-        image_large_cut[image_large_cut == -32768] = np.nan
         self.hdr_large = hdr_cut.copy()
         w_xy_small = WCS(self.hdr_small.copy())
         if self.use_sunpy:
@@ -785,10 +793,13 @@ class Alignment:
             x_cut, y_cut = w_xy_small.world_to_pixel(coords_cut)
         else:
             x_cut, y_cut = w_xy_small.world_to_pixel(longitude_cut, latitude_cut)
-
-        image_small_cut = Util.AlignCommonUtil.interpol2d(np.array(self.data_small.copy(), dtype=np.float64), x=x_cut,
-                                                          y=y_cut, order=self.order, fill=-32768)
-        image_small_cut[image_small_cut == -32768] = np.nan
+        image_small_cut = np.zeros_like(x_cut, dtype="float32")
+        Util.AlignCommonUtil.interpol2d(self.data_small.copy(), x=x_cut,
+                                        y=y_cut, order=self.order,
+                                        fill=np.nan, dst=image_small_cut,
+                                        opencv=self.opencv
+                                        )
+        # image_small_cut[image_small_cut == -32768] = np.nan
 
         self.data_small = image_small_cut
         self.hdr_small = hdr_cut.copy()
@@ -829,10 +840,10 @@ class Alignment:
 
         else:
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
-        image_small_shft = Util.AlignCommonUtil.interpol2d(np.array(copy.deepcopy(data), dtype="float"),
-                                                           x=x_large, y=y_large, order=self.order,
-                                                           fill=-32768,)
-        image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
+        image_small_shft = np.zeros_like(x_large, dtype="float32")
+        Util.AlignCommonUtil.interpol2d(data.copy(), x=x_large, y=y_large, order=self.order,
+                                        fill=np.nan, dst=image_small_shft, opencv=self.opencv)
+        # image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
 
         return image_small_shft
 

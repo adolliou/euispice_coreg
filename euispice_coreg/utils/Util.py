@@ -15,6 +15,7 @@ import matplotlib.patches as patches
 from astropy.visualization import ImageNormalize, AsymmetricPercentileInterval, SqrtStretch, LinearStretch, LogStretch
 from multiprocess.shared_memory import SharedMemory
 from astropy.coordinates import SkyCoord
+import cv2
 
 
 class AlignCommonUtil:
@@ -80,7 +81,7 @@ class AlignCommonUtil:
         return - ((- ang + pi) % (2 * pi) - pi)
 
     @staticmethod
-    def interpol2d(image, x, y, fill, order, dst=None):
+    def interpol2d(image, x, y, fill, order, dst=None, opencv=False):
         """"
         taken from Frederic interpol2d function
         """
@@ -89,11 +90,36 @@ class AlignCommonUtil:
         y = np.where(bad, -1, y)
 
         coords = np.stack((y.ravel(), x.ravel()), axis=0)
+        return_ = False
+        if opencv:
+            image = np.array(image, dtype="float32")
         if dst is None:
+            return_ = True
             dst = np.empty(x.shape, dtype=image.dtype)
-        map_coordinates(image, coords, order=order, mode='constant', cval=fill, output=dst.ravel(), prefilter=False)
-
-        return dst
+        if opencv:
+            if order == 0:
+                inter = cv2.INTER_NEAREST
+            elif order == 1:
+                inter = cv2.INTER_LINEAR
+            elif order == 2:
+                inter = cv2.INTER_CUBIC
+            else:
+                raise ValueError("order must be 0, 1 or 2 for openCV")
+            cv2.remap(image,
+                      x.astype(np.float32),  # converts to float 32 for opencv
+                      y.astype(np.float32),  # does nothing with default dtype
+                      inter,  # interpolation method
+                      dst,  # destination array
+                      cv2.BORDER_CONSTANT,  # fills in with constant value
+                      fill)
+        else:
+            map_coordinates(image,
+                            coords,
+                            order=order,
+                            mode='constant',
+                            cval=fill, output=dst.ravel(), prefilter=False)
+        if return_:
+            return dst
 
     @staticmethod
     def write_corrected_fits(path_l2_input: str, window_list, path_l3_output: str, corr: np.array,
@@ -108,10 +134,10 @@ class AlignCommonUtil:
 
                 AlignCommonUtil.correct_pointing_header(header,
                                                         lag_crval1=lag_crval1[max_index[0]],
-                                                        lag_crval2=lag_crval2[max_index[1]], 
-                                                        lag_cdelt1=lag_cdelt1[max_index[2]], 
-                                                        lag_cdelt2=lag_cdelt2[max_index[3]], 
-                                                        lag_crota = lag_crota[max_index[4]]
+                                                        lag_crval2=lag_crval2[max_index[1]],
+                                                        lag_cdelt1=lag_cdelt1[max_index[2]],
+                                                        lag_cdelt2=lag_cdelt2[max_index[3]],
+                                                        lag_crota=lag_crota[max_index[4]]
                                                         )
 
                 if isinstance(hdul[window], astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
@@ -141,7 +167,7 @@ class AlignCommonUtil:
                 header['CUNIT1']).value
         if lag_crval2 is not None:
             header['CRVAL2'] = header['CRVAL2'
-                               ] + u.Quantity(lag_crval2,"arcsec").to(
+                               ] + u.Quantity(lag_crval2, "arcsec").to(
                 header['CUNIT2']).value
         key_rota = None
         if "CROTA" in header:
@@ -956,10 +982,15 @@ class PlotFits:
 
 class MpUtils:
     @staticmethod
-    def gen_shmm(create=False, name=None, ndarray=None, size=0, shape=None, dtype=float):
+    def gen_shmm(create=False, name=None, ndarray=None, size=0, shape=None, dtype=None):
 
         assert (type(ndarray) != type(None) or size != 0) or type(name) != type(None)
         assert type(ndarray) != type(None) or type(shape) != type(None)
+        if (dtype is None) & create:
+            dtype = ndarray.dtype
+        elif (dtype is None) & (create == False):
+            raise ValueError("dtype must be set")
+
         size = size if type(ndarray) == type(None) else ndarray.nbytes
         shmm = SharedMemory(create=create, size=size, name=name)
         shmm_data = np.ndarray(shape=shape if type(ndarray) == type(None) else ndarray.shape, buffer=shmm.buf,

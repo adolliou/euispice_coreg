@@ -20,6 +20,7 @@ class AlignmentSpice(Alignment):
                  display_progress_bar: bool = False, path_save_figure: str | None = None,
                  wavelength_interval_to_sum: list[u.Quantity] | str = "all",
                  sub_fov_window: list[u.Quantity] | str = "all",
+                 opencv: bool = False,
                  ):
         """
 
@@ -47,6 +48,7 @@ class AlignmentSpice(Alignment):
         :param path_save_figure: path where to save the figures.
         :param sub_fov_window: for SPICE only. if "all", select the entire SPICE window. Else enter a list of the form
         [lon_min * u.arcsec, lon_max * u.arcsec, lat_min * u.arcsec, lat_max * u.arcsec].
+        :param opencv, set to True to use OpenCV library.
         """
         super().__init__(large_fov_known_pointing=large_fov_known_pointing, small_fov_to_correct=small_fov_to_correct,
                          lag_crval1=lag_crval1, lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2,
@@ -54,7 +56,7 @@ class AlignmentSpice(Alignment):
                          lag_solar_r=lag_solar_r, parallelism=parallelism,
                          counts_cpu_max=counts_cpu_max,
                          large_fov_window=large_fov_window, small_fov_window=small_fov_window,
-                         path_save_figure=path_save_figure, )
+                         path_save_figure=path_save_figure,opencv=opencv )
 
         self.sub_fov_window = sub_fov_window
         self.function_to_apply = None

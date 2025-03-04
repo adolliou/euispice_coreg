@@ -32,6 +32,7 @@ def test_alignement_helioprojective_spice():
                        lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, parallelism=parallelism,
                        large_fov_window=-1, small_fov_window=small_fov_window,
                        path_save_figure=None, wavelength_interval_to_sum=wave_interval,
+                       opencv=False,
                        )
 
     results = A.align_using_helioprojective(method='correlation', )
@@ -44,8 +45,8 @@ def test_alignement_helioprojective_spice():
             "Ly-gamma-CIII group (Merged)",
             "LyB- FeX group (Merged)",
             "O VI 1032 - Peak"]
-    path_save_fits = "./euispice_coreg/hdrshift/test/test_SPICE.fits"
-    path_save_folder = "./euispice_coreg/hdrshift/test"
+    path_save_fits = os.path.join(Path(__file__).parents[0], "test_SPICE.fits")
+    path_save_folder = os.path.join(Path(__file__).parents[0])
     results.write_corrected_fits(windows_spice, path_to_l3_output=path_save_fits)
     results.plot_correlation(path_save_figure=os.path.join(path_save_folder, "correlation_results.png"))
     results.plot_co_alignment(path_save_figure=os.path.join(path_save_folder, "co_alignment_results.png"))
