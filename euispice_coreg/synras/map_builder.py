@@ -90,6 +90,7 @@ class ComposedMapBuilder(MapBuilder):
             naxis2, naxis_long, utc_spice, w_xy = self._prepare_spectro_data(hdr_spice,
                                                                              keep_original_imager_pixel_size, level)
         # EUIUtil
+        
         for ii in range(naxis_long):
             utc_slit, deltat = self._return_mean_time(utc_spice[:, ii, 0])
             index_closest, dt = self._find_closest_imager_time(utc_slit)
@@ -123,9 +124,8 @@ class ComposedMapBuilder(MapBuilder):
 
                 else:
                     x_fsi, y_fsi = w_im.world_to_pixel(longitude_spice[:, ii, 0], latitude_spice[:, ii, 0])
-                data_imager_on_slit = Util.AlignCommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=1,
-                                                                      fill=-32762)
-                data_imager_on_slit = np.where(data_imager_on_slit == -32762, np.nan, data_imager_on_slit)
+                data_imager_on_slit = Util.AlignCommonUtil.interpol2d(data_imager, x=x_fsi, y=y_fsi, order=2,
+                                                                      fill=np.nan)
                 self.data_composed[:, ii] = data_imager_on_slit
                 hdul_imager.close()
         # keys = ["DATE-AVG", "DSUN_OBS", "RSUN_REF", "SOLAR_B0", "WAVELNTH", "DETECTOR", "BUNIT", "XPOSURE"]
@@ -251,13 +251,27 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
                 hdr_im = hdu.header.copy()
             if keep_original_imager_pixel_size:
 
+
                 x, y, t = np.meshgrid(np.arange(0, hdr_spice["NAXIS1"], hdr_im["CDELT1"] / hdr_spice["CDELT1"]),
-                                      np.arange(0, hdr_spice["NAXIS2"], hdr_im["CDELT2"] / hdr_spice["CDELT2"]),
-                                      np.arange(hdr_spice["NAXIS4"]))
+                        np.arange(0, hdr_spice["NAXIS2"], hdr_im["CDELT2"] / hdr_spice["CDELT2"]),
+                        np.arange(hdr_spice["NAXIS4"]))
+                self.data_composed = np.empty((len(np.arange(0, hdr_spice["NAXIS2"],
+                                                             hdr_im["CDELT2"] / hdr_spice["CDELT2"])),
+                                               len(np.arange(0, hdr_spice["NAXIS1"],
+                                                             hdr_im["CDELT1"] / hdr_spice["CDELT1"]))),
+                                              dtype=np.float64)
+                self.dates_selected = np.empty(len(np.arange(0, hdr_spice["NAXIS1"],
+                                                             hdr_im["CDELT1"] / hdr_spice["CDELT1"])), dtype="object")
+
+
+
+                naxis_long = len(np.arange(0, hdr_spice["NAXIS1"], hdr_im["CDELT1"] / hdr_spice["CDELT1"]))
             else:
                 x, y, t = np.meshgrid(np.arange(hdr_spice["NAXIS1"]),
                                       np.arange(hdr_spice["NAXIS2"]),
                                       np.arange(hdr_spice["NAXIS4"]))
+                naxis_long = hdr_spice["NAXIS1"]
+
             if self.use_sunpy:
                 coords_spice = w_xyt.pixel_to_world(x, y, t)
                 self.skycoord_spice = coords_spice[0]
@@ -270,7 +284,6 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
             w_xy = w_xyt.deepcopy()
             w_xy.wcs.pc[2, 0] = 0
             w_xy = w_xy.dropaxis(2)
-            naxis_long = hdr_spice["NAXIS1"]
         elif level == 3:
             w_spice = WCS(hdr_spice)
             self.dates_selected = np.empty(hdr_spice["NAXIS2"], dtype="object")
@@ -301,8 +314,8 @@ class SPICEComposedMapBuilder(ComposedMapBuilder):
                 self.dates_selected = np.empty(len(np.arange(0, hdr_spice["NAXIS2"],
                                                              hdr_im["CDELT1"] / hdr_spice["CDELT2"])), dtype="object")
 
-                x2, y2, z2 = np.meshgrid(np.arange(w_xyt.pixel_shape[idx_lon]), np.arange(w_xyt.pixel_shape[idx_lat]),
-                                         np.arange(w_xyt.pixel_shape[idx_utc]), )
+                # x2, y2, z2 = np.meshgrid(np.arange(w_xyt.pixel_shape[idx_lon]), np.arange(w_xyt.pixel_shape[idx_lat]),
+                #                          np.arange(w_xyt.pixel_shape[idx_utc]), )
 
                 naxis_long = len(np.arange(0, hdr_spice["NAXIS2"], hdr_im["CDELT1"] / hdr_spice["CDELT2"]))
 
