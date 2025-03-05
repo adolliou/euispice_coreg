@@ -130,6 +130,7 @@ class ComposedMapBuilder(MapBuilder):
                 self.data_composed[:, ii] = data_imager_on_slit
                 hdul_imager.close()
         # keys = ["DATE-AVG", "DSUN_OBS", "RSUN_REF", "SOLAR_B0", "WAVELNTH", "DETECTOR", "BUNIT", "XPOSURE"]
+
         keys = ["CRPIX1", "CRPIX2", "CRPIX3", "CRPIX4",
                 "CRVAL1", "CRVAL2", "CRVAL3", "CRVAL4",
                 "CDELT1", "CDELT2", "CDELT3", "CDELT4",
@@ -146,6 +147,9 @@ class ComposedMapBuilder(MapBuilder):
             else:
                 warnings.warn(f"{k} no in original header. It is not added to the synthetic raster header")
         self.hdr_composed["DATE-AVG"] = hdr_spice["DATE-AVG"]
+        self.hdr_composed["DATE-OBS"] = hdr_spice["DATE-OBS"]
+        self.hdr_composed["DATE-BEG"] = hdr_spice["DATE-BEG"]
+
         utc_composed, deltat = self._return_mean_time(self.dates_selected)
         wave = self.hdr_composed["WAVELNTH"]
         if "DETECTOR" in self.hdr_composed:
