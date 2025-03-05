@@ -91,7 +91,7 @@ class ComposedMapBuilder(MapBuilder):
             naxis2, naxis_long, utc_spice, w_xy = self._prepare_spectro_data(hdr_spice,
                                                                              keep_original_imager_pixel_size, level)
         # EUIUtil
-        
+        list_hdr_imagers_used = []
         for ii in range(naxis_long):
             utc_slit, deltat = self._return_mean_time(utc_spice[:, ii, 0])
             index_closest, dt = self._find_closest_imager_time(utc_slit)
@@ -109,7 +109,7 @@ class ComposedMapBuilder(MapBuilder):
                 hdu_imager = hdul_imager[self.window_imager]
                 hdr_imager = hdu_imager.header
                 data_imager = hdu_imager.data
-
+                list_hdr_imagers_used.append(hdr_imager)
                 # if self.divide_exposure:
                 #     if ('DN/s' in hdr_imager["BUNIT"]) or
                 #     pass
@@ -139,7 +139,7 @@ class ComposedMapBuilder(MapBuilder):
         for ii, jj in zip([1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
                           [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]):
             keys.append(f"PC{ii}_{jj}")
-        hdr_fsi_mid = self.headers[len(self.list_imager_paths) // 2]
+        hdr_fsi_mid = list_hdr_imagers_used[len(list_hdr_imagers_used) // 2].copy()
         self.hdr_composed = hdr_fsi_mid
         for k in keys:
             if k in self.hdr_spice_:
