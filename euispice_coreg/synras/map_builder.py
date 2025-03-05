@@ -34,6 +34,7 @@ class ComposedMapBuilder(MapBuilder):
         :param window_spectro: chosen window for the spectro HDULIST
         # :param divide_exposure: divide the imager data by the exposure time
         """
+        raise ValueError("Sorry, there is an critical error with composedmaps right now. Currently under review.\n /For now, please do not use the function, and coalign SPICE with an image close to DATE-AVG")
         super().__init__()
         self.path_to_spectro = path_to_spectro
         self.list_imager_paths = np.array(list_imager_paths, dtype="str")
