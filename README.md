@@ -25,12 +25,16 @@ In your project, a virtual environement can be created with the following comman
 python -m venv env
 source env/bin/activate # write "deactivate" in shell to go out of your virtual environement. 
 ```
-
-You can use the pip install + git command, while you are in virtual environment, to install the package into your own project.
+The package is also available on Pypi. You can install it through te following command, while you are in virtual environment, to install the package into your own project: 
+```shell
+pip install euispice-coreg
+```
+Alternativelym, if you want the lastest version, you can use the pip install + git command, .
 
 ```shell
 pip install git+https://github.com/adolliou/euispice_coreg
 ```
+
 You can also clone the euispice_coreg repository locally. Then, while you are in the virtual environment of your personal project, you can add the Alignment package with the following command :
 
 ```shell
