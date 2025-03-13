@@ -286,6 +286,7 @@ class AlignCommonUtil:
             elif "CROTA2" in hdr:
                 crot = hdr["CROTA2"]
             else:
+                hdr["CROTA"] = 0.0
                 crot=0.0
 
             rho = np.deg2rad(crot)
