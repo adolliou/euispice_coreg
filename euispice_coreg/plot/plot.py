@@ -619,6 +619,7 @@ class PlotFunctions:
                           small_fov_value_min: float = None,
                           small_fov_value_max: float = None,
                           shift_arcsec: list = None,
+                          norm_type=None, imin=2, imax=97,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -799,7 +800,7 @@ class PlotFunctions:
                 AlignCommonUtil.correct_pointing_header(header=header_to_align_shifted,
                                                         **parameter_alignment_values)
 
-                norm = PlotFits.get_range(data=data_reference, stre=None, imin=2, imax=97)
+                norm = PlotFits.get_range(data=data_reference, stre=norm_type, imin=imin, imax=imax)
                 longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_to_align.copy(), dsun=False,
                                                                         lon_ctype=header_to_align["CTYPE1"],  lat_ctype=header_to_align["CTYPE2"])
                 longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude, latitude)
@@ -869,7 +870,7 @@ class PlotFunctions:
                                                                   order=3, )
                             fig = plt.figure(figsize=(6, 6))
                             ax = fig.add_subplot()
-                            PlotFunctions.simple_plot(hdr_main=header_to_align, data_main=data_rep, fig=fig, ax=ax, )
+                            PlotFunctions.simple_plot(hdr_main=header_to_align, data_main=data_rep, fig=fig, ax=ax,)
                             ax.set_title(title)
                             pdf.savefig(fig)
     
@@ -889,7 +890,7 @@ class PlotFunctions:
                                                         "to align not Shifted"], ):
                             hdu = fits.PrimaryHDU(data=data, header=header)
                             hdu.verify('fix')
-                            norm = PlotFits.get_range(data, stre=None, imin=2, imax=98)
+                            norm = PlotFits.get_range(data, stre=norm_type, imin=imin, imax=imax)
                             cmap = "viridis"                            
                             if "TELESCOP" in header:
                                 if ("PHI" in header["TELESCOP"]) or ("HMI" in header["TELESCOP"]):
