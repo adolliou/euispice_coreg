@@ -324,8 +324,8 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "initial_carrington"
-        self.lon_ctype="CRLN-TAN"
-        self.lat_ctype="CRLT-TAN"
+        self.lon_ctype="CRLN-CAR"
+        self.lat_ctype="CRLT-CAR"
 
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -609,10 +609,8 @@ class Alignment:
                 if self.coordinate_frame == "final_carrington":
                     self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
                                                              hdr=self.hdr_large)
-                elif self.coordinate_frame == "final_helioprojective":
+                elif (self.coordinate_frame == "final_helioprojective") or (self.coordinate_frame == "initial_carrington"):
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
-                elif self.coordinate_frame == "initial_carrington":
-                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large, )
 
 
                 condition_1 = np.ones(self.data_small.shape, dtype='bool')
@@ -693,10 +691,10 @@ class Alignment:
                 (len(self.lag_crval1), len(self.lag_crval2), len(self.lag_cdelt1), len(self.lag_cdelt2),
                  len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
             for hh, d_solar_r in enumerate(self.lag_solar_r):
-                if self.coordinate_frame == "carrington":
+                if self.coordinate_frame == "final_carrington":
                     self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
                                                              hdr=self.hdr_large)
-                elif self.coordinate_frame == "helioprojective":
+                elif (self.coordinate_frame == "initial_helioprojective") or (self.coordinate_frame == "initial_carrington") :
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
 
                 # shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_large)
