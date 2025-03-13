@@ -279,7 +279,7 @@ class PlotFunctions:
                 latitude = AlignCommonUtil.ang2pipi(coords.Ty)
             else:
                 longitude = coords.lon
-                latitude = coords.lon
+                latitude = coords.lat
             longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude=longitude,
                                                                                     latitude=latitude)
             coords_grid = SkyCoord(longitude_grid, latitude_grid, frame=coords.frame)
