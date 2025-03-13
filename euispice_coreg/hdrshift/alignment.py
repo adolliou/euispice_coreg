@@ -125,6 +125,8 @@ class Alignment:
         self.order = reprojection_order
 
         self.lock = Lock()
+        self.lon_ctype = None
+        self.lat_ctype = None
 
         # check whether the Helioprojective frame is imported through an sunpy.map import for instance.
         use_sunpy = False
@@ -173,6 +175,9 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "final_carrington"
+        self.lon_ctype="HPLN-TAN"
+        self.lat_ctype="HPLT-TAN"
+
         self.method_carrington_reprojection = method_carrington_reprojection
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -261,6 +266,9 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "final_helioprojective"
+        self.lon_ctype="HPLN-TAN"
+        self.lat_ctype="HPLT-TAN"
+
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
         dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
@@ -316,6 +324,9 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "initial_carrington"
+        self.lon_ctype="CRLN-TAN"
+        self.lat_ctype="CRLT-TAN"
+
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
         dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
@@ -601,7 +612,7 @@ class Alignment:
                 elif self.coordinate_frame == "final_helioprojective":
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
                 elif self.coordinate_frame == "initial_carrington":
-                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large, lon_ctype='CRLN-CAR', lat_ctype='CRLT-CAR')
+                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large, )
 
 
                 condition_1 = np.ones(self.data_small.shape, dtype='bool')
@@ -812,7 +823,7 @@ class Alignment:
 
         return image
 
-    def _create_submap_of_large_data(self, data_large, lon_ctype="HPLN-TAN", lat_ctype="HPLT-TAN"):
+    def _create_submap_of_large_data(self, data_large, ):
         if self.path_save_figure is not None:
             plot.PlotFunctions.simple_plot(self.hdr_large, data_large, show=False,
                                            path_save='%s/large_fov_before_cut.pdf' % (self.path_save_figure))
@@ -822,16 +833,16 @@ class Alignment:
 
         if self.use_sunpy:
             w_cut = WCS(hdr_cut)
-            idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == lon_ctype)[0][0]
-            idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == lat_ctype)[0][0]
+            idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
+            idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
             x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
                                np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
             coords_cut = w_cut.pixel_to_world(x, y)
 
-            if lon_ctype == "HPLN-TAN":
+            if self.lon_ctype == "HPLN-TAN":
                 longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
                 latitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Ty)
-            elif lon_ctype == 'CRLN-CAR': 
+            elif self.lon_ctype == 'CRLN-CAR': 
                 longitude_cut = coords_cut.lon
                 latitude_cut = coords_cut.lat
             coords_cut = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
@@ -839,7 +850,7 @@ class Alignment:
 
 
         else:
-            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut, lon_ctype=lon_ctype, lat_ctype=lon_ctype)
+            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut, lon_ctype=self.lon_ctype, lat_ctype=self.lon_ctype)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
@@ -881,10 +892,10 @@ class Alignment:
         self.step_figure = False
         return np.array(image_large_cut)
 
-    def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr):
+    def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr,):
 
         w_xy_small = WCS(hdr)
-        longitude_large, latitude_large, dsun_obs_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large)
+        longitude_large, latitude_large, dsun_obs_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large, lon_ctype=self.lon_ctype, lat_ctype=self.lat_ctype)
 
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
@@ -893,8 +904,8 @@ class Alignment:
         if use_sunpy:
 
             w_large = WCS(self.hdr_large)
-            idx_lon = np.where(np.array(w_large.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-            idx_lat = np.where(np.array(w_large.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            idx_lon = np.where(np.array(w_large.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
+            idx_lat = np.where(np.array(w_large.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
             x, y = np.meshgrid(np.arange(w_large.pixel_shape[idx_lon]),
                                np.arange(w_large.pixel_shape[idx_lat]), )  # t dépend de x,
             coords = w_large.pixel_to_world(x, y)
