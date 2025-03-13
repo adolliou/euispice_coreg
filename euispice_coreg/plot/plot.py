@@ -282,7 +282,8 @@ class PlotFunctions:
             coords_grid = SkyCoord(longitude_grid, latitude_grid, frame=coords.frame)
             x, y = w.world_to_pixel(coords_grid)
         else:
-            longitude, latitude, dsun = AlignEUIUtil.extract_EUI_coordinates(hdr_main)
+            longitude, latitude, dsun = AlignEUIUtil.extract_EUI_coordinates(hdr_main, 
+                                                                             lon_ctype=hdr_main["CTYPE1"], lat_ctype=hdr_main["CTYPE2"])
             longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude=longitude,
                                                                                     latitude=latitude)
             w = WCS(hdr_main)
@@ -384,9 +385,10 @@ class PlotFunctions:
                      ax=None, fig=None, norm=None, show_xlabel=True, show_ylabel=True, plot_colorbar=True,
                      header_coordinates_plot=None, cmap="plasma", return_grid=False, aspect=1):
         if header_coordinates_plot is None:
-            longitude_main, latitude_main = AlignEUIUtil.extract_EUI_coordinates(hdr_contour, dsun=False)
+            longitude_main, latitude_main = AlignEUIUtil.extract_EUI_coordinates(hdr_contour, dsun=False, lon_ctype=hdr_contour["CTYPE1"], lat_ctype=hdr_contour["CTYPE2"])
         else:
-            longitude_main, latitude_main = AlignEUIUtil.extract_EUI_coordinates(header_coordinates_plot, dsun=False)
+            longitude_main, latitude_main = AlignEUIUtil.extract_EUI_coordinates(header_coordinates_plot, dsun=False, 
+                                                                                  lon_ctype=header_coordinates_plot["CTYPE1"], lat_ctype=header_coordinates_plot["CTYPE2"])
 
         longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude=longitude_main,
                                                                                 latitude=latitude_main)
@@ -787,7 +789,8 @@ class PlotFunctions:
                                                         **parameter_alignment_values)
 
                 norm = PlotFits.get_range(data=data_reference, stre=None, imin=2, imax=97)
-                longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_to_align.copy(), dsun=False)
+                longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_to_align.copy(), dsun=False,
+                                                                        lon_ctype=header_to_align["CTYPE1"],  lat_ctype=header_to_align["CTYPE2"])
                 longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude, latitude)
                 dlon = dlon.to("arcsec").value
                 dlat = dlat.to("arcsec").value
