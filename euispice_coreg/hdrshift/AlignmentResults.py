@@ -154,7 +154,8 @@ class AlignmentResults:
                     extname = hdu.header["EXTNAME"]
                 else:
                     extname = "nothing986953555165"
-                if (extname in window_list_to_apply_shift):
+                if (extname in window_list_to_apply_shift) or (ii in window_list_to_apply_shift) or \
+                      ((ii - len(hdul_out)) in window_list_to_apply_shift):
                     header = hdu.header.copy()
                     data = hdu.data.copy()
                     AlignCommonUtil.correct_pointing_header(
@@ -176,28 +177,28 @@ class AlignmentResults:
                     hdu_out = hdu
                 hdul_out.append(hdu_out)
                 has_corrected_window += 1
-            for win in window_list_to_apply_shift:
-                if isinstance(win, int):
-                    hdu = hdul[win]
-                    header = hdu.header.copy()
-                    data = hdu.data.copy()
-                    AlignCommonUtil.correct_pointing_header(
-                        header,
-                        lag_crval1=self.shift_arcsec[0],
-                        lag_crval2=self.shift_arcsec[1],
-                        lag_cdelt1=self.shift_arcsec[2],
-                        lag_cdelt2=self.shift_arcsec[3],
-                        lag_crota=self.shift_arcsec[4],
-                    )
-                    if isinstance(hdu, astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
-                        hdu_out = fits.CompImageHDU(data=data, header=header)
-                    elif isinstance(hdu, astropy.io.fits.hdu.image.ImageHDU):
-                        hdu_out = fits.ImageHDU(data=data, header=header)
-                    elif isinstance(hdu, astropy.io.fits.hdu.image.PrimaryHDU):
-                        hdu_out = fits.PrimaryHDU(data=data, header=header)
-                    hdu_out.verify("silentfix")
-                    hdul_out.insert(win, hdu_out)
-                    has_corrected_window += 1
+            # for win in window_list_to_apply_shift:
+            #     if isinstance(win, int):
+            #         hdu = hdul[win]
+            #         header = hdu.header.copy()
+            #         data = hdu.data.copy()
+            #         AlignCommonUtil.correct_pointing_header(
+            #             header,
+            #             lag_crval1=self.shift_arcsec[0],
+            #             lag_crval2=self.shift_arcsec[1],
+            #             lag_cdelt1=self.shift_arcsec[2],
+            #             lag_cdelt2=self.shift_arcsec[3],
+            #             lag_crota=self.shift_arcsec[4],
+            #         )
+            #         if isinstance(hdu, astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
+            #             hdu_out = fits.CompImageHDU(data=data, header=header)
+            #         elif isinstance(hdu, astropy.io.fits.hdu.image.ImageHDU):
+            #             hdu_out = fits.ImageHDU(data=data, header=header)
+            #         elif isinstance(hdu, astropy.io.fits.hdu.image.PrimaryHDU):
+            #             hdu_out = fits.PrimaryHDU(data=data, header=header)
+            #         hdu_out.verify("silentfix")
+            #         hdul_out.insert(win, hdu_out)
+            #         has_corrected_window += 1
 
             hdul_out.writeto(path_to_l3_output, overwrite=True)
             if has_corrected_window == 0:
