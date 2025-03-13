@@ -145,7 +145,7 @@ class AlignmentResults:
             if self.image_to_align_path is None:
                 raise ValueError("Please provide a path_to_l2_input parameter")
             path_to_l2_input = self.image_to_align_path
-
+        has_corrected_window = 0
         with fits.open(path_to_l2_input) as hdul:
             hdul_out = fits.HDUList()
             for ii in range(len(hdul)):
@@ -175,6 +175,7 @@ class AlignmentResults:
                 else:
                     hdu_out = hdu
                 hdul_out.append(hdu_out)
+                has_corrected_window += 1
             for win in window_list_to_apply_shift:
                 if isinstance(win, int):
                     hdu = hdul[win]
@@ -196,7 +197,12 @@ class AlignmentResults:
                         hdu_out = fits.PrimaryHDU(data=data, header=header)
                     hdu_out.verify("silentfix")
                     hdul_out.insert(win, hdu_out)
+                    has_corrected_window += 1
+
             hdul_out.writeto(path_to_l3_output, overwrite=True)
+            if has_corrected_window == 0:
+                raise ValueError("has not corrected any window.")
+
 
     def savefig(self, filename: str):
         raise NotImplementedError
