@@ -831,6 +831,7 @@ class Alignment:
 
         if self.use_sunpy:
             w_cut = WCS(hdr_cut)
+            print(self.lon_ctype)
             idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
             idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
             x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),

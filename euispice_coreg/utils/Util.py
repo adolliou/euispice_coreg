@@ -350,8 +350,12 @@ class AlignEUIUtil:
         # should reproject on a new coordinate grid first : suppose slits at the same time :
         coords = w.pixel_to_world(x, y)
         if isinstance(coords, SkyCoord):
-            longitude = AlignCommonUtil.ang2pipi(coords.Tx)
-            latitude = AlignCommonUtil.ang2pipi(coords.Ty)
+            if lon_ctype == "HPLN-TAN":
+                longitude = AlignCommonUtil.ang2pipi(coords.Tx)
+                latitude = AlignCommonUtil.ang2pipi(coords.Ty)
+            elif lon_ctype == "CRLN-CAR":
+                longitude = coords.lon
+                latitude = coords.lat
         elif isinstance(coords, list):
             longitude = AlignCommonUtil.ang2pipi(coords[0])
             latitude = AlignCommonUtil.ang2pipi(coords[1])
@@ -362,7 +366,7 @@ class AlignEUIUtil:
             return AlignCommonUtil.ang2pipi(longitude), \
                 AlignCommonUtil.ang2pipi(latitude), dsun_obs_large
         else:
-            return AlignCommonUtil.ang2pipi(longitude), AlignCommonUtil.ang2pipi(latitude)
+            return longitude, latitude
 
     @staticmethod
     def diff_rot(lat, wvl='default'):

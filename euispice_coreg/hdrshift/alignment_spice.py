@@ -91,7 +91,8 @@ class AlignmentSpice(Alignment):
         self.extend_pixel_size = extend_pixel_size
         self.cut_from_center = cut_from_center
         self._extract_imager_data_header()
-
+        self.lon_ctype="HPLN-TAN"
+        self.lat_ctype="HPLT-TAN"
         level = None
         if "L2" in self.small_fov_to_correct:
             level = 2
@@ -140,7 +141,8 @@ class AlignmentSpice(Alignment):
         self.method = method
         self.coordinate_frame = "final_carrington"
         self._extract_imager_data_header()
-
+        self.lon_ctype="HPLN-TAN"
+        self.lat_ctype="HPLT-TAN"
         level = None
         if "L2" in self.small_fov_to_correct:
             level = 2
@@ -439,10 +441,11 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
         self.shape = None
         self.reference_date = None
         self.function_to_apply = self._interpolate_on_large_data_grid
-        self.method = method
+        self.method = methods
         self.coordinate_frame = "final_helioprojective"
         self.extend_pixel_size = extend_pixel_size
-
+        self.lon_ctype="HPLN-TAN"
+        self.lat_ctype="HPLT-TAN"
         level = None
         if "L2" in self.small_fov_to_correct:
             level = 2

@@ -160,6 +160,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-co_alignment_results.png
-correlation_results.png
-co_alignment_sunpy.pdf
+*co_alignment_results.png
+*correlation_results.png
+*co_alignment_sunpy.pdf
