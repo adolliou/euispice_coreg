@@ -268,15 +268,18 @@ class PlotFunctions:
 
         if use_sunpy:
             w = WCS(hdr_main)
-            idx_lon = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-            idx_lat = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            idx_lon = np.where(np.array(w.wcs.ctype, dtype="str") == hdr_main["CTYPE1"])[0][0]
+            idx_lat = np.where(np.array(w.wcs.ctype, dtype="str") == hdr_main["CTYPE2"])[0][0]
             x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
                                np.arange(w.pixel_shape[idx_lat]), )  # t dépend de x,
             # should reproject on a new coordinate grid first : suppose slits at the same time :
             coords = w.pixel_to_world(x, y)
-            longitude = AlignCommonUtil.ang2pipi(coords.Tx)
-            latitude = AlignCommonUtil.ang2pipi(coords.Ty)
-
+            if hdr_main["CTYPE1"] == "HPLN-TAN":
+                longitude = AlignCommonUtil.ang2pipi(coords.Tx)
+                latitude = AlignCommonUtil.ang2pipi(coords.Ty)
+            else:
+                longitude = coords.lon
+                latitude = coords.lon
             longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude=longitude,
                                                                                     latitude=latitude)
             coords_grid = SkyCoord(longitude_grid, latitude_grid, frame=coords.frame)
@@ -291,8 +294,8 @@ class PlotFunctions:
         dlon = dlon.to("arcsec").value
         dlat = dlat.to("arcsec").value
 
-        longitude_grid_arcsec = AlignCommonUtil.ang2pipi(longitude_grid).to("arcsec").value
-        latitude_grid_arcsec = AlignCommonUtil.ang2pipi(latitude_grid).to("arcsec").value
+        longitude_grid_arcsec = longitude_grid.to("arcsec").value
+        latitude_grid_arcsec = latitude_grid.to("arcsec").value
 
         image_on_regular_grid = interpol2d(data_main, x=x, y=y, fill=-32762, order=1)
         image_on_regular_grid[image_on_regular_grid == -32762] = np.nan
@@ -400,8 +403,8 @@ class PlotFunctions:
 
         w_xy_main = WCS(hdr_main)
         if use_sunpy:
-            idx_lon = np.where(np.array(w_xy_main.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-            idx_lat = np.where(np.array(w_xy_main.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            idx_lon = np.where(np.array(w_xy_main.wcs.ctype, dtype="str") == hdr_main["CTYPE1"])[0][0]
+            idx_lat = np.where(np.array(w_xy_main.wcs.ctype, dtype="str") == hdr_main["CTYPE2"])[0][0]
             x, y = np.meshgrid(np.arange(w_xy_main.pixel_shape[idx_lon]),
                                np.arange(w_xy_main.pixel_shape[idx_lat]), )  # t dépend de x,
             # should reproject on a new coordinate grid first : suppose slits at the same time :
