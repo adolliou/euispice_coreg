@@ -828,14 +828,18 @@ class Alignment:
                                np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
             coords_cut = w_cut.pixel_to_world(x, y)
 
-            longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
-            latitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Ty)
+            if lon_ctype == "HPLN-TAN":
+                longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
+                latitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Ty)
+            elif lon_ctype == 'CRLN-CAR': 
+                longitude_cut = coords_cut.lon
+                latitude_cut = coords_cut.lat
             coords_cut = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
             x_cut, y_cut = w_xy_large.world_to_pixel(coords_cut)
 
 
         else:
-            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut, lon_ctype="HPLN-TAN", lat_ctype="HPLT-TAN")
+            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut, lon_ctype=lon_ctype, lat_ctype=lon_ctype)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
