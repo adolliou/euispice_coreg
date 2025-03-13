@@ -820,7 +820,7 @@ class PlotFunctions:
                         PlotFunctions.compare_plot(header_reference, data_reference, header_to_align, data_to_align,
                                                    header_to_align_shifted, data_to_align,
                                                    show=False, norm=norm, levels=levels, return_axes=True,
-                                                   fig=fig, lmin=lmin, lmax=lmax,
+                                                   fig=fig, lmin=lmin, lmax=lmax,norm_contour=norm_contour,
                                                    cmap1="plasma", cmap2="viridis", path_save=None)
                     if "DETECTOR" in header_reference.keys():
                         detector = header_reference["DETECTOR"]
