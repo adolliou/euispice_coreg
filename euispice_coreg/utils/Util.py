@@ -341,10 +341,10 @@ class AlignCommonUtil:
 
 class AlignEUIUtil:
     @staticmethod
-    def extract_EUI_coordinates(hdr, dsun=True):
+    def extract_EUI_coordinates(hdr, dsun=True, lon_ctype="HPLN-TAN", lat_ctype="HPLT-TAN"):
         w = WCS(hdr)
-        idx_lon = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-        idx_lat = np.where(np.array(w.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+        idx_lon = np.where(np.array(w.wcs.ctype, dtype="str") == lon_ctype)[0][0]
+        idx_lat = np.where(np.array(w.wcs.ctype, dtype="str") == lat_ctype)[0][0]
         x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
                            np.arange(w.pixel_shape[idx_lat]), )  # t dépend de x,
         # should reproject on a new coordinate grid first : suppose slits at the same time :

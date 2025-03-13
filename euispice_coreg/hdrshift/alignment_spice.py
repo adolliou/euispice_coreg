@@ -87,7 +87,7 @@ class AlignmentSpice(Alignment):
         self.reference_date = None
         self.function_to_apply = self._interpolate_on_large_data_grid
         self.method = method
-        self.coordinate_frame = "helioprojective"
+        self.coordinate_frame = "final_helioprojective"
         self.extend_pixel_size = extend_pixel_size
         self.cut_from_center = cut_from_center
         self._extract_imager_data_header()
@@ -138,7 +138,7 @@ class AlignmentSpice(Alignment):
         self.function_to_apply = self._carrington_transform
         self.extend_pixel_size = False
         self.method = method
-        self.coordinate_frame = "carrington"
+        self.coordinate_frame = "final_carrington"
         self._extract_imager_data_header()
 
         level = None
@@ -440,7 +440,7 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
         self.reference_date = None
         self.function_to_apply = self._interpolate_on_large_data_grid
         self.method = method
-        self.coordinate_frame = "helioprojective"
+        self.coordinate_frame = "final_helioprojective"
         self.extend_pixel_size = extend_pixel_size
 
         level = None

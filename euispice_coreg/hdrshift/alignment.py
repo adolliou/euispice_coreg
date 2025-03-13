@@ -172,7 +172,7 @@ class Alignment:
         """
 
         self.method = method
-        self.coordinate_frame = "carrington"
+        self.coordinate_frame = "final_carrington"
         self.method_carrington_reprojection = method_carrington_reprojection
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -260,7 +260,62 @@ class Alignment:
         self.function_to_apply = self._interpolate_on_large_data_grid
 
         self.method = method
-        self.coordinate_frame = "helioprojective"
+        self.coordinate_frame = "final_helioprojective"
+        f_large = Fits.open(self.large_fov_known_pointing)
+        f_small = Fits.open(self.small_fov_to_correct)
+        dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
+        self.data_large = dat_large_var
+
+        self.hdr_large = f_large[self.large_fov_window].header.copy()
+        # self._recenter_crpix_in_header(self.hdr_large)
+
+        self.hdr_small = f_small[self.small_fov_window].header.copy()
+
+        # if self.use_pcij:
+        self._check_ant_create_pcij_matrix(self.hdr_small)
+        self._check_ant_create_pcij_matrix(self.hdr_large)
+
+        # self._recenter_crpix_in_header(self.hdr_small)
+        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
+        f_large.close()
+        f_small.close()
+
+        results = self._find_best_header_parameters()
+        if return_type == "corr":
+            return results
+        elif return_type == "AlignmentResults":
+            return AlignmentResults(corr=results,
+                                    lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2,
+                                    lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2,
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
+                                    image_to_align_path=self.small_fov_to_correct,
+                                    image_to_align_window=self.small_fov_window,
+                                    reference_image_path=self.large_fov_known_pointing,
+                                    reference_image_window=self.large_fov_window)
+
+
+
+    def align_using_initial_carrington(self, method='correlation',
+                                    return_type='AlignmentResults'):
+        """
+        Returns the results for the correlation algorithm in carrington frame, starting from images in carrington coordinates
+
+        Args:
+            method (str, optional): Method to co align the data. Defaults to 'correlation'.
+            return_type (str, optional): Determinates the output object of the method 
+            either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+
+        Returns:
+            corr matrix or AlignmentResults depending on return_type
+        """
+        self.lonlims = None
+        self.latlims = None
+        self.shape = None
+        self.reference_date = None
+        self.function_to_apply = self._interpolate_on_large_data_grid
+
+        self.method = method
+        self.coordinate_frame = "initial_carrington"
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
         dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
@@ -540,11 +595,14 @@ class Alignment:
             for kk, d_solar_r in enumerate(self.lag_solar_r):
                 Processes = []
 
-                if self.coordinate_frame == "carrington":
+                if self.coordinate_frame == "final_carrington":
                     self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
                                                              hdr=self.hdr_large)
-                elif self.coordinate_frame == "helioprojective":
+                elif self.coordinate_frame == "final_helioprojective":
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
+                elif self.coordinate_frame == "initial_carrington":
+                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large, lon_ctype='CRLN-CAR', lat_ctype='CRLT-CAR')
+
 
                 condition_1 = np.ones(self.data_small.shape, dtype='bool')
                 condition_2 = np.ones(self.data_small.shape, dtype='bool')
@@ -754,7 +812,7 @@ class Alignment:
 
         return image
 
-    def _create_submap_of_large_data(self, data_large):
+    def _create_submap_of_large_data(self, data_large, lon_ctype="HPLN-TAN", lat_ctype="HPLT-TAN"):
         if self.path_save_figure is not None:
             plot.PlotFunctions.simple_plot(self.hdr_large, data_large, show=False,
                                            path_save='%s/large_fov_before_cut.pdf' % (self.path_save_figure))
@@ -764,8 +822,8 @@ class Alignment:
 
         if self.use_sunpy:
             w_cut = WCS(hdr_cut)
-            idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
-            idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+            idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == lon_ctype)[0][0]
+            idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == lat_ctype)[0][0]
             x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
                                np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
             coords_cut = w_cut.pixel_to_world(x, y)
@@ -777,7 +835,7 @@ class Alignment:
 
 
         else:
-            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut)
+            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut, lon_ctype="HPLN-TAN", lat_ctype="HPLT-TAN")
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,

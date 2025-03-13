@@ -14,7 +14,6 @@ from astropy.time import Time
 import os
 import warnings
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from sunpy.map import Map
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 from astropy.coordinates import SkyCoord
 from matplotlib.backends.backend_pdf import PdfPages
@@ -225,8 +224,9 @@ class PlotFunctions:
         
 
     @staticmethod
-    def simple_plot_sunpy(m_main: Map, path_save=None, show=False, ax=None, fig=None, norm=None,
+    def simple_plot_sunpy(m_main, path_save=None, show=False, ax=None, fig=None, norm=None,
                     show_xlabel=True, show_ylabel=True, plot_colorbar=True, cmap="plasma",  rsun = 1.004*astropy.constants.R_sun):
+        from sunpy.map import Map
 
         rsun = rsun.to("m").value
         return_im = False
@@ -324,58 +324,58 @@ class PlotFunctions:
         if return_im:
             return im
 
-    @staticmethod
-    def contour_plot_sunpy(hdr_main, data_main, hdr_contour, data_contour, path_save=None, show=True, levels=None,
-                    ax=None, fig=None, norm=None, show_xlabel=True, show_ylabel=True, plot_colorbar=True,
-                    header_coordinates_plot=None, cmap="plasma", rsun = 1.004*astropy.constants.R_sun):
-        rsun = rsun.to("m").value
-        if header_coordinates_plot is None:
-            hdr_contour_ = copy.deepcopy(hdr_contour)
-            hdr_contour_["RSUN_REF"] = rsun
-            wcs_to_reproject = WCS(hdr_contour_)
-        else:
-            wcs_to_reproject = WCS(header_coordinates_plot)
+    # @staticmethod
+    # def contour_plot_sunpy(hdr_main, data_main, hdr_contour, data_contour, path_save=None, show=True, levels=None,
+    #                 ax=None, fig=None, norm=None, show_xlabel=True, show_ylabel=True, plot_colorbar=True,
+    #                 header_coordinates_plot=None, cmap="plasma", rsun = 1.004*astropy.constants.R_sun):
+    #     rsun = rsun.to("m").value
+    #     if header_coordinates_plot is None:
+    #         hdr_contour_ = copy.deepcopy(hdr_contour)
+    #         hdr_contour_["RSUN_REF"] = rsun
+    #         wcs_to_reproject = WCS(hdr_contour_)
+    #     else:
+    #         wcs_to_reproject = WCS(header_coordinates_plot)
 
-        m_main = Map(data_main, hdr_main)
-        m_contour = Map(data_contour, hdr_contour)
+    #     m_main = Map(data_main, hdr_main)
+    #     m_contour = Map(data_contour, hdr_contour)
 
-        m_main.meta["rsun_ref"] = rsun
-        m_contour.meta["rsun_ref"] = rsun
-        with propagate_with_solar_surface(): 
-            m_main_rep = m_main.reproject_to(wcs_to_reproject)
-            m_contour_rep = m_contour.reproject_to(wcs_to_reproject)
-        return_im = True
-        if fig is None:
-            fig = plt.figure()
-            return_im = False
-        if ax is None:
-            ax = fig.add_subplot(projection=m_main_rep)
-        if norm is None:
-            norm = ImageNormalize(stretch=LogStretch(5))
-        m_main_rep.plot(axes=ax, norm=norm, cmap=cmap)
+    #     m_main.meta["rsun_ref"] = rsun
+    #     m_contour.meta["rsun_ref"] = rsun
+    #     with propagate_with_solar_surface(): 
+    #         m_main_rep = m_main.reproject_to(wcs_to_reproject)
+    #         m_contour_rep = m_contour.reproject_to(wcs_to_reproject)
+    #     return_im = True
+    #     if fig is None:
+    #         fig = plt.figure()
+    #         return_im = False
+    #     if ax is None:
+    #         ax = fig.add_subplot(projection=m_main_rep)
+    #     if norm is None:
+    #         norm = ImageNormalize(stretch=LogStretch(5))
+    #     m_main_rep.plot(axes=ax, norm=norm, cmap=cmap)
 
-        if levels is None:
-            max_small = np.nanmax(m_contour_rep.data)
-            levels = [0.5 * max_small]
-        m_contour_rep.draw_contours(axes=ax, levels=levels)
-        if show_xlabel:
-            ax.set_xlabel("Solar-X [arcsec]")
-        if show_ylabel:
-            ax.set_ylabel("Solar-Y [arcsec]")
-        if plot_colorbar:
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            if "BUNIT" in hdr_main:
+    #     if levels is None:
+    #         max_small = np.nanmax(m_contour_rep.data)
+    #         levels = [0.5 * max_small]
+    #     m_contour_rep.draw_contours(axes=ax, levels=levels)
+    #     if show_xlabel:
+    #         ax.set_xlabel("Solar-X [arcsec]")
+    #     if show_ylabel:
+    #         ax.set_ylabel("Solar-Y [arcsec]")
+    #     if plot_colorbar:
+    #         divider = make_axes_locatable(ax)
+    #         cax = divider.append_axes("right", size="5%", pad=0.05)
+    #         if "BUNIT" in hdr_main:
 
-                fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=cax, label=hdr_main["BUNIT"])
-            else:
-                fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=cax)
-        if show:
-            fig.show()
-        if path_save is not None:
-            fig.savefig(path_save)
-        elif return_im:
-            return im
+    #             fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=cax, label=hdr_main["BUNIT"])
+    #         else:
+    #             fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=cax)
+    #     if show:
+    #         fig.show()
+    #     if path_save is not None:
+    #         fig.savefig(path_save)
+    #     elif return_im:
+    #         return im
 
     
 
@@ -860,6 +860,8 @@ class PlotFunctions:
                             pdf.savefig(fig)
     
                 elif type_plot == "sunpy":
+                    from sunpy.map import Map
+
                     rsun=rsun.to("m").value
                     with PdfPages(path_save_figure) as pdf:
                         header_to_align_ = copy.deepcopy(header_to_align)
