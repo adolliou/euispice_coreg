@@ -938,11 +938,16 @@ class PlotFits:
         x = np.abs((longitude[1, 0] - longitude[0, 0]).to("deg").value)
         y = np.abs((latitude[1, 0] - latitude[0, 0]).to("deg").value)
         dlat = np.sqrt(x ** 2 + y ** 2)
-
-        longitude1D = np.arange(np.min(AlignCommonUtil.ang2pipi(longitude).to(u.deg).value),
-                                np.max(AlignCommonUtil.ang2pipi(longitude).to(u.deg).value), dlon)
-        latitude1D = np.arange(np.min(AlignCommonUtil.ang2pipi(latitude).to(u.deg).value),
-                               np.max(AlignCommonUtil.ang2pipi(latitude).to(u.deg).value), dlat)
+        if longitude.unit == "deg":
+            longitude1D = np.arange(np.min(longitude.to(u.deg).value),
+                                    np.max(longitude.to(u.deg).value), dlon)
+            latitude1D = np.arange(np.min(latitude.to(u.deg).value),
+                                np.max(latitude.to(u.deg).value), dlat)
+        elif longitude.unit == "arcsec":
+            longitude1D = np.arange(np.min(AlignCommonUtil.ang2pipi(longitude).to(u.deg).value),
+                                    np.max(AlignCommonUtil.ang2pipi(longitude).to(u.deg).value), dlon)
+            latitude1D = np.arange(np.min(AlignCommonUtil.ang2pipi(latitude).to(u.deg).value),
+                                np.max(AlignCommonUtil.ang2pipi(latitude).to(u.deg).value), dlat)
         if (lonlims is not None) or (latlims is not None):
             longitude1D = longitude1D[(longitude1D > AlignCommonUtil.ang2pipi(lonlims[0]).to("deg").value) &
                                       (longitude1D < AlignCommonUtil.ang2pipi(lonlims[1]).to("deg").value)]
@@ -965,18 +970,31 @@ class PlotFits:
         x = np.abs((longitude_grid[1, 0] - longitude_grid[0, 0]).to("deg").value)
         y = np.abs((latitude_grid[1, 0] - latitude_grid[0, 0]).to("deg").value)
         dlat = np.sqrt(x ** 2 + y ** 2)
+        if longitude_grid.unit == 'deg':
+            delta_longitude_deg = delta_longitude.to("deg").value
+            delta_latitude_deg = delta_latitude.to("deg").value
 
-        delta_longitude_deg = AlignCommonUtil.ang2pipi(delta_longitude).to("deg").value
-        delta_latitude_deg = AlignCommonUtil.ang2pipi(delta_latitude).to("deg").value
+            longitude1D = np.arange(
+                np.min(longitude_grid.to(u.deg).value - 0.5 * delta_longitude_deg),
+                np.max(longitude_grid.to(u.deg).value) + 0.5 * delta_longitude_deg,
+                dlon)
+            latitude1D = np.arange(
+                np.min(latitude_grid.to(u.deg).value - 0.5 * delta_latitude_deg),
+                np.max(latitude_grid.to(u.deg).value) + 0.5 * delta_latitude_deg,
+                dlat)
 
-        longitude1D = np.arange(
-            np.min(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value - 0.5 * delta_longitude_deg),
-            np.max(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value) + 0.5 * delta_longitude_deg,
-            dlon)
-        latitude1D = np.arange(
-            np.min(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value - 0.5 * delta_latitude_deg),
-            np.max(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value) + 0.5 * delta_latitude_deg,
-            dlat)
+        elif longitude_grid.unit == "arcsec":
+            delta_longitude_deg = AlignCommonUtil.ang2pipi(delta_longitude).to("deg").value
+            delta_latitude_deg = AlignCommonUtil.ang2pipi(delta_latitude).to("deg").value
+
+            longitude1D = np.arange(
+                np.min(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value - 0.5 * delta_longitude_deg),
+                np.max(AlignCommonUtil.ang2pipi(longitude_grid).to(u.deg).value) + 0.5 * delta_longitude_deg,
+                dlon)
+            latitude1D = np.arange(
+                np.min(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value - 0.5 * delta_latitude_deg),
+                np.max(AlignCommonUtil.ang2pipi(latitude_grid).to(u.deg).value) + 0.5 * delta_latitude_deg,
+                dlat)
 
         longitude_grid_ext, latitude_grid_ext = np.meshgrid(longitude1D, latitude1D)
         longitude_grid_ext = longitude_grid_ext * u.deg

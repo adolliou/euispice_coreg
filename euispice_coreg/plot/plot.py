@@ -429,8 +429,12 @@ class PlotFunctions:
                                        x=x_contour, y=y_contour,
                                        order=1, fill=-32768)
         image_contour_cut[image_contour_cut == -32768] = np.nan
-        longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid).to("arcsec").value
-        latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid).to("arcsec").value
+        if longitude_grid_arc.unit == "deg":
+            longitude_grid_arc =longitude_grid.to("arcsec").value
+            latitude_grid_arc = latitude_grid.to("arcsec").value        
+        else:
+            longitude_grid_arc = AlignCommonUtil.ang2pipi(longitude_grid).to("arcsec").value
+            latitude_grid_arc = AlignCommonUtil.ang2pipi(latitude_grid).to("arcsec").value
         dlon = dlon.to("arcsec").value
         dlat = dlat.to("arcsec").value
         return_im = True
@@ -529,8 +533,12 @@ class PlotFunctions:
             # max = np.percentile(data_contour_2[~isnan], 98)
             # norm_contour = ImageNormalize(stretch=LinearStretch(), vmin=min, vmax=max)
             norm_contour = PlotFits.get_range(data_contour_2, imin=3, imax=97, stre=None)
-        longitude_grid_arc = AlignCommonUtil.ang2pipi(lon_grid).to("arcsec").value
-        latitude_grid_arc = AlignCommonUtil.ang2pipi(lat_grid).to("arcsec").value
+        if lon_grid.unit == "deg":
+            longitude_grid_arc =lon_grid.to("arcsec").value
+            latitude_grid_arc = lat_grid.to("arcsec").value
+        else:
+            longitude_grid_arc = AlignCommonUtil.ang2pipi(lon_grid).to("arcsec").value
+            latitude_grid_arc = AlignCommonUtil.ang2pipi(lat_grid).to("arcsec").value
         dlon = longitude_grid_arc[1, 1] - longitude_grid_arc[0, 0]
         dlat = latitude_grid_arc[1, 1] - latitude_grid_arc[0, 0]
 
