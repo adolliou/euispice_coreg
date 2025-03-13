@@ -429,7 +429,7 @@ class PlotFunctions:
                                        x=x_contour, y=y_contour,
                                        order=1, fill=-32768)
         image_contour_cut[image_contour_cut == -32768] = np.nan
-        if longitude_grid_arc.unit == "deg":
+        if longitude_grid.unit == "deg":
             longitude_grid_arc =longitude_grid.to("arcsec").value
             latitude_grid_arc = latitude_grid.to("arcsec").value        
         else:
