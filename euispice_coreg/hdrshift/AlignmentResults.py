@@ -155,7 +155,7 @@ class AlignmentResults:
                 else:
                     extname = "nothing986953555165"
                 if (extname in window_list_to_apply_shift) or (ii in window_list_to_apply_shift) or \
-                      ((ii - len(hdul_out)) in window_list_to_apply_shift):
+                      ((ii - len(hdul)) in window_list_to_apply_shift):
                     header = hdu.header.copy()
                     data = hdu.data.copy()
                     AlignCommonUtil.correct_pointing_header(
@@ -173,10 +173,11 @@ class AlignmentResults:
                     elif isinstance(hdu, astropy.io.fits.hdu.image.PrimaryHDU):
                         hdu_out = fits.PrimaryHDU(data=data, header=header)
                     hdu_out.verify("silentfix")
+                    has_corrected_window += 1
+
                 else:
                     hdu_out = hdu
                 hdul_out.append(hdu_out)
-                has_corrected_window += 1
             # for win in window_list_to_apply_shift:
             #     if isinstance(win, int):
             #         hdu = hdul[win]
