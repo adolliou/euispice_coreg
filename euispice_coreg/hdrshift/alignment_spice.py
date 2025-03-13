@@ -441,7 +441,7 @@ class AlignementSpiceIterativeContextRaster(AlignmentSpice):
         self.shape = None
         self.reference_date = None
         self.function_to_apply = self._interpolate_on_large_data_grid
-        self.method = methods
+        self.method = method
         self.coordinate_frame = "final_helioprojective"
         self.extend_pixel_size = extend_pixel_size
         self.lon_ctype="HPLN-TAN"
