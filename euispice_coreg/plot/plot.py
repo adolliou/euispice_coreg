@@ -814,6 +814,7 @@ class PlotFunctions:
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
 
                 if type_plot == "compare_plot":
+                    norm_contour = PlotFits.get_range(data=data_to_align, stre=norm_type, imin=imin, imax=imax)
                     fig = plt.figure(figsize=(12, 6))
                     fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                         PlotFunctions.compare_plot(header_reference, data_reference, header_to_align, data_to_align,
