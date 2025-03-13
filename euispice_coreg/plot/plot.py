@@ -809,12 +809,13 @@ class PlotFunctions:
 
                 lmin = None
                 lmax = None
+                norm_contour = PlotFits.get_range(data=data_to_align, stre=norm_type, imin=imin, imax=imax)
+
                 if "SPICE" in header_to_align_original["TELESCOP"]:
                     lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
 
                 if type_plot == "compare_plot":
-                    norm_contour = PlotFits.get_range(data=data_to_align, stre=norm_type, imin=imin, imax=imax)
                     fig = plt.figure(figsize=(12, 6))
                     fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
                         PlotFunctions.compare_plot(header_reference, data_reference, header_to_align, data_to_align,
@@ -853,10 +854,11 @@ class PlotFunctions:
                 elif type_plot == "successive_plot":
                     with PdfPages(path_save_figure) as pdf:
 
-                        for data, header, title in zip([data_reference, data_to_align, data_to_align],
+                        for data, header, title, norm_ in zip([data_reference, data_to_align, data_to_align],
                                                        [header_reference, header_to_align_shifted, header_to_align],
                                                        ["Reference image", "to align image shifted",
-                                                        "to align not Shifted"], ):
+                                                        "to align not Shifted"], 
+                                                        [norm, norm_contour, norm_contour]):
                             w_ = WCS(header)
                             if use_sunpy:
                                 x, y = np.meshgrid(np.arange(1), np.arange(1))
@@ -871,7 +873,7 @@ class PlotFunctions:
                                                                   order=3, )
                             fig = plt.figure(figsize=(6, 6))
                             ax = fig.add_subplot()
-                            PlotFunctions.simple_plot(hdr_main=header_to_align, data_main=data_rep, fig=fig, ax=ax,)
+                            PlotFunctions.simple_plot(hdr_main=header_to_align, data_main=data_rep, fig=fig, ax=ax, norm=norm_)
                             ax.set_title(title)
                             pdf.savefig(fig)
     
