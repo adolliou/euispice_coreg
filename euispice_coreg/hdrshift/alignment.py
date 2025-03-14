@@ -16,7 +16,7 @@ import warnings
 from ..utils import Util
 import os
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
-from sunpy.map import Map
+# from sunpy.map import Map
 import astropy.constants
 from sunpy.coordinates import propagate_with_solar_surface
 from matplotlib import pyplot as plt
@@ -777,7 +777,7 @@ class Alignment:
 
     def _carrington_transform_sunpy(self, d_solar_r, data, hdr, data_large=None):
         rsun = (d_solar_r * astropy.constants.R_sun).to("m").value
-
+        from sunpy.map import Map
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
 
             map_ref = Map(data, hdr)

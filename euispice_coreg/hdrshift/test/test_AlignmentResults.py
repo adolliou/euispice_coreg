@@ -207,8 +207,8 @@ class TestAlignmentResults:
             reference_image_window=-1
         )
 
-        save_plot = "./euispice_coreg/hdrshift/test/plot_co_alignment1.jpeg"
-        save_plot_ref = "./euispice_coreg/hdrshift/test/plot_co_alignment2.jpeg"
+        save_plot = "./euispice_coreg/hdrshift/test/plot_co_alignment1_results.jpeg"
+        save_plot_ref = "./euispice_coreg/hdrshift/test/plot_co_alignment2_results.jpeg"
         R.plot_co_alignment(path_save_figure=save_plot, show=False)
         base_image = Image.open(save_plot)
         ref_image = Image.open(save_plot_ref)
