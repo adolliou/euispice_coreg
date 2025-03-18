@@ -171,7 +171,7 @@ class TestAlignmentResults:
         )
         assert np.abs(R.shift_pixels[0] - 9.33682107) < 1.0e-2
         assert np.abs(R.shift_pixels[1] - 1.42187891) < 1.0e-2
-        save_fits = "./euispice_coreg/hdrshift/test/test.fits"
+        save_fits = os.path.join(Path(__file__).parents[0],"test.fits")
         windows = [-1]
         R.write_corrected_fits(windows, path_to_l3_output=save_fits)
 
@@ -187,8 +187,8 @@ class TestAlignmentResults:
             reference_image_window=-1
         )
 
-        save_plot = "./euispice_coreg/hdrshift/test/plot_correlation1.jpeg"
-        save_plot_ref = "./euispice_coreg/hdrshift/test/plot_correlation2.jpeg"
+        save_plot = os.path.join(Path(__file__).parents[0],"plot_correlation1.jpeg")
+        save_plot_ref = os.path.join(Path(__file__).parents[0],"plot_correlation2.jpeg")
 
         R.plot_correlation(path_save_figure=save_plot, show=False)
         base_image = Image.open(save_plot)
@@ -207,8 +207,8 @@ class TestAlignmentResults:
             reference_image_window=-1
         )
 
-        save_plot = "./euispice_coreg/hdrshift/test/plot_co_alignment1_results.jpeg"
-        save_plot_ref = "./euispice_coreg/hdrshift/test/plot_co_alignment2_results.jpeg"
+        save_plot = os.path.join(Path(__file__).parents[0],"plot_co_alignment1_results.jpeg")
+        save_plot_ref = os.path.join(Path(__file__).parents[0],"plot_co_alignment2_results.jpeg")
         R.plot_co_alignment(path_save_figure=save_plot, show=False)
         base_image = Image.open(save_plot)
         ref_image = Image.open(save_plot_ref)

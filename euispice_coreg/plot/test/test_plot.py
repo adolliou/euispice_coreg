@@ -6,6 +6,8 @@ from ..plot import PlotFits, PlotFunctions
 from PIL import Image
 # This module contains a number of arithmetical image operations
 from PIL import ImageChops
+import os
+from pathlib import Path
 
 def image_pixel_differences(base_image, compare_image):
   """
@@ -93,8 +95,8 @@ def test_plot_co_alignment(corr, param_alignment):
                 "-image_20220317T095045281_V01.fits")
     path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
                 "-image_20220317T095045277_V01.fits")
-    save_fig = "./euispice_coreg/plot/test/co_alignment2.jpeg"
-    ref_fig = "./euispice_coreg/plot/test/co_alignment.jpeg"
+    save_fig = os.path.join(Path(__file__).parents[0],"co_alignment2.jpeg")
+    ref_fig = os.path.join(Path(__file__).parents[0],"co_alignment.jpeg")
     PlotFunctions.plot_co_alignment(reference_image_path=path_fsi, reference_image_window=-1, 
                                     image_to_align_path=path_hri, image_to_align_window=-1, 
                                     corr=corr, path_save_figure=save_fig, **param_alignment)
@@ -109,8 +111,8 @@ def test_plot_co_alignment_sunpy(corr, param_alignment):
                 "-image_20220317T095045281_V01.fits")
     path_hri = ("https://www.sidc.be/EUI/data/releases/202204_release_5.0/L2/2022/03/17/solo_L2_eui-hrieuv174"
                 "-image_20220317T095045277_V01.fits")
-    save_fig = "./euispice_coreg/plot/test/co_alignment_supy2.pdf"
-    ref_fig = "./euispice_coreg/plot/test/co_alignment_sunpy.pdf"
+    save_fig = os.path.join(Path(__file__).parents[0],"co_alignment_supy2.pdf")
+    ref_fig = os.path.join(Path(__file__).parents[0],"co_alignment_sunpy.pdf")
     PlotFunctions.plot_co_alignment(reference_image_path=path_fsi, reference_image_window=-1, 
                                     image_to_align_path=path_hri, image_to_align_window=-1, 
                                     corr=corr, path_save_figure=ref_fig, **param_alignment, type_plot="sunpy")

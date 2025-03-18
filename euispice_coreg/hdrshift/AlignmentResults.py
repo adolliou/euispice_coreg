@@ -7,6 +7,7 @@ from astropy.io import fits
 import astropy.units as u
 import astropy
 
+
 # from https://stackoverflow.com/questions/21566379/fitting-a-2d-gaussian-function-using-scipy-optimize-curve-fit-valueerror-and-m
 def twoD_Gaussian(xy, amplitude, xo, yo, sigma_x, sigma_y, offset):
     x, y = xy
@@ -14,7 +15,7 @@ def twoD_Gaussian(xy, amplitude, xo, yo, sigma_x, sigma_y, offset):
     y0 = float(yo)
 
     g = offset + amplitude * np.exp(
-        -((((x - x0) ** 2) / (2 * sigma_x**2)) + (((y - y0) ** 2) / (2 * sigma_y**2)))
+        -((((x - x0) ** 2) / (2 * sigma_x ** 2)) + (((y - y0) ** 2) / (2 * sigma_y ** 2)))
     )
     return g.ravel()
 
@@ -22,18 +23,18 @@ def twoD_Gaussian(xy, amplitude, xo, yo, sigma_x, sigma_y, offset):
 class AlignmentResults:
 
     def __init__(
-        self,
-        corr: np.array,
-        lag_crval1: np.array,
-        lag_crval2: np.array,
-        lag_cdelt1: np.array,
-        lag_cdelt2: np.array,
-        lag_crota: np.array,
-        unit_lag: str,
-        image_to_align_path: str = None,
-        image_to_align_window=None,
-        reference_image_path: str = None,
-        reference_image_window: int = None,
+            self,
+            corr: np.array,
+            lag_crval1: np.array,
+            lag_crval2: np.array,
+            lag_cdelt1: np.array,
+            lag_cdelt2: np.array,
+            lag_crota: np.array,
+            unit_lag: str,
+            image_to_align_path: str = None,
+            image_to_align_window=None,
+            reference_image_path: str = None,
+            reference_image_window: int = None,
     ):
         """
         Initialize a AlignmentResults class, that simplyfies the treatment of the correlation results
@@ -62,30 +63,35 @@ class AlignmentResults:
             lag_cdelt2 = np.array([0])
         if lag_crota is None:
             lag_crota = np.array([0])
-               
 
         self.max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
         self.corr = corr
         self.parameters_alignment = {
+            "lag_crval1": u.Quantity(lag_crval1, unit_lag),
+            "lag_crval2": u.Quantity(lag_crval2, unit_lag),
+            "lag_cdelt1": u.Quantity(lag_cdelt1, unit_lag),
+            "lag_cdelt2": u.Quantity(lag_cdelt2, unit_lag),
+            "lag_crota": u.Quantity(lag_crota, "deg"),
+        }
+        self.parameters_alignment_arcsec = {
             "lag_crval1": u.Quantity(lag_crval1, unit_lag).to("arcsec").value,
             "lag_crval2": u.Quantity(lag_crval2, unit_lag).to("arcsec").value,
             "lag_cdelt1": u.Quantity(lag_cdelt1, unit_lag).to("arcsec").value,
             "lag_cdelt2": u.Quantity(lag_cdelt2, unit_lag).to("arcsec").value,
-            "lag_crota": lag_crota,
+            "lag_crota": u.Quantity(lag_crota, "deg").to("deg").value,
         }
         self.image_to_align_path = image_to_align_path
         self.image_to_align_window = image_to_align_window
         self.reference_image_path = reference_image_path
         self.reference_image_window = reference_image_window
-        self.unit_lag = "arcsec"
-        self.unit_crota = "deg"
+        self.unit_lag = unit_lag
         self.shift_pixels = None
         self.shift_arcsec = None
 
         self._compute_shift()
 
     def plot_correlation(
-        self, path_save_figure: str = None, show=False, fig=None, ax=None
+            self, path_save_figure: str = None, show=False, fig=None, ax=None
     ):
         """
         Plot the correlation matrix. Calls the PlotFunctions.plot_correlation function from util.py
@@ -106,11 +112,14 @@ class AlignmentResults:
             fig=fig,
             ax=ax,
             shift=self.shift_arcsec,
-            **self.parameters_alignment,
+            unit_to_plot=self.unit_lag,
+            lag_dx_label=f"CRVAL1 [{self.unit_lag}]",
+            lag_dy_label=f"CRVAL2 [{self.unit_lag}]",
+            **self.parameters_alignment_arcsec,
         )
 
     def plot_co_alignment(
-        self, path_save_figure: str = None, show=False, **kwargs
+            self, path_save_figure: str = None, show=False, **kwargs
     ):
 
         return PlotFunctions.plot_co_alignment(
@@ -121,14 +130,15 @@ class AlignmentResults:
             path_save_figure=path_save_figure,
             shift_arcsec=self.shift_arcsec,
             show=show,
+            unit_to_plot=self.unit_lag,
             **kwargs,
         )
 
     def write_corrected_fits(
-        self,
-        window_list_to_apply_shift: list,
-        path_to_l3_output: str,
-        path_to_l2_input: str = None,
+            self,
+            window_list_to_apply_shift: list,
+            path_to_l3_output: str,
+            path_to_l2_input: str = None,
     ):
         """
         Save the FITS with the corrected metadata in their headers. The hdu.data arrays are not changed, only the header values.
@@ -155,7 +165,7 @@ class AlignmentResults:
                 else:
                     extname = "nothing986953555165"
                 if (extname in window_list_to_apply_shift) or (ii in window_list_to_apply_shift) or \
-                      ((ii - len(hdul)) in window_list_to_apply_shift):
+                        ((ii - len(hdul)) in window_list_to_apply_shift):
                     header = hdu.header.copy()
                     data = hdu.data.copy()
                     AlignCommonUtil.correct_pointing_header(
@@ -178,33 +188,10 @@ class AlignmentResults:
                 else:
                     hdu_out = hdu
                 hdul_out.append(hdu_out)
-            # for win in window_list_to_apply_shift:
-            #     if isinstance(win, int):
-            #         hdu = hdul[win]
-            #         header = hdu.header.copy()
-            #         data = hdu.data.copy()
-            #         AlignCommonUtil.correct_pointing_header(
-            #             header,
-            #             lag_crval1=self.shift_arcsec[0],
-            #             lag_crval2=self.shift_arcsec[1],
-            #             lag_cdelt1=self.shift_arcsec[2],
-            #             lag_cdelt2=self.shift_arcsec[3],
-            #             lag_crota=self.shift_arcsec[4],
-            #         )
-            #         if isinstance(hdu, astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
-            #             hdu_out = fits.CompImageHDU(data=data, header=header)
-            #         elif isinstance(hdu, astropy.io.fits.hdu.image.ImageHDU):
-            #             hdu_out = fits.ImageHDU(data=data, header=header)
-            #         elif isinstance(hdu, astropy.io.fits.hdu.image.PrimaryHDU):
-            #             hdu_out = fits.PrimaryHDU(data=data, header=header)
-            #         hdu_out.verify("silentfix")
-            #         hdul_out.insert(win, hdu_out)
-            #         has_corrected_window += 1
 
             hdul_out.writeto(path_to_l3_output, overwrite=True)
             if has_corrected_window == 0:
                 raise ValueError("has not corrected any window.")
-
 
     def savefig(self, filename: str):
         raise NotImplementedError
@@ -217,8 +204,8 @@ class AlignmentResults:
 
         # return the shift values after 3d polynomial computation.
         corr2d = self.corr[
-            :, :, self.max_index[2], self.max_index[3], self.max_index[4]
-        ]
+                 :, :, self.max_index[2], self.max_index[3], self.max_index[4]
+                 ]
         p = [(self.max_index[0], self.max_index[1])]
         px = [self.max_index[0]]
         py = [self.max_index[1]]
@@ -226,42 +213,42 @@ class AlignmentResults:
         lenx = corr2d.shape[0]
         leny = corr2d.shape[1]
         for ii, jj in zip(
-            [
-                1,
-                1,
-                -1,
-                -1,
-                2,
-                2,
-                -2,
-                -2,
-                1,
-                1,
-                -1,
-                -1,
-                2,
-                2,
-                -2,
-                -2,
-            ],
-            [
-                1,
-                -1,
-                1,
-                -1,
-                2,
-                -2,
-                2,
-                -2,
-                2,
-                -2,
-                2,
-                -2,
-                1,
-                -1,
-                1,
-                -1,
-            ],
+                [
+                    1,
+                    1,
+                    -1,
+                    -1,
+                    2,
+                    2,
+                    -2,
+                    -2,
+                    1,
+                    1,
+                    -1,
+                    -1,
+                    2,
+                    2,
+                    -2,
+                    -2,
+                ],
+                [
+                    1,
+                    -1,
+                    1,
+                    -1,
+                    2,
+                    -2,
+                    2,
+                    -2,
+                    2,
+                    -2,
+                    2,
+                    -2,
+                    1,
+                    -1,
+                    1,
+                    -1,
+                ],
         ):
             x = self.max_index[0] + ii
             y = self.max_index[1] + jj
@@ -282,11 +269,11 @@ class AlignmentResults:
                     self.max_index[4],
                 )
                 self.shift_arcsec = (
-                    self.parameters_alignment["lag_crval1"][self.max_index[0]],
-                    self.parameters_alignment["lag_crval2"][self.max_index[1]],
-                    self.parameters_alignment["lag_cdelt1"][self.max_index[2]],
-                    self.parameters_alignment["lag_cdelt2"][self.max_index[3]],
-                    self.parameters_alignment["lag_crota"][self.max_index[4]],
+                    self.parameters_alignment["lag_crval1"][self.max_index[0]].to("arcsec").value,
+                    self.parameters_alignment["lag_crval2"][self.max_index[1]].to("arcsec").value,
+                    self.parameters_alignment["lag_cdelt1"][self.max_index[2]].to("arcsec").value,
+                    self.parameters_alignment["lag_cdelt2"][self.max_index[3]].to("arcsec").value,
+                    self.parameters_alignment["lag_crota"][self.max_index[4]].to("deg").value,
                 )
                 return None
 
@@ -323,8 +310,8 @@ class AlignmentResults:
                 popt, pcov = curve_fit(
                     f=twoD_Gaussian, xdata=A, ydata=B, p0=p0, bounds=bounds
                 )
-                lag_x = self.parameters_alignment["lag_crval1"]
-                lag_y = self.parameters_alignment["lag_crval2"]
+                lag_x = self.parameters_alignment["lag_crval1"].to("arcsec").value
+                lag_y = self.parameters_alignment["lag_crval2"].to("arcsec").value
 
                 shift_x_arcsec = np.interp(
                     popt[1],
@@ -346,9 +333,9 @@ class AlignmentResults:
                 self.shift_arcsec = (
                     shift_x_arcsec,
                     shift_y_arcsec,
-                    self.parameters_alignment["lag_cdelt1"][self.max_index[2]],
-                    self.parameters_alignment["lag_cdelt2"][self.max_index[3]],
-                    self.parameters_alignment["lag_crota"][self.max_index[4]],
+                    self.parameters_alignment["lag_cdelt1"][self.max_index[2]].to("arcsec").value,
+                    self.parameters_alignment["lag_cdelt2"][self.max_index[3]].to("arcsec").value,
+                    self.parameters_alignment["lag_crota"][self.max_index[4]].to("deg").value,
                 )
 
                 return True
@@ -364,15 +351,15 @@ class AlignmentResults:
                     self.max_index[4],
                 )
                 self.shift_arcsec = (
-                    self.parameters_alignment["lag_crval1"][self.max_index[0]],
-                    self.parameters_alignment["lag_crval2"][self.max_index[1]],
-                    self.parameters_alignment["lag_cdelt1"][self.max_index[2]],
-                    self.parameters_alignment["lag_cdelt2"][self.max_index[3]],
-                    self.parameters_alignment["lag_crota"][self.max_index[4]],
+                    self.parameters_alignment["lag_crval1"][self.max_index[0]].to("arcsec").value,
+                    self.parameters_alignment["lag_crval2"][self.max_index[1]].to("arcsec").value,
+                    self.parameters_alignment["lag_cdelt1"][self.max_index[2]].to("arcsec").value,
+                    self.parameters_alignment["lag_cdelt2"][self.max_index[3]].to("arcsec").value,
+                    self.parameters_alignment["lag_crota"][self.max_index[4]].to("deg").value,
                 )
                 return None
         elif method == "poly2d":
-            A = np.array([1, px, py, px**2, py**2, px * py]).T
+            A = np.array([1, px, py, px ** 2, py ** 2, px * py]).T
             B = corr2d[px, py]
             coeff, r, rank, s = np.linalg.lstsq(A, B)
             # But then I need to compute the maximum from the polynom points.

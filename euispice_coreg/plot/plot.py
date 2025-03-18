@@ -79,7 +79,8 @@ class PlotFunctions:
                          path_save_figure=None, fig=None, ax=None, show=False, lag_dx_label='CRVAL1 [arcsec]'
                          , lag_dy_label='CRVAL2 [arcsec]',
                          shift: tuple=None,
-                         unit='\'\'', ):
+
+                         unit_to_plot="arcsec",):
         """
 
 
@@ -97,34 +98,47 @@ class PlotFunctions:
         :param shift: (tuple) (optional) shift array computed for AlignmentResults
         :param lag_dy_label: label for the dy axis
         :param lag_dx_label: label for the dx axis
+        :param unit_to_plot: AlignmentResults param
         """
         max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
-
+        if unit_to_plot == "arcsec":
+            unit = '\'\''
+        elif unit_to_plot == "deg":
+            unit = '°'
+        else:
+            raise NotImplementedError
         corr = corr[:, :, max_index[2], max_index[3], max_index[4]]
 
         if fig is None:
             fig = plt.figure()
         if ax is None:
             ax = fig.add_subplot()
-        dy = lag_crval2[1] - lag_crval2[0]
-        dx = lag_crval1[1] - lag_crval1[0]
-        lag_dx = lag_crval1
-        lag_dy = lag_crval2
+
+        lag_dx = u.Quantity(lag_crval1, "arcsec").to(unit_to_plot).value
+        lag_dy = u.Quantity(lag_crval2, "arcsec").to(unit_to_plot).value
+        dy = lag_dy[1] - lag_dy[0]
+        dx = lag_dx[1] - lag_dx[0]
         if lag_cdelt1 is None:
             lag_cdelt1_ = np.array([0])
         else:
-            lag_cdelt1_ = lag_cdelt1
+            lag_cdelt1_ = u.Quantity(lag_cdelt1, "arcsec").to(unit_to_plot).value
         if lag_cdelt2 is None:
             lag_cdelt2_ = np.array([0])
         else:
-            lag_cdelt2_ = lag_cdelt2
+            lag_cdelt2_ = u.Quantity(lag_cdelt2, "arcsec").to(unit_to_plot).value
         if lag_crota is None:
             lag_crota_ = np.array([0])
         else:
             lag_crota_ = lag_crota
         if shift is None:
-            shift = (lag_dx[max_index[0]], lag_dy[max_index[1]], lag_cdelt1_[max_index[2]],
-                     lag_cdelt2_[max_index[3]], lag_crota_[max_index[4]])
+            shift = (
+                u.Quantity(lag_dx[max_index[0]], "arcsec").to(unit_to_plot).value,
+                u.Quantity(lag_dy[max_index[1]], "arcsec").to(unit_to_plot).value,
+                u.Quantity(lag_cdelt1_[max_index[2]], "arcsec").to(unit_to_plot).value,
+                u.Quantity(lag_cdelt2_[max_index[3]], "arcsec").to(unit_to_plot).value,
+                lag_crota_[max_index[4]]
+            )
+
         # norm = PowerNorm(gamma=2)
         isnan = np.isnan(corr)
         min = np.percentile(corr[~isnan], 30)
@@ -620,6 +634,7 @@ class PlotFunctions:
                           small_fov_value_max: float = None,
                           shift_arcsec: list = None,
                           norm_type=None, imin=2, imax=97,
+                          unit_to_plot="arcsec",
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -650,6 +665,7 @@ class PlotFunctions:
         :param small_fov_value_min: add a minimal threshold on the absolute values of the to align image
         :param small_fov_value_max: add a maximal threshold on the absolute values of the to align image
         :param shift_arcsec: param for AlignmentResults class
+        :param unit_to_plot: param for AlignmentResults class
 
         """
         if levels_percentile is None:
