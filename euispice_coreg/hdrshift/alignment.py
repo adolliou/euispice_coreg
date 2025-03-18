@@ -329,7 +329,7 @@ class Alignment:
 
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
-        dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype=np.float64)
+        dat_large_var = np.array(f_large[self.large_fov_window].data.copy(), dtype="float32")
         self.data_large = dat_large_var
 
         self.hdr_large = f_large[self.large_fov_window].header.copy()
@@ -342,11 +342,11 @@ class Alignment:
         self._check_ant_create_pcij_matrix(self.hdr_large)
 
         # self._recenter_crpix_in_header(self.hdr_small)
-        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
+        self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype="float32")
         f_large.close()
         f_small.close()
 
-        results = self._find_best_header_parameters()
+        results = self._find_best_header_parameters(ang2pipi=False)
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
@@ -364,6 +364,7 @@ class Alignment:
             if self.unit_lag == hdr["CUNIT1"]:
                 hdr['CRVAL1'] = self.crval1_ref + kwargs["d_crval1"]
             else:
+                raise ValueError("lag.unit and cUNIT are not the same")
                 hdr['CRVAL1'] = u.Quantity(self.crval1_ref, self.unit_lag).to(hdr["CUNIT1"]).value \
                                 + u.Quantity(kwargs["d_crval1"], self.unit_lag).to(hdr["CUNIT1"]).value
 
@@ -371,6 +372,8 @@ class Alignment:
             if self.unit_lag == hdr["CUNIT2"]:
                 hdr['CRVAL2'] = self.crval2_ref + kwargs["d_crval2"]
             else:
+                raise ValueError("lag.unit and cUNIT are not the same")
+
                 hdr['CRVAL2'] = u.Quantity(self.crval2_ref, self.unit_lag).to(hdr["CUNIT2"]).value \
                                 + u.Quantity(kwargs["d_crval2"], self.unit_lag).to(hdr["CUNIT2"]).value
         change_pcij = False
@@ -378,15 +381,23 @@ class Alignment:
         if ('d_cdelt1' in kwargs.keys()):
             if kwargs["d_cdelt1"] != 0.0:
                 change_pcij = True
-                cdelt1 = (u.Quantity(self.cdelt1_ref, self.unit_lag)
-                          + u.Quantity(kwargs["d_cdelt1"], self.unit_lag))
-                hdr['CDELT1'] = cdelt1.to(hdr["CUNIT1"]).value
+                if self.unit_lag == hdr["CUNIT1"]:
+                    cdelt1 = self.cdelt1_ref + kwargs["d_cdelt1"]
+                else:
+                    raise ValueError("lag.unit and cUNIT are not the same")
+
+                    cdelt1 = (u.Quantity(self.cdelt1_ref, self.unit_lag)
+                            + u.Quantity(kwargs["d_cdelt1"], self.unit_lag))
+                    hdr['CDELT1'] = cdelt1.to(hdr["CUNIT1"]).value
         if 'd_cdelt2' in kwargs.keys():
             if kwargs["d_cdelt2"] != 0.0:
                 change_pcij = True
-
-                cdelt2 = (u.Quantity(self.cdelt2_ref, self.unit_lag)
-                          + u.Quantity(kwargs["d_cdelt2"], self.unit_lag))
+                if self.unit_lag == hdr["CUNIT2"]:
+                    cdelt2 = self.cdelt2_ref + kwargs["d_cdelt2"]
+                else:
+                    raise ValueError("lag.unit and CUNIT are not the same")
+                    cdelt2 = (u.Quantity(self.cdelt2_ref, self.unit_lag)
+                            + u.Quantity(kwargs["d_cdelt2"], self.unit_lag))
                 hdr['CDELT2'] = cdelt2.to(hdr["CUNIT2"]).value
         if 'd_crota' in kwargs.keys():
             if kwargs["d_crota"] != 0.0:
@@ -552,7 +563,7 @@ class Alignment:
             s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
             hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
 
-    def _find_best_header_parameters(self):
+    def _find_best_header_parameters(self, ang2pipi = True):
 
         self.crval1_ref = self.hdr_small['CRVAL1']
         self.crval2_ref = self.hdr_small['CRVAL2']
@@ -578,10 +589,16 @@ class Alignment:
 
         elif "deg" in self.unit1:
             warnings.warn("Units of headers in deg: Modyfying inputs units to deg.")
-            self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1, "arcsec")).to("deg").value
-            self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2, "arcsec")).to("deg").value
-            self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1, "arcsec")).to("deg").value
-            self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2, "arcsec")).to("deg").value
+            if ang2pipi:
+                self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1, "arcsec")).to("deg").value
+                self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2, "arcsec")).to("deg").value
+                self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1, "arcsec")).to("deg").value
+                self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2, "arcsec")).to("deg").value
+            else:
+                self.lag_crval1 = u.Quantity(self.lag_crval1, "arcsec").to("deg").value
+                self.lag_crval2 = u.Quantity(self.lag_crval2, "arcsec").to("deg").value
+                self.lag_cdelt1 = u.Quantity(self.lag_cdelt1, "arcsec").to("deg").value
+                self.lag_cdelt2 = u.Quantity(self.lag_cdelt2, "arcsec").to("deg").value               
             self.unit_lag = "deg"
         if self.lag_solar_r is None:
             self.lag_solar_r = np.array([1.004])
@@ -894,7 +911,6 @@ class Alignment:
     def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr,):
 
         w_xy_small = WCS(hdr)
-        longitude_large, latitude_large, dsun_obs_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large, lon_ctype=self.lon_ctype, lat_ctype=self.lat_ctype)
 
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
@@ -911,7 +927,9 @@ class Alignment:
             x_large, y_large = w_xy_small.world_to_pixel(coords)
 
         else:
+            longitude_large, latitude_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large, lon_ctype=self.lon_ctype, lat_ctype=self.lat_ctype, dsun=False)
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
+
         image_small_shft = np.zeros_like(x_large, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data.copy(), x=x_large, y=y_large, order=self.order,
                                         fill=np.nan, dst=image_small_shft, opencv=self.opencv)
