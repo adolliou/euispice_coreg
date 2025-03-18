@@ -216,7 +216,6 @@ class Alignment:
                 self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
                 self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
                 self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
-                print(f"{self.lonlims=}")
 
             elif (lonlims is not None) and (latlims is not None) & (shape is not None):
 
