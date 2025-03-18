@@ -54,15 +54,15 @@ class Alignment:
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
                  path_save_figure: str = None, reprojection_order=2, force_crota_0=False,
-                 opencv=False):
+                 opencv=False, unit_lag="arcsec"):
         """
 
         @param large_fov_known_pointing: (str) path to the reference file fits (most of the time an imager or a synthetic raster)
         @param small_fov_to_correct: (str)  path to the fits file to align. Only the header values will be changed.
-        @param lag_crval1: (arcsec) array of header CRVAL1 lags.
-        @param lag_crval2: (arcsec) array of header CRVAL2 lags.
-        @param lag_cdelt1: (arcsec) array of header CDELT1 lags.
-        @param lag_cdelt2: (arcsec) array of header CDELT2 lags.
+        @param lag_crval1: (unit_lag) array of header CRVAL1 lags.
+        @param lag_crval2: (unit_lag) array of header CRVAL2 lags.
+        @param lag_cdelt1: (unit_lag) array of header CDELT1 lags.
+        @param lag_cdelt2: (unit_lag) array of header CDELT2 lags.
         @param lag_crota: (deg) array of header CROTA lags. the PC1_1/2 matrixes will be updated accordingly.
         @param lag_solar_r: ([1/Rsun]) set to 1.004 by default. Only needed if apply carrington transformation.
         Important: If you align PHI data, you should set it at 1.000 .
@@ -83,9 +83,10 @@ class Alignment:
         self.lag_crval2 = lag_crval2
         self.lag_cdelt1 = lag_cdelt1
         self.lag_cdelt2 = lag_cdelt2
-
         self.lag_crota = lag_crota
         self.lag_solar_r = lag_solar_r
+        self.unit_lag = unit_lag
+
         self.lonlims = None
         self.latlims = None
         self.shape = None
@@ -175,8 +176,8 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "final_carrington"
-        self.lon_ctype="HPLN-TAN"
-        self.lat_ctype="HPLT-TAN"
+        self.lon_ctype = "HPLN-TAN"
+        self.lat_ctype = "HPLT-TAN"
 
         self.method_carrington_reprojection = method_carrington_reprojection
         f_large = Fits.open(self.large_fov_known_pointing)
@@ -266,8 +267,8 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "final_helioprojective"
-        self.lon_ctype="HPLN-TAN"
-        self.lat_ctype="HPLT-TAN"
+        self.lon_ctype = "HPLN-TAN"
+        self.lat_ctype = "HPLT-TAN"
 
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -301,10 +302,8 @@ class Alignment:
                                     reference_image_path=self.large_fov_known_pointing,
                                     reference_image_window=self.large_fov_window)
 
-
-
     def align_using_initial_carrington(self, method='correlation',
-                                    return_type='AlignmentResults'):
+                                       return_type='AlignmentResults'):
         """
         Returns the results for the correlation algorithm in carrington frame, starting from images in carrington coordinates
 
@@ -324,8 +323,8 @@ class Alignment:
 
         self.method = method
         self.coordinate_frame = "initial_carrington"
-        self.lon_ctype="CRLN-CAR"
-        self.lat_ctype="CRLT-CAR"
+        self.lon_ctype = "CRLN-CAR"
+        self.lat_ctype = "CRLT-CAR"
 
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -387,7 +386,7 @@ class Alignment:
                     raise ValueError("lag.unit and cUNIT are not the same")
 
                     cdelt1 = (u.Quantity(self.cdelt1_ref, self.unit_lag)
-                            + u.Quantity(kwargs["d_cdelt1"], self.unit_lag))
+                              + u.Quantity(kwargs["d_cdelt1"], self.unit_lag))
                     hdr['CDELT1'] = cdelt1.to(hdr["CUNIT1"]).value
         if 'd_cdelt2' in kwargs.keys():
             if kwargs["d_cdelt2"] != 0.0:
@@ -397,7 +396,7 @@ class Alignment:
                 else:
                     raise ValueError("lag.unit and CUNIT are not the same")
                     cdelt2 = (u.Quantity(self.cdelt2_ref, self.unit_lag)
-                            + u.Quantity(kwargs["d_cdelt2"], self.unit_lag))
+                              + u.Quantity(kwargs["d_cdelt2"], self.unit_lag))
                 hdr['CDELT2'] = cdelt2.to(hdr["CUNIT2"]).value
         if 'd_crota' in kwargs.keys():
             if kwargs["d_crota"] != 0.0:
@@ -563,7 +562,7 @@ class Alignment:
             s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
             hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
 
-    def _find_best_header_parameters(self, ang2pipi = True):
+    def _find_best_header_parameters(self, ang2pipi=True):
 
         self.crval1_ref = self.hdr_small['CRVAL1']
         self.crval2_ref = self.hdr_small['CRVAL2']
@@ -584,22 +583,29 @@ class Alignment:
         self.unit1 = self.hdr_small["CUNIT1"]
         self.unit2 = self.hdr_small["CUNIT2"]
 
-        if "arcsec" in self.unit1:
-            self.unit_lag = "arcsec"
+        if self.unit_lag in self.unit1:
+            pass
+        else:
 
-        elif "deg" in self.unit1:
             warnings.warn("Units of headers in deg: Modyfying inputs units to deg.")
             if ang2pipi:
-                self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1, "arcsec")).to("deg").value
-                self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2, "arcsec")).to("deg").value
-                self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1, "arcsec")).to("deg").value
-                self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2, "arcsec")).to("deg").value
+                self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1,
+                                                                           self.unit_lag)).to(self.unit1).value
+                self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2,
+                                                                           self.unit_lag)).to(self.unit2).value
+                self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1,
+                                                                           self.unit_lag)).to(self.unit1).value
+                self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2,
+                                                                           self.unit_lag)).to(self.unit2).value
             else:
-                self.lag_crval1 = u.Quantity(self.lag_crval1, "arcsec").to("deg").value
-                self.lag_crval2 = u.Quantity(self.lag_crval2, "arcsec").to("deg").value
-                self.lag_cdelt1 = u.Quantity(self.lag_cdelt1, "arcsec").to("deg").value
-                self.lag_cdelt2 = u.Quantity(self.lag_cdelt2, "arcsec").to("deg").value               
-            self.unit_lag = "deg"
+                self.lag_crval1 = u.Quantity(self.lag_crval1, self.unit_lag).to(self.unit1).value
+                self.lag_crval2 = u.Quantity(self.lag_crval2, self.unit_lag).to(self.unit2).value
+                self.lag_cdelt1 = u.Quantity(self.lag_cdelt1, self.unit_lag).to(self.unit1).value
+                self.lag_cdelt2 = u.Quantity(self.lag_cdelt2, self.unit_lag).to(self.unit2).value
+            self.unit_lag = self.unit1
+
+        if self.unit1 != self.unit2:
+            raise ValueError("CUNIT1 and CUNIT2 must be equal")
         if self.lag_solar_r is None:
             self.lag_solar_r = np.array([1.004])
 
@@ -626,9 +632,9 @@ class Alignment:
                 if self.coordinate_frame == "final_carrington":
                     self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
                                                              hdr=self.hdr_large)
-                elif (self.coordinate_frame == "final_helioprojective") or (self.coordinate_frame == "initial_carrington"):
+                elif (self.coordinate_frame == "final_helioprojective") or (
+                        self.coordinate_frame == "initial_carrington"):
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
-
 
                 condition_1 = np.ones(self.data_small.shape, dtype='bool')
                 condition_2 = np.ones(self.data_small.shape, dtype='bool')
@@ -640,8 +646,8 @@ class Alignment:
                 set_to_nan = np.logical_not(np.logical_or(condition_1, condition_2))
                 self.data_small[set_to_nan] = np.nan
                 shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_large))
-                self._large = {"name": shmm_large.name,  "shape": data_large.shape,
-                               "dtype": data_large.dtype, "size": data_large.size,}
+                self._large = {"name": shmm_large.name, "shape": data_large.shape,
+                               "dtype": data_large.dtype, "size": data_large.size, }
                 del self.data_large
 
                 shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_small))
@@ -711,7 +717,8 @@ class Alignment:
                 if self.coordinate_frame == "final_carrington":
                     self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
                                                              hdr=self.hdr_large)
-                elif (self.coordinate_frame == "initial_helioprojective") or (self.coordinate_frame == "initial_carrington") :
+                elif (self.coordinate_frame == "initial_helioprojective") or (
+                        self.coordinate_frame == "initial_carrington"):
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
 
                 # shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_large)
@@ -858,7 +865,7 @@ class Alignment:
             if self.lon_ctype == "HPLN-TAN":
                 longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
                 latitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Ty)
-            elif self.lon_ctype == 'CRLN-CAR': 
+            elif self.lon_ctype == 'CRLN-CAR':
                 longitude_cut = coords_cut.lon
                 latitude_cut = coords_cut.lat
             coords_cut = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
@@ -866,7 +873,9 @@ class Alignment:
 
 
         else:
-            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut, lon_ctype=self.lon_ctype, lat_ctype=self.lon_ctype)
+            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut,
+                                                                                                  lon_ctype=self.lon_ctype,
+                                                                                                  lat_ctype=self.lon_ctype)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
@@ -908,7 +917,7 @@ class Alignment:
         self.step_figure = False
         return np.array(image_large_cut)
 
-    def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr,):
+    def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr, ):
 
         w_xy_small = WCS(hdr)
 
@@ -927,7 +936,10 @@ class Alignment:
             x_large, y_large = w_xy_small.world_to_pixel(coords)
 
         else:
-            longitude_large, latitude_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large, lon_ctype=self.lon_ctype, lat_ctype=self.lat_ctype, dsun=False)
+            longitude_large, latitude_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large,
+                                                                                        lon_ctype=self.lon_ctype,
+                                                                                        lat_ctype=self.lat_ctype,
+                                                                                        dsun=False)
             x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
 
         image_small_shft = np.zeros_like(x_large, dtype="float32")
