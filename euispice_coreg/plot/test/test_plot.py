@@ -80,8 +80,8 @@ def test_plot_correlation(corr, ):
     min_value = 0
     max_value = 1310
     lag_solar_r = [1.004]
-    save_fig = "./euispice_coreg/plot/test/correlation2.jpeg"
-    ref_fig = "./euispice_coreg/plot/test/correlation.jpeg"
+    save_fig = os.path.join(Path(__file__).parents[0], "correlation2.jpeg")
+    ref_fig = os.path.join(Path(__file__).parents[0], "correlation.jpeg")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
     PlotFunctions.plot_correlation(corr=corr, path_save_figure=save_fig, **params_alignment)
 

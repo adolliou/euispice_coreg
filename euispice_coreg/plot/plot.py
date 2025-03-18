@@ -132,13 +132,20 @@ class PlotFunctions:
             lag_crota_ = lag_crota
         if shift is None:
             shift = (
-                u.Quantity(lag_dx[max_index[0]], "arcsec").to(unit_to_plot).value,
-                u.Quantity(lag_dy[max_index[1]], "arcsec").to(unit_to_plot).value,
-                u.Quantity(lag_cdelt1_[max_index[2]], "arcsec").to(unit_to_plot).value,
-                u.Quantity(lag_cdelt2_[max_index[3]], "arcsec").to(unit_to_plot).value,
+                lag_dx[max_index[0]],
+                lag_dy[max_index[1]],
+                lag_cdelt1_[max_index[2]],
+                lag_cdelt2_[max_index[3]],
                 lag_crota_[max_index[4]]
             )
-
+        else:
+            shift = (
+                u.Quantity(shift[0], "arcsec").to(unit_to_plot).value,
+                u.Quantity(shift[1], "arcsec").to(unit_to_plot).value,
+                u.Quantity(shift[2], "arcsec").to(unit_to_plot).value,
+                u.Quantity(shift[3], "arcsec").to(unit_to_plot).value,
+                shift[4],
+            )
         # norm = PowerNorm(gamma=2)
         isnan = np.isnan(corr)
         min = np.percentile(corr[~isnan], 30)
