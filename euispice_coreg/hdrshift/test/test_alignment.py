@@ -2,9 +2,7 @@ import os.path
 
 import numpy as np
 from ..alignment import Alignment
-from pathlib import Path
-from functools import wraps
-import time
+
 
 
 def test_alignement_helioprojective_shift():
@@ -30,7 +28,7 @@ def test_alignement_helioprojective_shift():
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
-                  parallelism=True, display_progress_bar=True, counts_cpu_max=40, small_fov_value_min=min_value,
+                  parallelism=True, display_progress_bar=True, counts_cpu_max=None, small_fov_value_min=min_value,
                   small_fov_value_max=max_value, )
 
     corr = A.align_using_helioprojective(method='correlation', return_type="corr")

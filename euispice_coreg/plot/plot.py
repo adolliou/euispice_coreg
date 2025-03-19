@@ -163,25 +163,25 @@ class PlotFunctions:
         ax.axvline(x=shift[0], color='r', linestyle='--', linewidth=0.5)
         if (lag_crota is not None) & (lag_cdelt1 is None):
             textstr = '\n'.join((
-                r'$dx=%.1f$ %s' % (shift[0], unit),
-                r'$dy=%.1f$ %s' % (shift[1], unit),
-                r'$drota=%.2f$ $^\circ$' % (shift[4]),
-                r'max_cc = %.2f' % (np.nanmax(corr))
+                r'$dx=%.3f$ %s' % (shift[0], unit),
+                r'$dy=%.3f$ %s' % (shift[1], unit),
+                r'$drota=%.3f$ $^\circ$' % (shift[4]),
+                r'max_cc = %.3f' % (np.nanmax(corr))
             ))
         elif (lag_crota is not None) & (lag_cdelt1 is not None):
             textstr = '\n'.join((
-                r'$dx=%.1f$ %s' % (shift[0], unit),
-                r'$dy=%.1f$ %s' % (shift[1], unit),
-                r'$drota=%.2f$ $^\circ$' % (shift[4]),
-                r'$cdelt1=%.2f$ $^\circ$' % (shift[2]),
-                r'$cdelt2=%.2f$ $^\circ$' % (shift[3]),
-                r'max_cc = %.2f' % (np.nanmax(corr))))
+                r'$dx=%.3f$ %s' % (shift[0], unit),
+                r'$dy=%.3f$ %s' % (shift[1], unit),
+                r'$drota=%.3f$ $^\circ$' % (shift[4]),
+                r'$cdelt1=%.3f$ $^\circ$' % (shift[2]),
+                r'$cdelt2=%.3f$ $^\circ$' % (shift[3]),
+                r'max_cc = %.3f' % (np.nanmax(corr))))
 
         else:
             textstr = '\n'.join((
-                r'$\delta CRVAL1=%.2f$ %s' % (shift[0], unit),
-                r'$\delta CRVAL2=%.2f$ %s' % (shift[1], unit),
-                r'max_cc = %.2f' % (np.nanmax(corr))))
+                r'$\delta CRVAL1=%.3f$ %s' % (shift[0], unit),
+                r'$\delta CRVAL2=%.3f$ %s' % (shift[1], unit),
+                r'max_cc = %.3f' % (np.nanmax(corr))))
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=7,
                 verticalalignment='top', bbox=props)

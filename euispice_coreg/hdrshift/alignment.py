@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 import multiprocessing as mp
-from functools import partial
+# from functools import partial
 from astropy.coordinates import SkyCoord
 from tqdm import tqdm
 from multiprocessing import Process, Lock
@@ -19,13 +19,12 @@ from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 # from sunpy.map import Map
 import astropy.constants
 from sunpy.coordinates import propagate_with_solar_surface
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
 from .AlignmentResults import AlignmentResults
 
-from scipy.stats import linregress
 
 
 class HiddenPrints:
@@ -426,15 +425,20 @@ class Alignment:
             hdr["PC1_2"] = - lam * np.sin(rho)
             hdr["PC2_1"] = (1 / lam) * np.sin(rho)
 
-    def _iteration_step_along_crval2(self, d_crval1, d_cdelt1, d_cdelt2, d_crota, d_solar_r, method: str,
+    def _iteration_step(self, list_d_crval1, list_d_crval2, list_d_cdelt1, list_d_cdelt2, list_d_crota, d_solar_r, method: str,
                                      position: tuple, lock=None):
         A = np.array([1, 2], dtype="float")
         B = np.array([1, 2], dtype="float")
         lag = [0]
         c = self.correlation_function(A, B, lag)
-        results = np.zeros(len(self.lag_crval2), dtype=np.float64)
+        results = np.zeros(len(list_d_crval1), dtype=np.float64)
         if self.display_progress_bar:
-            for ii, d_crval2 in enumerate(tqdm(self.lag_crval2, desc='crval1 = %.2f' % (d_crval1))):
+            for ii, d_crval1 in enumerate(tqdm(list_d_crval1)):
+                d_crval2 = list_d_crval2[ii]
+                d_cdelt1 = list_d_cdelt1[ii]
+                d_cdelt2 = list_d_cdelt2[ii]
+                d_crota = list_d_crota[ii]
+
                 results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
                                          d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2, d_crota=d_crota,
                                          method=method, d_solar_r=d_solar_r,
@@ -442,7 +446,12 @@ class Alignment:
 
         else:
 
-            for ii, d_crval2 in enumerate(self.lag_crval2):
+            for ii, d_crval1 in enumerate(list_d_crval1):
+                d_crval2 = list_d_crval2[ii]
+                d_cdelt1 = list_d_cdelt1[ii]
+                d_cdelt2 = list_d_cdelt2[ii]
+                d_crota = list_d_crota[ii]
+
                 results[ii] = self._step(d_crval2=d_crval2, d_crval1=d_crval1,
                                          d_cdelt1=d_cdelt1, d_cdelt2=d_cdelt2, d_crota=d_crota,
                                          method=method, d_solar_r=d_solar_r,
@@ -450,7 +459,8 @@ class Alignment:
 
         lock.acquire()
         shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
-        data_correlation[position[0], :, position[1], position[2], position[3], position[4]] = results
+        # for uu in range(len(position[0])):
+        data_correlation[position[0], position[1], position[2], position[3], position[4], position[5],] = results
         lock.release()
         shmm_correlation.close()
 
@@ -654,25 +664,61 @@ class Alignment:
                                "dtype": data_small.dtype}
                 del self.data_small
 
-                for ii, d_cdelt1 in enumerate(self.lag_cdelt1):
-                    for ll, d_cdelt2 in enumerate(self.lag_cdelt2):
-                        for jj, d_crota in enumerate(self.lag_crota):
-                            for ff, d_crval1 in enumerate(self.lag_crval1):
-                                kwargs = {
-                                    "d_crval1": d_crval1,
-                                    "d_cdelt1": d_cdelt1,
-                                    "d_cdelt2": d_cdelt2,
-                                    "d_crota": d_crota,
-                                    "d_solar_r": d_solar_r,
-                                    "method": self.method,
-                                    "lock": self.lock,
-                                    "position": (ff, ii, ll, jj, kk),
-                                }
-
-                                Processes.append(Process(target=self._iteration_step_along_crval2, kwargs=kwargs))
-
+                list_d_crval1_, list_d_crval2_, list_d_cdelt1_, list_d_cdelt2_, list_d_crota_ = \
+                    np.meshgrid(self.lag_crval1, self.lag_crval2, self.lag_cdelt1, self.lag_cdelt2, self.lag_crota, indexing='ij')
+                xx_, yy_, zz_, nn_, pp_ = np.meshgrid(np.arange(len(self.lag_crval1)),
+                                                np.arange(len(self.lag_crval2)),
+                                                np.arange(len(self.lag_cdelt1)), 
+                                                np.arange(len(self.lag_cdelt2)), 
+                                                np.arange(len(self.lag_crota)), 
+                                                indexing='ij')
                 if self.counts is None:
                     self.counts = mp.cpu_count()
+                list_d_crval1 = np.array_split(list_d_crval1_.ravel(), self.counts)
+                list_d_crval2 = np.array_split(list_d_crval2_.ravel(), self.counts)
+                list_d_cdelt1 = np.array_split(list_d_cdelt1_.ravel(), self.counts)
+                list_d_cdelt2 = np.array_split(list_d_cdelt2_.ravel(), self.counts)
+                list_d_crota = np.array_split(list_d_crota_.ravel(), self.counts)
+                
+                xx = np.array_split(xx_.ravel(), self.counts)
+                yy = np.array_split(yy_.ravel(), self.counts)
+                zz = np.array_split(zz_.ravel(), self.counts)
+                nn = np.array_split(nn_.ravel(), self.counts)
+                pp = np.array_split(pp_.ravel(), self.counts)
+
+
+
+
+                for ii, sublist_d_crval1 in enumerate(list_d_crval1):
+                    sublist_d_crval2 = list_d_crval2[ii]
+                    sublist_d_cdelt1 = list_d_cdelt1[ii]
+                    sublist_d_cdelt2 = list_d_cdelt2[ii]
+                    sublist_d_crota = list_d_crota[ii]
+
+                    position =  (
+                        xx[ii], 
+                        yy[ii], 
+                        zz[ii], 
+                        nn[ii], 
+                        pp[ii], 
+                        [kk] * len(xx[ii])
+                    )
+                    
+                    
+                    
+                    kwargs = {
+                        "list_d_crval1": sublist_d_crval1,
+                        "list_d_crval2": sublist_d_crval2,
+                        "list_d_cdelt1": sublist_d_cdelt1,
+                        "list_d_cdelt2": sublist_d_cdelt2,
+                        "list_d_crota": sublist_d_crota,
+                        "d_solar_r": d_solar_r,
+                        "method": self.method,
+                        "lock": self.lock,
+                        "position": position,
+                    }
+
+                    Processes.append(Process(target=self._iteration_step, kwargs=kwargs))
 
                 lenp = len(Processes)
                 ii = -1
@@ -854,7 +900,6 @@ class Alignment:
 
         if self.use_sunpy:
             w_cut = WCS(hdr_cut)
-            print(self.lon_ctype)
             idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
             idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
             x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
