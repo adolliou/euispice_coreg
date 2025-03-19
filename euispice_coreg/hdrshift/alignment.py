@@ -18,7 +18,6 @@ import os
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 # from sunpy.map import Map
 import astropy.constants
-from sunpy.coordinates import propagate_with_solar_surface
 # from matplotlib import pyplot as plt
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
@@ -133,7 +132,6 @@ class Alignment:
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
             if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
                 use_sunpy = True
-                # import sunpy.map
         self.use_sunpy = use_sunpy
         # set None values to np.array([0]) lags.
         for lag_name, lag_value in zip(["lag_crval1", "lag_crval2", "lag_crota", "lag_cdelt1", "lag_cdelt2"],
@@ -865,6 +863,8 @@ class Alignment:
     def _carrington_transform_sunpy(self, d_solar_r, data, hdr, data_large=None):
         rsun = (d_solar_r * astropy.constants.R_sun).to("m").value
         from sunpy.map import Map
+        from sunpy.coordinates import propagate_with_solar_surface
+
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
 
             map_ref = Map(data, hdr)

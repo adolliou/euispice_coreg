@@ -18,7 +18,6 @@ from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 from astropy.coordinates import SkyCoord
 from matplotlib.backends.backend_pdf import PdfPages
 import astropy.constants
-from sunpy.coordinates import propagate_with_solar_surface
 from matplotlib.colors import CenteredNorm
 
 
@@ -902,6 +901,7 @@ class PlotFunctions:
     
                 elif type_plot == "sunpy":
                     from sunpy.map import Map
+                    from sunpy.coordinates import propagate_with_solar_surface
 
                     rsun=rsun.to("m").value
                     with PdfPages(path_save_figure) as pdf:
