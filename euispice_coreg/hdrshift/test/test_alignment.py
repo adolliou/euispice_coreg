@@ -23,13 +23,10 @@ def test_alignement_helioprojective_shift():
 
     lag_crota = [0.75]
 
-    min_value = 0
-    max_value = 1310
 
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
-                  parallelism=True, display_progress_bar=True, counts_cpu_max=None, small_fov_value_min=min_value,
-                  small_fov_value_max=max_value, )
+                  parallelism=True, display_progress_bar=True, counts_cpu_max=None,  )
 
     corr = A.align_using_helioprojective(method='correlation', return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
@@ -97,8 +94,7 @@ def test_alignement_carrington():
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=parallelism, display_progress_bar=True,
-                  small_fov_value_min=min_value,
-                  small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
+                    lag_solar_r=lag_solar_r, )
     corr = A.align_using_carrington(method='correlation', shape=shape, lonlims=lonlims, latlims=latlims,
                                     reference_date=reference_date,  method_carrington_reprojection="fa", return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
@@ -169,8 +165,7 @@ def test_alignement_carrington_sunpy():
     A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, lag_crval1=lag_crval1,
                   lag_crval2=lag_crval2, lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, lag_crota=lag_crota,
                   parallelism=parallelism, display_progress_bar=True,
-                  small_fov_value_min=min_value,
-                  small_fov_value_max=max_value, lag_solar_r=lag_solar_r, )
+                     lag_solar_r=lag_solar_r, )
     corr = A.align_using_carrington(method='correlation', 
                                     reference_date=reference_date,   method_carrington_reprojection="sunpy", return_type="corr")
     max_index = np.unravel_index(corr.argmax(), corr.shape)
