@@ -698,7 +698,7 @@ class Alignment:
             
             if w_large.naxis == 2:
                 x_large, y_large = w_xy_small.world_to_pixel(coords)
-            if w_large.naxis == 3:
+            elif w_large.naxis == 3:
                 time_matrix = np.empty(coords.shape, dtype='datetime64[ns]')
                 for i in range(coords.shape[0]):
                     for j in range(coords.shape[1]):
@@ -706,7 +706,7 @@ class Alignment:
                 time_matrix =  Time(time_matrix)
                 x_large, y_large, z = w_xy_small.world_to_pixel(coords,time_matrix)
             else:
-                raise Exception('Number of axis for the wcs object is unknown')
+                raise Exception('Number of axis for the wcs object is unknown,')
         else:
             if w_xy_small.naxis == 2:
                 x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
