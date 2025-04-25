@@ -937,7 +937,7 @@ class Alignment:
         else:
             longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut,
                                                                                                   lon_ctype=self.lon_ctype,
-                                                                                                  lat_ctype=self.lon_ctype)
+                                                                                                  lat_ctype=self.lat_ctype)
             x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
