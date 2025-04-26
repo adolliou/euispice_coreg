@@ -219,7 +219,7 @@ class PlotFunctions:
 
     @staticmethod
     def plot_fov(data, slc=None, path_save=None, show=True, plot_colorbar=True, fig=None, ax=None, norm=None,
-                 cmap="plasma", xlabel="X [px]", ylabel="Y [px]", aspect=1, return_im=False, extent=None,):
+                 cmap="plasma", xlabel="X [px]", ylabel="Y [px]", label_cbar="DN/s", aspect=1, return_im=False, extent=None,):
         if fig is None:
             fig = plt.figure()
         if ax is None:
@@ -232,7 +232,9 @@ class PlotFunctions:
         else:
             im = ax.imshow(data, cmap=cmap, origin="lower", interpolation="None", norm=norm, aspect=aspect, extent=extent)
         if plot_colorbar:
-            fig.colorbar(im, label="DN/s")
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            fig.colorbar(im, label="DN/s", cax=cax)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         if show:
