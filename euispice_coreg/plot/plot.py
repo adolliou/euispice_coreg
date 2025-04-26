@@ -900,7 +900,7 @@ class PlotFunctions:
                             longitude_grid_unit = longitude_grid.to(unit_to_plot).value
                             latitude_grid_unit = longitude_grid.to(unit_to_plot).value
 
-                            extent = (longitude_grid - 0.5*dlon, longitude_grid_unit + 0.5*dlon, latitude_grid_unit - 0.5*dlat, latitude_grid_unit + 0.5*dlat)
+                            extent = (longitude_grid_unit - 0.5*dlon, longitude_grid_unit + 0.5*dlon, latitude_grid_unit - 0.5*dlat, latitude_grid_unit + 0.5*dlat)
                             fig = plt.figure(figsize=(6, 6))
                             ax = fig.add_subplot()
                             PlotFunctions.plot_fov(data=data_rep, fig=fig, ax=ax, norm=norm_, unit_to_plot=unit_to_plot, extent=extent,
