@@ -119,7 +119,7 @@ class AlignmentResults:
         )
 
     def plot_co_alignment(
-            self, path_save_figure: str = None, show=False, **kwargs
+            self, path_save_figure: str = None, show=False, lonlims=None, latlims=None, **kwargs
     ):
 
         return PlotFunctions.plot_co_alignment(
@@ -131,6 +131,8 @@ class AlignmentResults:
             shift_arcsec=self.shift_arcsec,
             show=show,
             unit_to_plot=self.unit_lag,
+            lonlims=lonlims, 
+            latlims=latlims,
             **kwargs,
         )
 

@@ -642,8 +642,8 @@ class PlotFunctions:
                           shift_arcsec: list = None,
                           norm_type=None, imin=2, imax=97,
                           unit_to_plot="arcsec",
-                          lonlim = None, 
-                          latlim = None,
+                          lonlims = None, 
+                          latlims = None,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -828,7 +828,7 @@ class PlotFunctions:
                 norm = PlotFits.get_range(data=data_reference, stre=norm_type, imin=imin, imax=imax)
                 longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_to_align.copy(), dsun=False,
                                                                         lon_ctype=header_to_align["CTYPE1"],  lat_ctype=header_to_align["CTYPE2"])
-                longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude, latitude)
+                longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude, latitude, lonlims=lonlims, latlims=latlims)
                 dlon = dlon.to(unit_to_plot).value
                 dlat = dlat.to(unit_to_plot).value
 
