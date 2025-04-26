@@ -279,7 +279,8 @@ class PlotFunctions:
 
     @staticmethod
     def simple_plot(hdr_main, data_main, path_save=None, show=False, ax=None, fig=None, norm=None,
-                    show_xlabel=True, show_ylabel=True, plot_colorbar=True, cmap="plasma"):
+                    show_xlabel=True, show_ylabel=True, plot_colorbar=True, cmap="plasma", unit_to_plot="arcsec", 
+                    lonlim=None, latlim=None):
 
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
@@ -308,14 +309,14 @@ class PlotFunctions:
             longitude, latitude, dsun = AlignEUIUtil.extract_EUI_coordinates(hdr_main, 
                                                                              lon_ctype=hdr_main["CTYPE1"], lat_ctype=hdr_main["CTYPE2"])
             longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude=longitude,
-                                                                                    latitude=latitude)
+                                                                                    latitude=latitude, )
             w = WCS(hdr_main)
             x, y = w.world_to_pixel(longitude_grid, latitude_grid)
-        dlon = dlon.to("arcsec").value
-        dlat = dlat.to("arcsec").value
+        dlon = dlon.to(unit_to_plot).value
+        dlat = dlat.to(unit_to_plot).value
 
-        longitude_grid_arcsec = longitude_grid.to("arcsec").value
-        latitude_grid_arcsec = latitude_grid.to("arcsec").value
+        longitude_grid_arcsec = longitude_grid.to(unit_to_plot).value
+        latitude_grid_arcsec = latitude_grid.to(unit_to_plot).value
 
         image_on_regular_grid = interpol2d(data_main, x=x, y=y, fill=-32762, order=1)
         image_on_regular_grid[image_on_regular_grid == -32762] = np.nan
@@ -333,9 +334,9 @@ class PlotFunctions:
         # im = ax.imshow(data_main, origin="lower", interpolation="none", norm=norm,)
 
         if show_xlabel:
-            ax.set_xlabel("Solar-X [arcsec]")
+            ax.set_xlabel(f"Solar-X [{unit_to_plot}]")
         if show_ylabel:
-            ax.set_ylabel("Solar-Y [arcsec]")
+            ax.set_ylabel(f"Solar-Y [{unit_to_plot}]")
         if plot_colorbar:
             if "BUNIT" in hdr_main:
                 fig.colorbar(im, label=hdr_main["BUNIT"])
@@ -641,6 +642,8 @@ class PlotFunctions:
                           shift_arcsec: list = None,
                           norm_type=None, imin=2, imax=97,
                           unit_to_plot="arcsec",
+                          lonlim = None, 
+                          latlim = None,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -826,16 +829,16 @@ class PlotFunctions:
                 longitude, latitude = AlignEUIUtil.extract_EUI_coordinates(header_to_align.copy(), dsun=False,
                                                                         lon_ctype=header_to_align["CTYPE1"],  lat_ctype=header_to_align["CTYPE2"])
                 longitude_grid, latitude_grid, dlon, dlat = PlotFits.build_regular_grid(longitude, latitude)
-                dlon = dlon.to("arcsec").value
-                dlat = dlat.to("arcsec").value
+                dlon = dlon.to(unit_to_plot).value
+                dlat = dlat.to(unit_to_plot).value
 
                 lmin = None
                 lmax = None
                 norm_contour = PlotFits.get_range(data=data_to_align, stre=norm_type, imin=imin, imax=imax)
 
                 if "SPICE" in header_to_align_original["TELESCOP"]:
-                    lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
-                    lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
+                    lmin = AlignCommonUtil.ang2pipi(latitude).to(unit_to_plot).value[ymin, 0]
+                    lmax = AlignCommonUtil.ang2pipi(latitude).to(unit_to_plot).value[ymax, 0]
 
                 if type_plot == "compare_plot":
                     fig = plt.figure(figsize=(12, 6))
@@ -892,10 +895,17 @@ class PlotFunctions:
                                 x, y = w_.world_to_pixel(longitude_grid, latitude_grid)
 
                             data_rep = AlignCommonUtil.interpol2d(image=data, x=x, y=y, fill=np.nan,
-                                                                  order=3, )
+                                                                  order=2, )
+                            
+                            longitude_grid_unit = longitude_grid.to(unit_to_plot).value
+                            latitude_grid_unit = longitude_grid.to(unit_to_plot).value
+
+                            extent = (longitude_grid - 0.5*dlon, longitude_grid_unit + 0.5*dlon, latitude_grid_unit - 0.5*dlat, latitude_grid_unit + 0.5*dlat)
                             fig = plt.figure(figsize=(6, 6))
                             ax = fig.add_subplot()
-                            PlotFunctions.simple_plot(hdr_main=header_to_align, data_main=data_rep, fig=fig, ax=ax, norm=norm_)
+                            PlotFunctions.plot_fov(data=data_rep, fig=fig, ax=ax, norm=norm_, unit_to_plot=unit_to_plot, extent=extent,
+                                                   norm=norm,
+                                                    xlabel=f"Solar-X {unit_to_plot}", ylabel=f"Solar-Y {unit_to_plot}")
                             ax.set_title(title)
                             pdf.savefig(fig)
     
