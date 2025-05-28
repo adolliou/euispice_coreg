@@ -444,8 +444,22 @@ class PlotFunctions:
 
         w_xy_contour = WCS(hdr_contour)
         if use_sunpy:
-            x_contour, y_contour = w_xy_contour.world_to_pixel(coords_grid)
-
+            if w_xy_contour.naxis == 2:
+                x_contour, y_contour = w_xy_contour.world_to_pixel(coords_grid)
+            elif w_xy_contour.naxis == 3:
+                # import pickle
+            #       with open("___.pkl", "wb") as f:
+            #         pickle.dump((w_xy_contour, coords_grid, Time([coords_grid.obstime for i in range(len(coords_grid))])), f)
+                time_matrix = np.empty(coords_grid.shape, dtype='datetime64[ns]')
+                for i in range(coords_grid.shape[0]):
+                    for j in range(coords_grid.shape[1]):
+                        time_matrix[i, j] =  np.datetime64(str(coords_grid.obstime))
+                time_matrix =  Time(time_matrix)
+                x_contour, y_contour,z = w_xy_contour.world_to_pixel(
+                    coords_grid,
+                    time_matrix
+                    )
+                
         else:
             x_contour, y_contour = w_xy_contour.world_to_pixel(longitude_grid, latitude_grid)
         image_contour_cut = interpol2d(np.array(data_contour, dtype=np.float64),
@@ -572,9 +586,29 @@ class PlotFunctions:
             x, y = np.meshgrid(np.arange(w_xy.pixel_shape[idx_lon]),
                                np.arange(w_xy.pixel_shape[idx_lat]), )  # t dépend de x,
             # should reproject on a new coordinate grid first : suppose slits at the same time :
-            coords_ = w_xy.pixel_to_world(x, y)
+            if w_xy.naxis==2:
+                coords_ = w_xy.pixel_to_world(x, y)
+            elif w_xy.naxis == 3:
+                coords_,time = w_xy.pixel_to_world(x, y, 0 )
+            else: 
+                raise Exception("WCS naxis must be 2 or 3")
             coords = SkyCoord(lon_grid, lat_grid, frame=coords_.frame)
-            x, y = w_xy.world_to_pixel(coords)
+            if w_xy.naxis==2:
+                x, y = w_xy.world_to_pixel(coords)
+            elif w_xy.naxis == 3:
+                time_matrix = np.empty(coords.shape, dtype='datetime64[ns]')
+                for i in range(coords.shape[0]):
+                    for j in range(coords.shape[1]):
+                        time_matrix[i, j] =  np.datetime64(str(coords.obstime))
+                        
+                time_matrix = Time(time_matrix)
+                print(time_matrix.shape, coords.shape)
+                print(type(time_matrix), type(coords))
+                x,y,z = w_xy.world_to_pixel(coords, time_matrix)
+            else: 
+                raise Exception("WCS naxis must be 2 or 3")
+            
+            
 
         else:
 
@@ -698,6 +732,7 @@ class PlotFunctions:
             with fits.open(image_to_align_path) as hdul_to_align:
                 header_to_align_original = hdul_to_align[image_to_align_window].header.copy()
 
+<<<<<<< HEAD
                 if "HRI_EUV" in header_to_align_original["TELESCOP"]:
                     # AlignEUIUtil.recenter_crpix_in_header(header_spice)
                     w_xy = WCS(header_to_align_original)
@@ -705,6 +740,25 @@ class PlotFunctions:
                     data_to_align = np.array(hdul_to_align[image_to_align_window].data.copy(), dtype=float)
 
                 elif "SPICE" in header_to_align_original["TELESCOP"]:
+=======
+        }
+
+        max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
+
+        with fits.open(large_fov_path) as hdul_large:
+            header_large = hdul_large[large_fov_window].header.copy()
+            data_large = hdul_large[large_fov_window].data.copy()
+            with fits.open(small_fov_path) as hdul_spice:
+                header_spice_original = hdul_spice[small_fov_window].header.copy()
+                lmin = None
+                lmax = None
+                if ("TELESCOP" in  header_spice_original.keys()) and ("HRI_EUV" in header_spice_original["TELESCOP"]):
+                    # AlignEUIUtil.recenter_crpix_in_header(header_spice)
+                    w_xy = WCS(header_spice_original)
+                    header_spice = w_xy.to_header().copy()
+                    data_spice = np.array(hdul_spice[small_fov_window].data.copy(), dtype=np.float64)
+                elif ("TELESCOP" in  header_spice_original.keys()) and ("SPICE" in header_spice_original["TELESCOP"]):
+>>>>>>> 6d709ed9f1b79f498720c66b61529c8ed9b1c95b
                     # AlignSpiceUtil.recenter_crpix_in_header_L2(header_spice)
                     w_to_align = WCS(header_to_align_original)
                     w_wave = w_to_align.sub(['spectral'])
@@ -836,11 +890,76 @@ class PlotFunctions:
 
                 lmin = None
                 lmax = None
+<<<<<<< HEAD
                 norm_contour = PlotFits.get_range(data=data_to_align, stre=norm_type, imin=imin, imax=imax)
 
                 if "SPICE" in header_to_align_original["TELESCOP"]:
                     lmin = AlignCommonUtil.ang2pipi(latitude).to(unit_to_plot).value[ymin, 0]
                     lmax = AlignCommonUtil.ang2pipi(latitude).to(unit_to_plot).value[ymax, 0]
+=======
+                if ("TELESCOP" in header_spice_original) and ("SPICE" in header_spice_original["TELESCOP"]):
+                    lmin = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymin, 0]
+                    lmax = AlignCommonUtil.ang2pipi(latitude).to("arcsec").value[ymax, 0]
+
+                    # data_large_cp[b] = np.nan
+                    # data_large_cp[b] = np.nan
+
+                fig = plt.figure(figsize=(12, 6))
+                fig, ax1, ax2, ax3, ax_cbar1, ax_cbar2 = \
+                    PlotFunctions.compare_plot(header_large, data_large_cp, header_spice, data_spice, hdr_spice_shifted,
+                                               data_spice, show=False, norm=norm, levels=levels, return_axes=True,
+                                               fig=fig, lmin=lmin, lmax=lmax,
+                                               cmap1="plasma", cmap2="viridis", path_save=None)
+                detector = header_large["DETECTOR"]
+                wave = header_large["WAVELNTH"]
+
+                ax1.set_title(f"{detector} {wave} \& Small FOV (contour) NA ")
+                ax2.set_title(f"{detector} {wave} \& Small FOV (contour) A ")
+                ax2.set_yticklabels([])
+                ax3.set_yticklabels([])
+
+                ax3.set_title("Small FOV (%s) aligned " % small_fov_window)
+                date = Time(hdul_spice[small_fov_window].header["DATE-AVG"]).fits[:19]
+                date = date.replace(":", "_")
+                date = date.replace("-", "_")
+
+                date_str = header_spice["DATE-OBS"][:19]
+                fig.suptitle(f"Small FOV {date_str} aligned with {detector} {wave}. Aligned (A) ; Not Aligned (NA) ; ")
+                # fig.suptitle("Alignement of SPICE  using a synthetic raster of HRIEUV images")
+                if results_folder is not None:
+                    fig.savefig('%s/compare_alignment.pdf' % (results_folder))
+                if show:
+                    fig.show()
+                if plot_all_figures:
+                    # fig.suptitle(f"Alignement SPICE {date}- HRI 174")
+                    w_fsi = WCS(header_fsi)
+                    w_spice = WCS(header_spice)
+                    w_spice_shift = WCS(hdr_spice_shifted)
+                    if use_sunpy:
+                        idx_lon = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                        idx_lat = np.where(np.array(w_fsi.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+                        x, y = np.meshgrid(np.arange(w_fsi.pixel_shape[idx_lon]),
+                                           np.arange(w_fsi.pixel_shape[idx_lat]), )  # t dépend de x,
+
+                        # should reproject on a new coordinate grid first : suppose slits at the same time :
+                        coords_fsi = w_fsi.pixel_to_world(x, y)
+
+                        idx_lon = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLN-TAN")[0][0]
+                        idx_lat = np.where(np.array(w_spice.wcs.ctype, dtype="str") == "HPLT-TAN")[0][0]
+                        x, y = np.meshgrid(np.arange(w_spice.pixel_shape[idx_lon]),
+                                           np.arange(w_spice.pixel_shape[idx_lat]), )
+                        coords_spice = w_spice.pixel_to_world(x, y)
+
+                        # breakpoint()
+                        coords_grid = SkyCoord(longitude_grid, latitude_grid,
+                                               frame="helioprojective", observer=coords_fsi.observer)
+                        x_fsi, y_fsi = w_fsi.world_to_pixel(coords_grid)
+                        coords_grid = SkyCoord(longitude_grid, latitude_grid,
+                                               frame="helioprojective", observer=coords_spice.observer)
+
+                        x_spice, y_spice = w_spice.world_to_pixel(coords_grid)
+                        x_spice_shift, y_spice_shift = w_spice_shift.world_to_pixel(coords_grid)
+>>>>>>> 6d709ed9f1b79f498720c66b61529c8ed9b1c95b
 
                 if type_plot == "compare_plot":
                     fig = plt.figure(figsize=(12, 6))
