@@ -127,7 +127,7 @@ class Alignment:
         self.lon_ctype = None
         self.lat_ctype = None
 
-        # check whether the Helioprojective frame is imported through an sunpy.map import for instance.
+        # check whether the Helioprojective frame is imported through a sunpy.map import for instance.
         use_sunpy = False
         for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
             if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
