@@ -599,6 +599,7 @@ class AlignmentSpiceSaffronL3(Alignment):
         self.lat_ctype="HPLT-TAN"
         self._extract_spice_data_header()
         results = self._find_best_header_parameters()
+        return results
 
         if return_type == "corr":
             return results
@@ -609,7 +610,6 @@ class AlignmentSpiceSaffronL3(Alignment):
                                     lag_crota=self.lag_crota, 
                                     image_to_align_path=self.small_fov_to_correct, image_to_align_window=self.small_fov_window,  
                                     reference_image_path=self.large_fov_known_pointing, reference_image_window=self.large_fov_window)
-        raise
     def _find_best_header_parameters(self, ang2pipi=True):
 
         self.crval1_ref = self.small_fov_to_correct.meta['CRVAL1']
@@ -722,7 +722,8 @@ class AlignmentSpiceSaffronL3(Alignment):
                         for neighbor in neighbors:
                             if neighbor in visited:
                                 test_point = np.array(neighbor, dtype=float)
-                                while tuple(test_point) in visited or tuple(test_point) in neighbors in visited or tuple(test_point) in updated_neighbors:
+                                # while tuple(test_point) in visited or tuple(test_point) in neighbors or tuple(test_point) in updated_neighbors:
+                                while tuple(test_point) in visited or tuple(test_point) in neighbors or tuple(test_point) in updated_neighbors:
                                     test_point += gradient_vector
                                 new_neighbor = tuple(test_point)
                                 updated_neighbors.append(new_neighbor)
@@ -874,6 +875,7 @@ class AlignmentSpiceSaffronL3(Alignment):
         Raises:
             ValueError: raise Error if incorrect input level.
         """   
+        
         dt = self.small_fov_to_correct.meta.copy()["PC3_1"]
         
         if self.extend_pixel_size:
