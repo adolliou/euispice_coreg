@@ -216,7 +216,43 @@ Example of a results for co-alignment between a SPICE C III image and a FSI 304 
 ## Correction of instrumental Jitter. 
 
 The code also includes a script to correct the instrumental Jitter, by adapting the method described in Chitta et al, A&A (2022). 
- 
+The script separates a list of input FITS files into overlapping sublists, ordered by dates. Then each image is co-aligned in a carrington frame 
+with the first image of its sublist. The corrected FITS files are saved in an output folder.
+
+ ```python
+from euispice_coreg.jitter_correction import jitter_correction_imagers
+from glob import glob
+import os
+
+
+list_files_input = glob.glob(os.path.join("path_to_input_files_folders", "*.fits"))
+path_files_output = "path_to_output_folder"
+# Carrington grid where the alignment is performed
+lonlims = (200, 300)
+latlims = (-20, 20)  # longitude min and max (degrees)
+shape = [2048, 2048] # number of pixels
+
+sublist_length = 10 # number of images for each sublist
+overap = 1 # number of images overlapping between sublists
+
+param_alignment = {
+    "lag_crval1": np.arange(-5, 5, 0.5), # lag crvals in the headers, in arcsec
+    "lag_crval2": np.arange(-5, 5, 0.5),  # in arcsec
+    "lag_crota": np.array([0]), # in degrees
+    "lag_cdelt1": np.array([0]), # in arcsec
+    "lag_cdelt2": np.array([0]), # in arcsec
+}
+
+jitter_correction_images( 
+    list_files_input=list_files_input, path_files_output=path_files_output, 
+    lonlims=lonlims, latlims=latlims, shape=shape, 
+    sublist_length=sublist_length, overlap=overlap, 
+    **param_alignment
+)
+
+
+
+ ```
 
 
 ## Acknowledgments
