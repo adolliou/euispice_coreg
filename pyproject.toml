@@ -6,7 +6,6 @@ authors = ["dolliou <dolliou@mps.mpg.de>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-<<<<<<< HEAD
 python = ">=3.11,<4.0"
 numpy = ">=1.26.4"
 tqdm = ">=4.66.2"
@@ -20,19 +19,6 @@ sunpy = {extras = ["visualization"], version = "^6.0.4"}
 beautifulsoup4 = ">=4.12.3"
 reproject = "^0.14.1"
 numba = "^0.61.0"
-=======
-python = "^3.9"
-numpy = "^1.25.0"
-tqdm = "^4.66.2"
-astropy = "^6.0.1"
-matplotlib = "^3.8.4"
-opencv-python = "^4.9.0.80"
-scipy = "^1.13.0"
-pytest = "^8.1.1"
-multiprocess = "^0.70.15"
-sunpy = "^5.1.2"
-beautifulsoup4 = "^4.12.3"
->>>>>>> 6d709ed9f1b79f498720c66b61529c8ed9b1c95b
 
 
 [build-system]

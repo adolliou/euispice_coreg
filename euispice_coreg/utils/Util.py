@@ -349,13 +349,7 @@ class AlignEUIUtil:
         x, y = np.meshgrid(np.arange(w.pixel_shape[idx_lon]),
                            np.arange(w.pixel_shape[idx_lat]), )  # t dépend de x,
         # should reproject on a new coordinate grid first : suppose slits at the same time :
-        if w.naxis == 2:
-            coords = w.pixel_to_world(x, y)
-        if w.naxis == 3:
-            try:
-                coords,time = w.pixel_to_world(x, y,0)
-            except:
-                coords = w.pixel_to_world(x, y,0)
+        coords = w.pixel_to_world(x, y)
         if isinstance(coords, SkyCoord):
             if lon_ctype == "HPLN-TAN":
                 longitude = AlignCommonUtil.ang2pipi(coords.Tx)
