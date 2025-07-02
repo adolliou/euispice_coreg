@@ -149,6 +149,8 @@ class ComposedMapBuilder(MapBuilder):
         self.hdr_composed["DATE-OBS"] = hdr_spice["DATE-OBS"]
         self.hdr_composed["DATE-BEG"] = hdr_spice["DATE-BEG"]
 
+        self.hdr_composed["SPECPATH"] = os.path.basename(self.path_to_spectro)
+
         utc_composed, deltat = self._return_mean_time(self.dates_selected)
         wave = self.hdr_composed["WAVELNTH"]
         if "DETECTOR" in self.hdr_composed:
