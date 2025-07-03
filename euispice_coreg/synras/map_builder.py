@@ -9,6 +9,7 @@ from ..utils import Util
 import warnings
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 from astropy.coordinates import SkyCoord
+import random
 
 
 class MapBuilder(ABC):
@@ -191,7 +192,8 @@ class ComposedMapBuilder(MapBuilder):
         if basename_output is None:
             date = utc_composed.fits[:19]
             date = date.replace(":", "_")
-            basename_new = f"solo_L3_{detector}{wave}-image-composed-{date}.fits"
+            randint = random.randint(1, 99999)
+            basename_new = f"solo_L3_{detector}{wave}-image-composed-{date}_{randint:05d}.fits"
         else:
             basename_new = basename_output
         if path_output is not None:
