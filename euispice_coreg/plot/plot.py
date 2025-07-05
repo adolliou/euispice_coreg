@@ -908,6 +908,7 @@ class PlotFunctions:
                             fig = plt.figure(figsize=(6, 6))
                             ax = fig.add_subplot()
                             PlotFunctions.plot_fov(data=data_rep, fig=fig, ax=ax, norm=norm__, extent=extent,
+                                                   show=False,
                                                     xlabel=f"Solar-X {unit_to_plot}", ylabel=f"Solar-Y {unit_to_plot}")
                             ax.set_title(title)
                             pdf.savefig(fig)
