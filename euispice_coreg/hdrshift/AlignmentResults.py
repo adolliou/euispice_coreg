@@ -222,6 +222,15 @@ class AlignmentResults:
 
     def return_corrected_header(self, window: str, 
                  path_to_l2_input: str = None):
+        """Return the header of a given window of the FITS file with the corrected pointing informations
+
+        Args:
+            window (str): window over which the header will be returned
+            path_to_l2_input (str, optional): Initial FITS file path name. If None, Then take the
+            image_to_align_path attribute of the class., .
+        Returns:
+            _type_: corrected header
+        """        
         # yaml with the corrected header values
         if path_to_l2_input is None:
             if self.image_to_align_path is None:
