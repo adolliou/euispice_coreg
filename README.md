@@ -250,7 +250,7 @@ jitter_correction_images(
     **param_alignment
 )
 
-
+S
 
  ```
 
@@ -265,7 +265,7 @@ jitter_correction_images(
 ## Contact
 
 
-Author: Antoine Dolliou (antoine.dolliou@universite-paris-saclay.fr)
+Author: Antoine Dolliou (dolliou@mps.mpg.de)
 
 ## Acknowledgment
 

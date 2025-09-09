@@ -195,12 +195,52 @@ class AlignmentResults:
             if has_corrected_window == 0:
                 raise ValueError("has not corrected any window.")
 
+
     def savefig(self, filename: str):
         raise NotImplementedError
 
-    def saveyaml(self, filename: str):
-        # yaml with the correlation values
+    def saveyaml(self, filename: str, window: str, 
+                 path_to_l2_input: str = None):
+        # yaml with the corrected header values
         raise NotImplementedError
+
+        if path_to_l2_input is None:
+            if self.image_to_align_path is None:
+                raise ValueError("Please provide a path_to_l2_input parameter")
+            path_to_l2_input = self.image_to_align_path
+        with fits.open(path_to_l2_input) as hdul:
+            hdu = hdul[window]
+            header_origin = hdu.header.copy()
+            AlignCommonUtil.correct_pointing_header(
+                header_origin,
+                lag_crval1=self.shift_arcsec[0],
+                lag_crval2=self.shift_arcsec[1],
+                lag_cdelt1=self.shift_arcsec[2],
+                lag_cdelt2=self.shift_arcsec[3],
+                lag_crota=self.shift_arcsec[4],
+            )
+
+    def return_corrected_header(self, window: str, 
+                 path_to_l2_input: str = None):
+        # yaml with the corrected header values
+        if path_to_l2_input is None:
+            if self.image_to_align_path is None:
+                raise ValueError("Please provide a path_to_l2_input parameter")
+            path_to_l2_input = self.image_to_align_path
+        with fits.open(path_to_l2_input) as hdul:
+            hdu = hdul[window]
+            header_origin = hdu.header.copy()
+            AlignCommonUtil.correct_pointing_header(
+                header_origin,
+                lag_crval1=self.shift_arcsec[0],
+                lag_crval2=self.shift_arcsec[1],
+                lag_cdelt1=self.shift_arcsec[2],
+                lag_cdelt2=self.shift_arcsec[3],
+                lag_crota=self.shift_arcsec[4],
+            )
+        return header_origin
+
+
 
     def _compute_shift(self, method="fitting_gaussian"):
 
