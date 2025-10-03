@@ -295,7 +295,7 @@ class AlignCommonUtil:
             hdr["PC2_2"] = np.cos(rho)
             hdr["PC1_2"] = - lam * np.sin(rho)
             hdr["PC2_1"] = (1 / lam) * np.sin(rho)
-        if hdr["PC1_1"] > 1.0:
+        if hdr["PC1_1"] >= 1.0:
             warnings.warn(f'{hdr["PC1_1"]=}, setting to  1.0.')
             hdr["PC1_1"] = 1.0
             hdr["PC2_2"] = 1.0
