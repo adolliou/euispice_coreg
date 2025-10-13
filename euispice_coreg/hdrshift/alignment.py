@@ -175,6 +175,8 @@ class Alignment:
         self.coordinate_frame = "final_carrington"
         self.lon_ctype = "HPLN-TAN"
         self.lat_ctype = "HPLT-TAN"
+        self.ang2pipi = True
+
 
         self.method_carrington_reprojection = method_carrington_reprojection
         f_large = Fits.open(self.large_fov_known_pointing)
@@ -268,6 +270,7 @@ class Alignment:
         self.coordinate_frame = "final_helioprojective"
         self.lon_ctype = "HPLN-TAN"
         self.lat_ctype = "HPLT-TAN"
+        self.ang2pipi = True
 
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -287,10 +290,9 @@ class Alignment:
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
         f_large.close()
         f_small.close()
-        if fov_limits is not None:
-           self._select_fov_in_small_data(fov_limits)
 
-        results = self._find_best_header_parameters()
+
+        results = self._find_best_header_parameters(fov_limits=fov_limits)
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
@@ -326,6 +328,7 @@ class Alignment:
         self.coordinate_frame = "initial_carrington"
         self.lon_ctype = "CRLN-CAR"
         self.lat_ctype = "CRLT-CAR"
+        self.ang2pipi = False
 
         f_large = Fits.open(self.large_fov_known_pointing)
         f_small = Fits.open(self.small_fov_to_correct)
@@ -571,60 +574,21 @@ class Alignment:
             s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
             hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
 
-    def _find_best_header_parameters(self, ang2pipi=True):
+    def _find_best_header_parameters(self, ang2pipi=True, fov_limits=None):
 
-        self.crval1_ref = self.hdr_small['CRVAL1']
-        self.crval2_ref = self.hdr_small['CRVAL2']
-        self.use_crota = True
+        self._set_removed_values_to_nan_in_datasmall(fov_limits)
+        
+        self._set_initial_header_values(ang2pipi)
 
-        if 'CROTA' in self.hdr_small:
-            self.crota_ref = self.hdr_small['CROTA']
-        elif 'CROTA2' in self.hdr_small:
-            self.crota_ref = self.hdr_small['CROTA2']
-        else:
-            s = - np.sign(self.hdr_small['PC1_2']) + (self.hdr_small['PC1_2'] == 0)
-            self.crota_ref = np.rad2deg(np.arccos(self.hdr_small['PC1_1'])) * s
-            self.hdr_small["CROTA"] = np.rad2deg(np.arccos(self.hdr_small['PC1_1']))
-            # self.use_crota = False
-        self.cdelt1_ref = self.hdr_small['CDELT1']
-        self.cdelt2_ref = self.hdr_small['CDELT2']
-
-        self.unit1 = self.hdr_small["CUNIT1"]
-        self.unit2 = self.hdr_small["CUNIT2"]
-
-        if self.unit_lag in self.unit1:
-            pass
-        else:
-
-            warnings.warn("Units of headers in deg: Modyfying inputs units to deg.")
-            if ang2pipi:
-                self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1,
-                                                                           self.unit_lag)).to(self.unit1).value
-                self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2,
-                                                                           self.unit_lag)).to(self.unit2).value
-                self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1,
-                                                                           self.unit_lag)).to(self.unit1).value
-                self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2,
-                                                                           self.unit_lag)).to(self.unit2).value
-            else:
-                self.lag_crval1 = u.Quantity(self.lag_crval1, self.unit_lag).to(self.unit1).value
-                self.lag_crval2 = u.Quantity(self.lag_crval2, self.unit_lag).to(self.unit2).value
-                self.lag_cdelt1 = u.Quantity(self.lag_cdelt1, self.unit_lag).to(self.unit1).value
-                self.lag_cdelt2 = u.Quantity(self.lag_cdelt2, self.unit_lag).to(self.unit2).value
-            self.unit_lag = self.unit1
-
-        if self.unit1 != self.unit2:
-            raise ValueError("CUNIT1 and CUNIT2 must be equal")
-        if self.lag_solar_r is None:
-            self.lag_solar_r = np.array([1.004])
-
-        for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelt1, self.lag_cdelt2, self.lag_crota]:
-            if lag is None:
-                lag = np.array([0])
-        A = np.array([1, 2], dtype="float")
-        B = np.array([1, 2], dtype="float")
-        lag = [0]
-        c = self.correlation_function(A, B, lag)
+        # for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelt1, self.lag_cdelt2, self.lag_crota]:
+        #     if lag is None:
+        #         lag = np.array([0])
+        
+        
+        # A = np.array([1, 2], dtype="float")
+        # B = np.array([1, 2], dtype="float")
+        # lag = [0]
+        # c = self.correlation_function(A, B, lag)
 
         if self.parallelism:
             results = np.zeros(
@@ -643,21 +607,10 @@ class Alignment:
                                                              hdr=self.hdr_large)
                 elif (self.coordinate_frame == "final_helioprojective") or (
                         self.coordinate_frame == "initial_carrington"):
-                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
+                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large, fov_limits=fov_limits)
 
-                condition_1 = np.ones(self.data_small.shape, dtype='bool')
-                condition_2 = np.ones(self.data_small.shape, dtype='bool')
 
-  
-                if self.small_fov_value_min is not None:
-                    condition_1[np.abs(self.data_small) < self.small_fov_value_min] = False
-                if self.small_fov_value_max is not None:
-                    condition_2[np.abs(self.data_small) > self.small_fov_value_max] = False
-                set_to_nan = np.logical_not(np.logical_and(condition_1, condition_2))
-
-                self.data_small[set_to_nan] = np.nan
                 isnan = np.isnan(self.data_small)
-
                 if isnan.all():
                     raise ValueError("minimum or maximum value have set all small FOV to nan")
                 shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=copy.deepcopy(self.data_large))
@@ -770,19 +723,9 @@ class Alignment:
                                                              hdr=self.hdr_large)
                 elif (self.coordinate_frame == "initial_helioprojective") or (
                         self.coordinate_frame == "initial_carrington"):
-                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large)
+                    self.data_large = self._create_submap_of_large_data(data_large=self.data_large, fov_limits=fov_limits)
 
-                condition_1 = np.ones(self.data_small.shape, dtype='bool')
-                condition_2 = np.ones(self.data_small.shape, dtype='bool')
 
-  
-                if self.small_fov_value_min is not None:
-                    condition_1[np.abs(self.data_small) < self.small_fov_value_min] = False
-                if self.small_fov_value_max is not None:
-                    condition_2[np.abs(self.data_small) > self.small_fov_value_max] = False
-                set_to_nan = np.logical_not(np.logical_and(condition_1, condition_2))
-
-                self.data_small[set_to_nan] = np.nan
                 isnan = np.isnan(self.data_small)
                 # shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_large)
                 # self._large = {"name": shmm_large.name, "dtype": data_large.dtype, "shape": data_large.shape}
@@ -811,6 +754,66 @@ class Alignment:
                                                                                                      )
 
         return data_correlation_cp
+
+    def _set_initial_header_values(self, ang2pipi):
+        self.crval1_ref = self.hdr_small['CRVAL1']
+        self.crval2_ref = self.hdr_small['CRVAL2']
+        self.use_crota = True
+
+        if 'CROTA' in self.hdr_small:
+            self.crota_ref = self.hdr_small['CROTA']
+        elif 'CROTA2' in self.hdr_small:
+            self.crota_ref = self.hdr_small['CROTA2']
+        else:
+            s = - np.sign(self.hdr_small['PC1_2']) + (self.hdr_small['PC1_2'] == 0)
+            self.crota_ref = np.rad2deg(np.arccos(self.hdr_small['PC1_1'])) * s
+            self.hdr_small["CROTA"] = np.rad2deg(np.arccos(self.hdr_small['PC1_1']))
+            # self.use_crota = False
+        self.cdelt1_ref = self.hdr_small['CDELT1']
+        self.cdelt2_ref = self.hdr_small['CDELT2']
+
+        self.unit1 = self.hdr_small["CUNIT1"]
+        self.unit2 = self.hdr_small["CUNIT2"]
+
+        if self.unit_lag in self.unit1:
+            pass
+        else:
+            warnings.warn("Units of headers in deg: Modyfying inputs units to deg.")
+            if ang2pipi:
+                self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1,
+                                                                           self.unit_lag)).to(self.unit1).value
+                self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2,
+                                                                           self.unit_lag)).to(self.unit2).value
+                self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1,
+                                                                           self.unit_lag)).to(self.unit1).value
+                self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2,
+                                                                           self.unit_lag)).to(self.unit2).value
+            else:
+                self.lag_crval1 = u.Quantity(self.lag_crval1, self.unit_lag).to(self.unit1).value
+                self.lag_crval2 = u.Quantity(self.lag_crval2, self.unit_lag).to(self.unit2).value
+                self.lag_cdelt1 = u.Quantity(self.lag_cdelt1, self.unit_lag).to(self.unit1).value
+                self.lag_cdelt2 = u.Quantity(self.lag_cdelt2, self.unit_lag).to(self.unit2).value
+            self.unit_lag = self.unit1
+
+        if self.unit1 != self.unit2:
+            raise ValueError("CUNIT1 and CUNIT2 must be equal")
+        if self.lag_solar_r is None:
+            self.lag_solar_r = np.array([1.004])
+
+    def _set_removed_values_to_nan_in_datasmall(self, fov_limits=None):
+        condition_1 = np.ones(self.data_small.shape, dtype='bool')
+        condition_2 = np.ones(self.data_small.shape, dtype='bool')
+
+  
+        if self.small_fov_value_min is not None:
+            condition_1[np.abs(self.data_small) < self.small_fov_value_min] = False
+        if self.small_fov_value_max is not None:
+            condition_2[np.abs(self.data_small) > self.small_fov_value_max] = False
+        set_to_nan = np.logical_not(np.logical_and(condition_1, condition_2))
+
+        self.data_small[set_to_nan] = np.nan
+        if fov_limits is not None:
+            self._select_fov_in_small_data(fov_limits)
 
     def _carrington_transform_fa(self, d_solar_r, data, hdr):
         rate_wave_ = None
@@ -910,7 +913,7 @@ class Alignment:
 
         return image
 
-    def _create_submap_of_large_data(self, data_large, ):
+    def _create_submap_of_large_data(self, data_large,fov_limits=None ):
         if self.path_save_figure is not None:
             plot.PlotFunctions.simple_plot(self.hdr_large, data_large, show=False,
                                            path_save='%s/large_fov_before_cut.pdf' % (self.path_save_figure))
@@ -1056,7 +1059,37 @@ class Alignment:
             np.logical_or(longitude < lonlims[0], longitude > lonlims[1]), 
             np.logical_or(latitude  < latlims[0], latitude  > latlims[1]), 
         )
-        self.data_small[set_to_nan] = np.nan
 
         
-        
+        self.data_small[set_to_nan] = np.nan
+
+
+        long, latg, dlon, dlat = Util.PlotFits.build_regular_grid(longitude, latitude, lonlims=fov_limits[0], latlims=fov_limits[1])
+
+
+        mid_point = [long.shape[0]//2, long.shape[1]//2]
+        hdrg_small = self.hdr_small.copy()
+        hdrg_small["CRVAL1"] = long[mid_point[0], mid_point[1]].to(hdrg_small["CUNIT1"]).value
+        hdrg_small["CRVAL2"] = latg[mid_point[0], mid_point[1]].to(hdrg_small["CUNIT2"]).value
+        hdrg_small["CRPIX1"] = mid_point[0] + 1
+        hdrg_small["CRPIX2"] = mid_point[1] + 1
+        hdrg_small["CDELT1"] = dlon.to(hdrg_small["CUNIT1"]).value
+        hdrg_small["CDELT2"] = dlat.to(hdrg_small["CUNIT2"]).value
+
+        hdrg_small["PC1_1"] = 1.0
+        hdrg_small["PC2_2"] = 1.0
+        hdrg_small["PC1_2"] = 0.0
+        hdrg_small["PC2_1"] = 0.0
+        hdrg_small["CROTA"] = 0.0
+        hdrg_small["CROTA2"] = 0.0
+
+        xg, yg = self._extract_coordinates_pixels(header_initial_to_project=hdrg_small,
+                                                  header_target_projection=self.hdr_small, 
+                                                  ang2pipi = self.ang2pipi,
+                                                  )
+        data_small_interp = np.zeros_like(xg)
+        Util.AlignCommonUtil.interpol2d(self.data_small, x=xg, y=yg, order=self.order, fill=np.nan, dst=data_small_interp)
+        self.data_small = data_small_interp
+        self.hdr_small = hdrg_small
+
+
