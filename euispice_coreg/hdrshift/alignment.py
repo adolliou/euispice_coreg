@@ -919,31 +919,8 @@ class Alignment:
                                            path_save='%s/large_fov_before_cut.pdf' % (self.path_save_figure))
 
         hdr_cut = self.hdr_small.copy()
-        w_xy_large = WCS(self.hdr_large.copy())
+        x_cut, y_cut = self._extract_coordinates_pixels(hdr_cut, self.hdr_large)
 
-        if self.use_sunpy:
-            w_cut = WCS(hdr_cut)
-            idx_lon = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
-            idx_lat = np.where(np.array(w_cut.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
-            x, y = np.meshgrid(np.arange(w_cut.pixel_shape[idx_lon]),
-                               np.arange(w_cut.pixel_shape[idx_lat]), )  # t dépend de x,
-            coords_cut = w_cut.pixel_to_world(x, y)
-
-            if self.lon_ctype == "HPLN-TAN":
-                longitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Tx)
-                latitude_cut = Util.AlignCommonUtil.ang2pipi(coords_cut.Ty)
-            elif self.lon_ctype == 'CRLN-CAR':
-                longitude_cut = coords_cut.lon
-                latitude_cut = coords_cut.lat
-            coords_cut = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
-            x_cut, y_cut = w_xy_large.world_to_pixel(coords_cut)
-
-
-        else:
-            longitude_cut, latitude_cut, dsun_obs_cut = Util.AlignEUIUtil.extract_EUI_coordinates(hdr_cut,
-                                                                                                  lon_ctype=self.lon_ctype,
-                                                                                                  lat_ctype=self.lat_ctype)
-            x_cut, y_cut = w_xy_large.world_to_pixel(longitude_cut, latitude_cut)
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
                                         dst=image_large_cut,
@@ -952,25 +929,22 @@ class Alignment:
         # image_large_cut_ = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut_, y=y_cut_,order=1,fill=-32768)
 
         self.hdr_large = hdr_cut.copy()
-        w_xy_small = WCS(self.hdr_small.copy())
-        if self.use_sunpy:
-            # coords_cut_small = SkyCoord(longitude_cut, latitude_cut, frame=coords_cut.frame)
-            x_cut, y_cut = w_xy_small.world_to_pixel(coords_cut)
-        else:
-            x_cut, y_cut = w_xy_small.world_to_pixel(longitude_cut, latitude_cut)
-        image_small_cut = np.zeros_like(x_cut, dtype="float32")
-        Util.AlignCommonUtil.interpol2d(self.data_small.copy(), x=x_cut,
-                                        y=y_cut, order=self.order,
-                                        fill=np.nan, dst=image_small_cut,
-                                        opencv=self.opencv
-                                        )
+        # x_cut, y_cut = self._extract_coordinates_pixels(hdr_cut, self.hdr_small)
+
+        # image_small_cut = np.zeros_like(x_cut, dtype="float32")
+        # Util.AlignCommonUtil.interpol2d(self.data_small.copy(), x=x_cut,
+        #                                 y=y_cut, order=self.order,
+        #                                 fill=np.nan, dst=image_small_cut,
+        #                                 opencv=self.opencv
+        #                                 )
         # image_small_cut[image_small_cut == -32768] = np.nan
 
-        self.data_small = image_small_cut
-        self.hdr_small = hdr_cut.copy()
-        levels = [0.15 * np.nanmax(self.data_small)]
+        # self.data_small = image_small_cut
+        # self.hdr_small = hdr_cut.copy()
 
         if self.path_save_figure is not None:
+            levels = [0.15 * np.nanmax(self.data_small)]
+
             date_small = self.hdr_small["DATE-AVG"]
             date_small = date_small.replace(":", "_")
             plot.PlotFunctions.simple_plot(self.hdr_large, image_large_cut, show=False,
