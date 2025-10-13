@@ -1056,6 +1056,9 @@ class Alignment:
         hdrg_small["PC2_1"] = 0.0
         hdrg_small["CROTA"] = 0.0
         hdrg_small["CROTA2"] = 0.0
+        
+        hdrg_small["NAXIS1"] = long.shape[0]
+        hdrg_small["NAXIS2"] = long.shape[1]
 
         xg, yg = self._extract_coordinates_pixels(header_initial_to_project=hdrg_small,
                                                   header_target_projection=self.hdr_small, 
