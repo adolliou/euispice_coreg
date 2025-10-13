@@ -483,9 +483,8 @@ class Alignment:
         if method == 'correlation':
 
             lag = [0]
-            is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
-                               | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
-                              dtype='bool')
+            is_nan = np.logical_or(np.logical_not(np.isfinite(data_large.ravel())),np.logical_not(np.isfinite(data_small_interp.ravel())))
+
             # if data_large.ravel()[(~is_nan)].shape == data_small_interp.ravel()[(~is_nan)].shape:
             # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
             A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
@@ -524,9 +523,7 @@ class Alignment:
         if method == 'correlation':
 
             lag = [0]
-            is_nan = np.array((np.isnan(data_large.ravel(), dtype='bool')
-                               | (np.isnan(data_small_interp.ravel(), dtype='bool'))),
-                              dtype='bool')
+            is_nan = np.logical_or(np.logical_not(np.isfinite(data_large.ravel())),np.logical_not(np.isfinite(data_small_interp.ravel())))
             A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
             B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
             c = self.correlation_function(A, B, lags=lag)
