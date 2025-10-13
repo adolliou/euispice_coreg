@@ -1091,5 +1091,6 @@ class Alignment:
         Util.AlignCommonUtil.interpol2d(self.data_small, x=xg, y=yg, order=self.order, fill=np.nan, dst=data_small_interp)
         self.data_small = data_small_interp
         self.hdr_small = hdrg_small
+        #A
 
 
