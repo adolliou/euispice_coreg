@@ -243,7 +243,8 @@ class Alignment:
         return results
 
     def align_using_helioprojective(self, method='correlation',
-                                    return_type='AlignmentResults'):
+                                    return_type='AlignmentResults', 
+                                    fov_limits=None):
         """
         Returns the results for the correlation algorithm in helioprojective frame
 
@@ -251,6 +252,8 @@ class Alignment:
             method (str, optional): Method to co align the data. Defaults to 'correlation'.
             return_type (str, optional): Determinates the output object of the method 
             either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
+            fov_limits: list of the longitude and latitude limits to set to the small image for the correlation. 
+            [[lonmin , lonmax], [latmin, latmax]] * u.arcsec
 
         Returns:
             corr matrix or AlignmentResults depending on return_type
@@ -284,6 +287,8 @@ class Alignment:
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
         f_large.close()
         f_small.close()
+        if fov_limits is not None:
+           self._select_fov_in_small_data(fov_limits)
 
         results = self._find_best_header_parameters()
         if return_type == "corr":
@@ -981,28 +986,9 @@ class Alignment:
 
     def _interpolate_on_large_data_grid(self, d_solar_r, data, hdr, ):
 
-        w_xy_small = WCS(hdr)
 
-        use_sunpy = False
-        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
-            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
-                use_sunpy = True
-        if use_sunpy:
 
-            w_large = WCS(self.hdr_large)
-            idx_lon = np.where(np.array(w_large.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
-            idx_lat = np.where(np.array(w_large.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
-            x, y = np.meshgrid(np.arange(w_large.pixel_shape[idx_lon]),
-                               np.arange(w_large.pixel_shape[idx_lat]), )  # t dépend de x,
-            coords = w_large.pixel_to_world(x, y)
-            x_large, y_large = w_xy_small.world_to_pixel(coords)
-
-        else:
-            longitude_large, latitude_large = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_large,
-                                                                                        lon_ctype=self.lon_ctype,
-                                                                                        lat_ctype=self.lat_ctype,
-                                                                                        dsun=False)
-            x_large, y_large = w_xy_small.world_to_pixel(longitude_large, latitude_large)
+        x_large, y_large = self._extract_coordinates_pixels(self.hdr_large, hdr)
 
         image_small_shft = np.zeros_like(x_large, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data.copy(), x=x_large, y=y_large, order=self.order,
@@ -1010,6 +996,46 @@ class Alignment:
         # image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
 
         return image_small_shft
+
+    def _check_sunpy(self):
+        use_sunpy = False
+        for mapping in [WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS]:
+            if mapping[-1][0].__module__ == 'sunpy.coordinates.wcs_utils':
+                use_sunpy = True
+        return use_sunpy
+
+    def _extract_coordinates_pixels(self, header_initial_to_project, header_target_projection=None, return_type="xy", ang2pipi=True):
+        use_sunpy = self._check_sunpy()
+        if return_type == "xy":
+            w_to_project = WCS(header_target_projection)
+
+        if use_sunpy:
+            w_initial_to_project = WCS(header_initial_to_project)
+            idx_lon = np.where(np.array(w_initial_to_project.wcs.ctype, dtype="str") == self.lon_ctype)[0][0]
+            idx_lat = np.where(np.array(w_initial_to_project.wcs.ctype, dtype="str") == self.lat_ctype)[0][0]
+            x, y = np.meshgrid(np.arange(w_initial_to_project.pixel_shape[idx_lon]),
+                               np.arange(w_initial_to_project.pixel_shape[idx_lat]), )  # t dépend de x,
+            if return_type=="xy":
+                coords = w_initial_to_project.pixel_to_world(x, y)
+                x_large, y_large = w_to_project.world_to_pixel(coords)
+            else:
+                if ang2pipi:
+                    longitude_large = Util.AlignCommonUtil.ang2pipi(coords.Tx)
+                    latitude_large = Util.AlignCommonUtil.ang2pipi(coords.Ty)
+                else:
+                    longitude_large = coords.lon
+                    latitude_large = coords.lat
+
+        else:
+            longitude_large, latitude_large = Util.AlignEUIUtil.extract_EUI_coordinates(header_initial_to_project,
+                                                                                        lon_ctype=self.lon_ctype,
+                                                                                        lat_ctype=self.lat_ctype,
+                                                                                        dsun=False)
+            x_large, y_large = w_to_project.world_to_pixel(longitude_large, latitude_large)
+        if return_type=="xy":
+            return x_large,y_large
+        elif return_type=="lonlat":
+            return longitude_large, latitude_large
 
     @staticmethod
     def _get_naxis(hdr):
@@ -1020,3 +1046,20 @@ class Alignment:
             naxis1 = hdr["NAXIS1"]
             naxis2 = hdr["NAXIS2"]
         return naxis1, naxis2
+
+
+    def _select_fov_in_small_data(self, fov_limits):
+        lonlims = fov_limits[0]
+        latlims = fov_limits[1]
+        longitude, latitude = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_small, 
+                                                                        lon_ctype=self.lon_ctype,
+                                                                        lat_ctype=self.lat_ctype,
+                                                                        dsun=False)
+        set_to_nan = np.logical_or(
+            np.logical_or(longitude < lonlims[0], longitude > lonlims[1]), 
+            np.logical_or(latitude  < latlims[0], latitude  > latlims[1]), 
+        )
+        self.data_small[set_to_nan] = np.nan
+
+        
+        
