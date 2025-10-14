@@ -122,33 +122,61 @@ class AlignCommonUtil:
             return dst
 
     @staticmethod
-    def write_corrected_fits(path_l2_input: str, window_list, path_l3_output: str, corr: np.array,
+    def write_corrected_fits(path_to_l2_input: str, window_list_to_apply_shift, path_to_l3_output: str, corr: np.array,
                              lag_crval1=None, lag_crval2=None, lag_crota=None,
-                             lag_cdelt1=None, lag_cdelt2=None,
+                             lag_cdelt1=None, lag_cdelt2=None, shift_arcsec=None,
                              ):
-        max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
-        with fits.open(path_l2_input) as hdul:
-            for window in window_list:
-                header = hdul[window].header.copy()
-                data = hdul[window].data.copy()
+        if shift_arcsec is None:
+            max_index = np.unravel_index(np.nanargmax(corr), corr.shape)
+             
+            shift_arcsec = [
+                    lag_crval1[max_index[0]],
+                    lag_crval2[max_index[1]],
+                    lag_cdelt1[max_index[2]],
+                    lag_cdelt2[max_index[3]],
+                    lag_crota[max_index[4]]
+             ]
+        has_corrected_window = 0
+        with fits.open(path_to_l2_input) as hdul:
+            hdul_out = fits.HDUList()
+            for ii in range(len(hdul)):
+                hdu = hdul[ii]
+                if "EXTNAME" in hdu.header:
+                    extname = hdu.header["EXTNAME"]
+                else:
+                    extname = "nothing98695"
+                if (extname in window_list_to_apply_shift) or (ii in window_list_to_apply_shift) or \
+                        ((ii - len(hdul)) in window_list_to_apply_shift):
+                    header = hdu.header.copy()
+                    data = hdu.data.copy()
+                    AlignCommonUtil.correct_pointing_header(
+                        header,
+                        lag_crval1=shift_arcsec[0],
+                        lag_crval2=shift_arcsec[1],
+                        lag_cdelt1=shift_arcsec[2],
+                        lag_cdelt2=shift_arcsec[3],
+                        lag_crota=shift_arcsec[4],
+                    )
 
-                AlignCommonUtil.correct_pointing_header(header,
-                                                        lag_crval1=lag_crval1[max_index[0]],
-                                                        lag_crval2=lag_crval2[max_index[1]],
-                                                        lag_cdelt1=lag_cdelt1[max_index[2]],
-                                                        lag_cdelt2=lag_cdelt2[max_index[3]],
-                                                        lag_crota=lag_crota[max_index[4]]
-                                                        )
-                data = np.array(data, dtype="<f4")
-                if isinstance(hdul[window], astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
-                    hdu = fits.CompImageHDU(data=data, header=header)
-                elif isinstance(hdul[window], astropy.io.fits.hdu.image.ImageHDU):
-                    hdu = fits.ImageHDU(data=data, header=header)
-                elif isinstance(hdul[window], astropy.io.fits.hdu.image.PrimaryHDU):
-                    hdu = fits.PrimaryHDU(data=data, header=header)
-                hdul[window] = hdu
-            hdul.writeto(path_l3_output, overwrite=True)
-            hdul.close()
+                    data = np.array(data, dtype="<f4")
+                    if isinstance(hdu, astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
+                        hdu_out = fits.CompImageHDU(data=data, header=header)
+                    elif isinstance(hdu, astropy.io.fits.hdu.image.ImageHDU):
+                        hdu_out = fits.ImageHDU(data=data, header=header)
+                    elif isinstance(hdu, astropy.io.fits.hdu.image.PrimaryHDU):
+                        hdu_out = fits.PrimaryHDU(data=data, header=header)
+                    hdu_out.verify("silentfix")
+                    has_corrected_window += 1
+
+                else:
+                    hdu_out = hdu
+                hdul_out.append(hdu_out)
+
+            hdul_out.writeto(path_to_l3_output, overwrite=True)
+            if has_corrected_window == 0:
+                raise ValueError("has not corrected any window.")
+
+
 
     @staticmethod
     def correct_pointing_header(header, lag_cdelt1, lag_cdelt2, lag_crota, lag_crval1, lag_crval2):
