@@ -139,7 +139,7 @@ class AlignCommonUtil:
                                                         lag_cdelt2=lag_cdelt2[max_index[3]],
                                                         lag_crota=lag_crota[max_index[4]]
                                                         )
-
+                data = np.array(data, dtype="<f4")
                 if isinstance(hdul[window], astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
                     hdu = fits.CompImageHDU(data=data, header=header)
                 elif isinstance(hdul[window], astropy.io.fits.hdu.image.ImageHDU):
