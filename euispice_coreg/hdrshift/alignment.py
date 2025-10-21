@@ -925,22 +925,8 @@ class Alignment:
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
                                         dst=image_large_cut,
                                         order=self.order, fill=np.nan, opencv=self.opencv)
-        # breakpoint()
-        # image_large_cut_ = Util.AlignCommonUtil.interpol2d(np.array(data_large, dtype=np.float64), x=x_cut_, y=y_cut_,order=1,fill=-32768)
 
         self.hdr_large = hdr_cut.copy()
-        # x_cut, y_cut = self._extract_coordinates_pixels(hdr_cut, self.hdr_small)
-
-        # image_small_cut = np.zeros_like(x_cut, dtype="float32")
-        # Util.AlignCommonUtil.interpol2d(self.data_small.copy(), x=x_cut,
-        #                                 y=y_cut, order=self.order,
-        #                                 fill=np.nan, dst=image_small_cut,
-        #                                 opencv=self.opencv
-        #                                 )
-        # image_small_cut[image_small_cut == -32768] = np.nan
-
-        # self.data_small = image_small_cut
-        # self.hdr_small = hdr_cut.copy()
 
         if self.path_save_figure is not None:
             levels = [0.15 * np.nanmax(self.data_small)]
@@ -993,10 +979,10 @@ class Alignment:
                 coords = w_initial_to_project.pixel_to_world(x, y)
                 x_large, y_large = w_to_project.world_to_pixel(coords)
             else:
-                if ang2pipi:
+                if self.lon_ctype == "HPLN-TAN":
                     longitude_large = Util.AlignCommonUtil.ang2pipi(coords.Tx)
                     latitude_large = Util.AlignCommonUtil.ang2pipi(coords.Ty)
-                else:
+                elif  self.lon_ctype == "CRLN-CAR":
                     longitude_large = coords.lon
                     latitude_large = coords.lat
 

@@ -386,8 +386,12 @@ class AlignEUIUtil:
                 longitude = coords.lon
                 latitude = coords.lat
         elif isinstance(coords, list):
-            longitude = AlignCommonUtil.ang2pipi(coords[0])
-            latitude = AlignCommonUtil.ang2pipi(coords[1])
+            if lon_ctype == "HPLN-TAN":
+                longitude = AlignCommonUtil.ang2pipi(coords[0])
+                latitude = AlignCommonUtil.ang2pipi(coords[1])
+            elif lon_ctype == "CRLN-CAR":
+                longitude = coords[0]
+                latitude = coords[1]
         else:
             raise ValueError("output from w.pixel_to_world() must be SkyCoord or list")
         if dsun:
