@@ -31,7 +31,7 @@ def jitter_correction_imagers(
     """Correct the jitter of a list of FITS files, by dividing them into overlapping sublists 
     and cross-correlating them to the first image of their sublist (see Chitta et al., A&A, 2022, 
     DOI: 10.1051/0004-6361/202244170)
-    The cross-correlation is performed in a carrington frame, not to remove the Earth rotation. 
+    By default, the cross-correlation is performed in a carrington frame, not to remove the Earth rotation. 
     This is necessary if one want to reproject these corrected images into a carrington frame.
     One has to define the Carrington frame where the reprojection is performed. 
 
@@ -89,7 +89,7 @@ def jitter_correction_imagers(
     }
 
     idx_list = np.arange(list_files_input)
-    # first : iterate on the list after the index_ref :
+
     list_after_ref = idx_list[idx_list[0]:]
     sublists_after = [list_after_ref[n: n + sublist_length + overlap] for n
                       in range(0, len(list_after_ref), sublist_length)]
@@ -100,15 +100,12 @@ def jitter_correction_imagers(
     if len(sublists_after) > 0:
         for ii, list_ in enumerate(tqdm(sublists_after)):
             index_ref = list_[0]
-            print(f'{index_ref=}')
             basename = os.path.basename(list_files_input[index_ref])
             basename_new = basename
 
             path_reference = os.path.join(path_files_output, basename_new)
 
-            if not os.path.isfile(path_reference):
-                if ii != 0:
-                    raise ValueError("should not copy the reference path apart from the first image")
+            if ii == 0:
                 shutil.copyfile(list_files_input[index_ref], path_reference)
             
 
@@ -148,9 +145,7 @@ def jitter_correction_imagers(
             basename_new = basename
             path_reference = os.path.join(path_files_output,basename_new)
 
-            if not os.path.isfile(path_reference):
-                if ii != 0:
-                    raise ValueError("should not copy the reference path apart from the first image")
+            if (not os.path.isfile(path_reference)) and (ii == 0):
                 shutil.copyfile(list_files_input[index_ref], path_reference)
             
   
@@ -159,7 +154,6 @@ def jitter_correction_imagers(
                 date_to_align = date_to_align[index_to_align].fits[11:19]
                 date_to_align = date_to_align.replace(":", "_")
                 reference_date = date_to_align[index_ref]
-            # !TODO L IMAGE A ALINGER REF DOIT ETRE CORRIGEE !!! 
                 results = _align_hrieuv_with_hrieuv(path_output_figures=path_figures,
                                                    large_fov_fits_path=path_reference,
                                                    large_fov_window=window_files_input,
@@ -187,49 +181,43 @@ def _align_hrieuv_with_hrieuv( large_fov_fits_path: str, large_fov_window: str,
                              lonlims=None, latlims=None, shape=None, unit_lag="arcsec",
                              reference_date=None,small_fov_value_max=None,small_fov_value_min=None,
                              method_carrington_reprojection="fa", alignement_method="carrington",
-                            path_output_figures: str = None, ):
+                            path_output_figures: str = None,
+                             fov_limits=None ):
     """Sub-function of jittter_correction_imagers.
 
     Args:
-        large_fov_fits_path (str): _description_
-        large_fov_window (str): _description_
-        small_fov_path (str): _description_
-        parameter_alignment (dict): _description_
-        date_to_align (_type_): _description_
-        cpu_count (int, optional): _description_. Defaults to 30.
-        window_to_align (int, optional): _description_. Defaults to 3.
+        large_fov_fits_path (str): path to the reference FITS file
+        large_fov_window (str): window of the reference FITS file
+        small_fov_path (str): path to the FITS file to align
+        parameter_alignment (dict): other kword parameters for the alignment algorithm
+        date_to_align (_type_): date of the FITS file to align
+        cpu_count (int, optional): number of CPU cores to use for parallelism. Defaults to 30.
+        window_to_align (int, optional): Window of the FITS file to align . Defaults to 3.
         do_plot_figure (bool, optional): _description_. Defaults to False.
-        parallelism (bool, optional): _description_. Defaults to True.
-        lonlims (_type_, optional): _description_. Defaults to None.
-        latlims (_type_, optional): _description_. Defaults to None.
-        shape (_type_, optional): _description_. Defaults to None.
-        unit_lag (str, optional): _description_. Defaults to "arcsec".
-        reference_date (_type_, optional): _description_. Defaults to None.
-        small_fov_value_max (_type_, optional): _description_. Defaults to None.
-        small_fov_value_min (_type_, optional): _description_. Defaults to None.
-        method_carrington_reprojection (str, optional): _description_. Defaults to "fa".
-        alignement_method (str, optional): _description_. Defaults to "carrington".
-        path_output_figures (str, optional): _description_. Defaults to None.
+        parallelism (bool, optional): use parallelism or not. Defaults to True.
+        lonlims (_type_, optional): parameter defining the carrington grid. Defaults to None.
+        latlims (_type_, optional): parameter defining the carrington grid. Defaults to None.
+        shape (_type_, optional): parameter defining the carrington grid. Defaults to None.
+        unit_lag (str, optional): unit over which the lag arrays are given. Defaults to "arcsec".
+        reference_date (_type_, optional): date over which to correct for differential rotation. Defaults to None.
+        small_fov_value_max (_type_, optional): maximum threshold value in the FITS file to align to consider for the alignment.. Defaults to None.
+        small_fov_value_min (_type_, optional): minimum threshold value in the FITS file to align to consider for the alignment. Defaults to None.
+        method_carrington_reprojection (str, optional): method for the carrington alignement (fa or sunpy). Defaults to "fa".
+        alignement_method (str, optional): method to do the alignment. Defaults to "carrington".
+        path_output_figures (str, optional): path for output figures. Defaults to None.
+        fov_limits (tuple, optional): 
 
     Returns:
         _type_: _description_
     """    
-    # if do_plot_figure is False:
-    #     path_save = None
-    # else:
-    #     path_save = folderman["res"]["path"]
+
     A = Alignment(large_fov_known_pointing=large_fov_fits_path, large_fov_window=large_fov_window,
                   small_fov_to_correct=small_fov_path, small_fov_window=window_to_align,
                   display_progress_bar=False,small_fov_value_max=small_fov_value_max,
                   small_fov_value_min=small_fov_value_min,
                   parallelism=parallelism, counts_cpu_max=cpu_count,unit_lag=unit_lag,
                   **parameter_alignment)
-    #
-    # if method_alignement == "helioprojective":
-    #
-    #     corr = A.align_using_helioprojective(method="correlation",
-    #                                          correct_shift_solar_rotation=False)
-    
+
     date_ref = (reference_date.fits[11:19]).replace(":", "_")
     unit = None
     if alignement_method == "carrington":
@@ -239,28 +227,31 @@ def _align_hrieuv_with_hrieuv( large_fov_fits_path: str, large_fov_window: str,
         results.plot_correlation(path_save_figure=os.path.join(path_output_figures,
                                                                f"correlation_{date_to_align}.pdf"))
         unit = "deg"
+        lonlims_ = None
+        latlims_ = None            
     elif alignement_method == "initial_carrington":
         results = A.align_using_initial_carrington(method="correlation", )
         results.plot_correlation(
             path_save_figure=os.path.join(path_output_figures, f"correlation_{date_to_align}_{date_ref}.pdf"))
-    
         unit = "deg"
+        lonlims_=u.Quantity(lonlims, unit)
+        latlims_=u.Quantity(latlims, unit)
+    elif alignement_method == "helioprojective":
+    
+        results = A.align_using_helioprojective(method="correlation", fov_limits=fov_limits)
+        results.plot_correlation(
+            path_save_figure=os.path.join(path_output_figures, f"correlation_{date_to_align}_{date_ref}.pdf"))
+        lonlims_ = None
+        latlims_ = None 
 
     if do_plot_figure:
         results.plot_co_alignment(type_plot="successive_plot",
                                   path_save_figure=os.path.join(path_output_figures,
                                                                 f"plot_co_alignment_{date_to_align}_{date_ref}.pdf"),
-                                                                lonlims=u.Quantity(lonlims, unit), latlims=u.Quantity(latlims, unit),
+                                                                lonlims=lonlims_, latlims=latlims_,
                                   )
 
     plt.close("all")
 
-    # path_save_fits = apply_shift_to_eui_headers(dcrval1=dcrval1, dcrval2=dcrval2,do_plot_figure=do_plot_figure,
-    #                                                         folderman=folderman,
-    #                                                         large_fov_fits_path=large_fov_fits_path,
-    #                                                         small_fov_path=small_fov_path,
-    #                                                         norm=norm,
-    #                                                         small_fov_window=window_to_align,
-    #                                                     large_fov_window=large_fov_window)
 
     return results
