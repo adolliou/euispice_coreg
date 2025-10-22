@@ -13,7 +13,7 @@ from astropy.time import Time
 
 def jitter_correction_imagers(
         list_files_input: list, path_files_output: str, 
-        lonlims: tuple, latlims: tuple, shape: tuple,     
+        lonlims = None, latlims = None, shape = None,     
         lag_crval1: np.array = np.array(-5, 5, 0.1),
         lag_crval2: np.array = np.array(-5, 5, 0.1),
         lag_cdelt1: np.array = np.array(0, 1, 1),
