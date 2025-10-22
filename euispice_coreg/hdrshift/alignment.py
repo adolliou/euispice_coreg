@@ -1015,16 +1015,16 @@ class Alignment:
                                                                         lon_ctype=self.lon_ctype,
                                                                         lat_ctype=self.lat_ctype,
                                                                         dsun=False)
-        set_to_nan = np.logical_or(
-            np.logical_or(longitude < lonlims[0], longitude > lonlims[1]), 
-            np.logical_or(latitude  < latlims[0], latitude  > latlims[1]), 
-        )
+        # set_to_nan = np.logical_or(
+        #     np.logical_or(longitude < lonlims[0], longitude > lonlims[1]), 
+        #     np.logical_or(latitude  < latlims[0], latitude  > latlims[1]), 
+        # )
 
         
-        self.data_small[set_to_nan] = np.nan
+        # self.data_small[set_to_nan] = np.nan
 
 
-        long, latg, dlon, dlat = Util.PlotFits.build_regular_grid(longitude, latitude, lonlims=fov_limits[0], latlims=fov_limits[1])
+        long, latg, dlon, dlat = Util.PlotFits.build_regular_grid(longitude, latitude, lonlims=lonlims, latlims=latlims)
 
 
         mid_point = [long.shape[0]//2, long.shape[1]//2]
