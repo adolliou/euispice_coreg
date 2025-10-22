@@ -158,6 +158,7 @@ class AlignmentResults:
                 raise ValueError("Please provide a path_to_l2_input parameter")
             path_to_l2_input = self.image_to_align_path
         AlignCommonUtil.write_corrected_fits(
+            corr=self.corr,
             path_to_l2_input=path_to_l2_input,
             path_to_l3_output=path_to_l3_output,
             window_list_to_apply_shift=window_list_to_apply_shift,

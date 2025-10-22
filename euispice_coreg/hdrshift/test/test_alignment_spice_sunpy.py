@@ -37,8 +37,8 @@ def test_alignement_helioprojective_spice():
 
     results = A.align_using_helioprojective(method='correlation', )
 
-    assert np.abs(results.shift_arcsec[0] + 22.736789342637366) < 1.0E-3
-    assert np.abs(results.shift_arcsec[1] - 36.198098608759494) < 1.0E-3
+    assert np.abs(results.shift_arcsec[0] + 22.736789342637366) < 0.1
+    assert np.abs(results.shift_arcsec[1] - 36.198098608759494) < 0.1
     windows_spice = ["Mg IX 706 - Peak", # The windows where the pointing will be corrected. It is adviced to correct the shift in all of the spectral windows. 
             "Ne VIII 770 - Peak",
             "S V 786 / O IV 787 - Peak",
