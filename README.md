@@ -211,7 +211,7 @@ results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_ali
 
 ```
 Example of a results for co-alignment between a SPICE C III image and a FSI 304 synthetic raster, obtained with plot_co_alignment :
-![Example of a results for co-alignment between SPICE and FSI 304, from plot_spice_co_alignment](co_alignment_SPICE_FSI.pdf)
+![Example of a results for co-alignment between SPICE and FSI 304, from plot_spice_co_alignment](co_alignment_SPICE_FSI.png)
 
 ## Correction of instrumental Jitter. 
 
