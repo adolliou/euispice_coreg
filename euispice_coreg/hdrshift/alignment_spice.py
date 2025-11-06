@@ -105,6 +105,15 @@ class AlignmentSpice(Alignment):
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
+            self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.unit_lag = self.unit_lag_input
             return AlignmentResults(corr=results, unit_lag=self.unit_lag,
                                     lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2, 
                                     lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2, 

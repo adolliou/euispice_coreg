@@ -121,7 +121,17 @@ class AlignmentResults:
     def plot_co_alignment(
             self, path_save_figure: str = None, show=False, lonlims=None, latlims=None, **kwargs
     ):
+        """Plot the co_alignment results with the plot_co_alingment function
 
+        Args:
+            path_save_figure (str, optional): Path where the figure will be saved. Must end with .pdf. Defaults to None.
+            show (bool, optional): set to True to show the figure. Defaults to False.
+            lonlims (_type_, optional): Limits over which to plot the figure. Defaults to None.
+            latlims (_type_, optional): Limits over which to plot the figure. Defaults to None.
+            **kwargs : additional arguments to add to the PlotFunctions.plot_co_alignment function
+
+
+        """        
         return PlotFunctions.plot_co_alignment(
             reference_image_path=self.reference_image_path,
             reference_image_window=self.reference_image_window,
@@ -164,46 +174,6 @@ class AlignmentResults:
             window_list_to_apply_shift=window_list_to_apply_shift,
             shift_arcsec=self.shift_arcsec,
         )
-        # has_corrected_window = 0
-
-
-        # with fits.open(path_to_l2_input) as hdul:
-        #     hdul_out = fits.HDUList()
-        #     for ii in range(len(hdul)):
-        #         hdu = hdul[ii]
-        #         if "EXTNAME" in hdu.header:
-        #             extname = hdu.header["EXTNAME"]
-        #         else:
-        #             extname = "nothing98695"
-        #         if (extname in window_list_to_apply_shift) or (ii in window_list_to_apply_shift) or \
-        #                 ((ii - len(hdul)) in window_list_to_apply_shift):
-        #             header = hdu.header.copy()
-        #             data = hdu.data.copy()
-        #             AlignCommonUtil.correct_pointing_header(
-        #                 header,
-        #                 lag_crval1=self.shift_arcsec[0],
-        #                 lag_crval2=self.shift_arcsec[1],
-        #                 lag_cdelt1=self.shift_arcsec[2],
-        #                 lag_cdelt2=self.shift_arcsec[3],
-        #                 lag_crota=self.shift_arcsec[4],
-        #             )
-        #             if isinstance(hdu, astropy.io.fits.hdu.compressed.compressed.CompImageHDU):
-        #                 hdu_out = fits.CompImageHDU(data=data, header=header)
-        #             elif isinstance(hdu, astropy.io.fits.hdu.image.ImageHDU):
-        #                 hdu_out = fits.ImageHDU(data=data, header=header)
-        #             elif isinstance(hdu, astropy.io.fits.hdu.image.PrimaryHDU):
-        #                 hdu_out = fits.PrimaryHDU(data=data, header=header)
-        #             hdu_out.verify("silentfix")
-        #             has_corrected_window += 1
-
-        #         else:
-        #             hdu_out = hdu
-        #         hdul_out.append(hdu_out)
-
-        #     hdul_out.writeto(path_to_l3_output, overwrite=True)
-        #     if has_corrected_window == 0:
-        #         raise ValueError("has not corrected any window.")
-
 
     def savefig(self, filename: str):
         raise NotImplementedError

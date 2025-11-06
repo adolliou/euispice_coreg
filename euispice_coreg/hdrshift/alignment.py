@@ -84,6 +84,7 @@ class Alignment:
         self.lag_crota = lag_crota
         self.lag_solar_r = lag_solar_r
         self.unit_lag = unit_lag
+        self.unit_lag_input = copy.deepcopy(unit_lag)
 
         self.lonlims = None
         self.latlims = None
@@ -234,10 +235,22 @@ class Alignment:
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
+
+            self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.unit_lag = self.unit_lag_input
+
+
             return AlignmentResults(corr=results,
                                     lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2,
                                     lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2,
-                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag_input,
                                     image_to_align_path=self.small_fov_to_correct,
                                     image_to_align_window=self.small_fov_window,
                                     reference_image_path=self.large_fov_known_pointing,
@@ -296,10 +309,22 @@ class Alignment:
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
+            
+
+            self.lag_crval1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval1,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_crval2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_crval2,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_cdelt1 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt1,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.lag_cdelt2 = Util.AlignCommonUtil.ang2pipi(u.Quantity(self.lag_cdelt2,
+                                                                        self.unit_lag)).to(self.unit_lag_input).value
+            self.unit_lag = self.unit_lag_input
+
             return AlignmentResults(corr=results,
                                     lag_crval1=self.lag_crval1, lag_crval2=self.lag_crval2,
                                     lag_cdelt1=self.lag_cdelt1, lag_cdelt2=self.lag_cdelt2,
-                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag,
+                                    lag_crota=self.lag_crota, unit_lag=self.unit_lag_input,
                                     image_to_align_path=self.small_fov_to_correct,
                                     image_to_align_window=self.small_fov_window,
                                     reference_image_path=self.large_fov_known_pointing,
