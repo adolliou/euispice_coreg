@@ -52,7 +52,7 @@ class Alignment:
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
                  path_save_figure: str = None, reprojection_order=2, force_crota_0=False,
-                 opencv=False, unit_lag="arcsec"):
+                 unit_lag="arcsec"):
         """
 
         @param large_fov_known_pointing: (str) path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -119,7 +119,6 @@ class Alignment:
         self.correlation_function = c_correlate.c_correlate
         if (lag_crota is None) and (lag_cdelt1 is None) and (lag_cdelt2 is None):
             self.use_pcij = False
-        self.opencv = opencv
         self._correlation = None
 
         self.order = reprojection_order
@@ -851,7 +850,7 @@ class Alignment:
                                                 reference_date=self.reference_date,
                                                 rate_wave=rate_wave_)
         spherizer = rectify.Rectifier(spherical)
-        image = spherizer(data, self.shape, self.lonlims, self.latlims, opencv=False, order=self.order, fill=-32762)
+        image = spherizer(data, self.shape, self.lonlims, self.latlims, order=self.order, fill=-32762)
         image = np.where(image == -32762, np.nan, image)
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
             if self.path_save_figure is not None:
@@ -872,7 +871,7 @@ class Alignment:
                                                         rate_wave=rate_wave_)
                 spherizer = rectify.Rectifier(spherical)
 
-                image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, opencv=False,
+                image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, 
                                         order=self.order, fill=-32762, )
                 image_small = np.where(image_small == -32762, np.nan, image_small)
                 date_obs = self.hdr_small["DATE-OBS"]
@@ -949,7 +948,7 @@ class Alignment:
         image_large_cut = np.zeros_like(x_cut, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data_large.copy(), x=x_cut, y=y_cut,
                                         dst=image_large_cut,
-                                        order=self.order, fill=np.nan, opencv=self.opencv)
+                                        order=self.order, fill=np.nan)
 
         self.hdr_large = hdr_cut.copy()
 
@@ -977,7 +976,7 @@ class Alignment:
 
         image_small_shft = np.zeros_like(x_large, dtype="float32")
         Util.AlignCommonUtil.interpol2d(data.copy(), x=x_large, y=y_large, order=self.order,
-                                        fill=np.nan, dst=image_small_shft, opencv=self.opencv)
+                                        fill=np.nan, dst=image_small_shft,)
         # image_small_shft = np.where(image_small_shft == -32768, np.nan, image_small_shft)
 
         return image_small_shft

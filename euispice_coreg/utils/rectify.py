@@ -17,10 +17,9 @@ import configparser
 import os.path
 import scipy.ndimage
 import scipy.interpolate
-import cv2
 
 
-def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
+def interpol2d(image, x, y, order=1, fill=0, dst=None):
     """
     Interpolates in 2D image using either map_coordinates or opencv
 
@@ -43,30 +42,16 @@ def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
     if dst is None:
         dst = np.empty(x.shape, dtype=image.dtype)
 
-    if opencv:
-        if order == 0:
-            inter = cv2.INTER_NEAREST
-        elif order == 1:
-            inter = cv2.INTER_LINEAR
-        elif order == 2:
-            inter = cv2.INTER_CUBIC
-        cv2.remap(image,
-                  x.astype(np.float32),  # converts to float 32 for opencv
-                  y.astype(np.float32),  # does nothing with default dtype
-                  inter,  # interpolation method
-                  dst,  # destination array
-                  cv2.BORDER_CONSTANT,  # fills in with constant value
-                  fill)  # constant value
-    else:
-        coords = np.stack((y.ravel(), x.ravel()), axis=0)
 
-        scipy.ndimage.map_coordinates(image,  # input array
-                                      coords,  # array of coordinates
-                                      order=order,  # spline order
-                                      mode='constant',  # fills in with constant value
-                                      cval=fill,  # constant value
-                                      output=dst.ravel(),
-                                      prefilter=False)
+    coords = np.stack((y.ravel(), x.ravel()), axis=0)
+
+    scipy.ndimage.map_coordinates(image,  # input array
+                                    coords,  # array of coordinates
+                                    order=order,  # spline order
+                                    mode='constant',  # fills in with constant value
+                                    cval=fill,  # constant value
+                                    output=dst.ravel(),
+                                    prefilter=False)
 
     return dst
 
@@ -859,12 +844,6 @@ class Rectifier():
     Rectifier class to be initialized with a Transform object instance.
     Provides an interpolator method to resample images on a regular grid
 
-    order: if using map_coordinates (opencv set to False), this is the order
-           of the spline interpolation, must be in the range 0-5.
-           if opencv is True, order=0, 1, 2, corresponds to nearest neighbor,
-           linear and cubic spline interpolation respectively.
-    opencv: if False (default), uses scipy map_coordinates. If True, uses
-            opencv remap function (faster)
 
     dtype: np.float32 (default) or np.float64. 32 bit computations are faster
            and should be sufficient in most cases. If opencv is True,
@@ -885,7 +864,7 @@ class Rectifier():
 
     def __call__(self,
                  image, shape, xlims, ylims,
-                 order=1, dst=None, opencv=False, dtype=np.float32, fill=0):
+                 order=1, dst=None, dtype=np.float32, fill=0):
         """
         image: ndarray containing the image to rectify
         shape: shape of the regular grid on which to interpolate
@@ -906,6 +885,6 @@ class Rectifier():
         else:
             nx, ny, mu = dum
 
-        return interpol2d(image, nx, ny, dst=dst, order=order, opencv=opencv, fill=fill) / mu
+        return interpol2d(image, nx, ny, dst=dst, order=order, fill=fill) / mu
 
 
