@@ -206,11 +206,8 @@ A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small
 results = A.align_using_helioprojective(method='correlation')
 results.write_corrected_fits(windows_spice, path_to_l3_output=path_save_fits)
 results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"), show=True)
-results.plot_co_alignment(type_plot="successive_plot",
-                        path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), 
-                        levels_percentile=[80, 90],
-                        norm_type="log",show=False,
-                            )
+results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), levels_percentile=[80, 90])
+
 ```
 Example of a results for co-alignment between a SPICE C III image and a FSI 304 synthetic raster, obtained with plot_co_alignment :
 ![Example of a results for co-alignment between SPICE and FSI 304, from plot_spice_co_alignment](co_alignment_SPICE_FSI.png)

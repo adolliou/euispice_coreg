@@ -32,7 +32,6 @@ def test_alignement_helioprojective_spice():
                        lag_cdelt1=lag_cdelt1, lag_cdelt2=lag_cdelt2, parallelism=parallelism,
                        large_fov_window=-1, small_fov_window=small_fov_window,
                        path_save_figure=None, wavelength_interval_to_sum=wave_interval,
-                       opencv=False,
                        )
 
     results = A.align_using_helioprojective(method='correlation', )
