@@ -66,8 +66,8 @@ folder_save_fig = "folder/where/to/save/figure" # path to the folder where to sa
 
 
 param_alignment = {
-    "lag_crval1": np.arange(15, 26, 1), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(5, 11, 1),  # in arcsec
+    "lag_crval1": np.arange(-30, 30, 1), # lag crvals in the headers, in arcsec
+    "lag_crval2": np.arange(-30, 30, 1),  # in arcsec
     "lag_crota": np.array([0]), # in degrees
     "lag_cdelt1": np.array([0]), # in arcsec
     "lag_cdelt2": np.array([0]), # in arcsec
@@ -87,9 +87,11 @@ results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
 results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
 results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
 
-
-
 ```
+
+**Important Advice** : You should always check the "correlation_results.pdf" figure, to ensure that the shift between the two images are within your lag parameter range. If you notice that the maximum correlation values are on the boundaries of the correlation image, then you should adapt the "param_alignment" innput accordingly. An example of a the type of "correlation_results.pdf" you should obtain is the following (with the maximum correlation not on the boundaries, but well within the figure):  
+[image](correlation_19_07_00.png)
+
 
 ### Alignment of HRIEUV with FSI 174 using Carrington coordinates
 
@@ -110,9 +112,9 @@ path_save_fits = "path/where/to/save/aligned_fits"
 
 parallelism = True
 param_alignment = {
-    "lag_crval1": np.arange(55, 62, 1), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(-28, -22, 1),  # in arcsec
-    "lag_crota": np.array([-39.25]), # in degrees
+    "lag_crval1": np.arange(-60, 60, 1), # lag crvals in the headers, in arcsec
+    "lag_crval2": np.arange(-60, 60, 1),  # in arcsec
+    "lag_crota": np.array([0]), # in degrees
     "lag_cdelt1": np.array([0]), # in arcsec
     "lag_cdelt2": np.array([0]), # in arcsec
 }
@@ -187,8 +189,8 @@ window_sr = -1 # the HDULIST index for the synthetic raster.
 path_save_figure= "path/to/output/figures/folder"
 
 param_alignment = {
-    "lag_crval1": np.arange(-30, -15, 4), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(30, 51, 4),  # in arcsec
+    "lag_crval1": np.arange(-50, 50, 1), # lag crvals in the headers, in arcsec
+    "lag_crval2": np.arange(-50, 50, 1),  # in arcsec
     "lag_crota": np.array([0]), # in degrees
     "lag_cdelt1": np.array([0]), # in arcsec
     "lag_cdelt2": np.array([0]), # in arcsec
