@@ -15,7 +15,6 @@ import matplotlib.patches as patches
 from astropy.visualization import ImageNormalize, AsymmetricPercentileInterval, SqrtStretch, LinearStretch, LogStretch
 from multiprocess.shared_memory import SharedMemory
 from astropy.coordinates import SkyCoord
-import cv2
 
 
 class AlignCommonUtil:
@@ -81,7 +80,7 @@ class AlignCommonUtil:
         return - ((- ang + pi) % (2 * pi) - pi)
 
     @staticmethod
-    def interpol2d(image, x, y, fill, order, dst=None, opencv=False):
+    def interpol2d(image, x, y, fill, order, dst=None):
         """"
         taken from Frederic interpol2d function
         """
@@ -91,33 +90,16 @@ class AlignCommonUtil:
 
         coords = np.stack((y.ravel(), x.ravel()), axis=0)
         return_ = False
-        if opencv:
-            image = np.array(image, dtype="float32")
+
         if dst is None:
             return_ = True
             dst = np.empty(x.shape, dtype=image.dtype)
-        if opencv:
-            if order == 0:
-                inter = cv2.INTER_NEAREST
-            elif order == 1:
-                inter = cv2.INTER_LINEAR
-            elif order == 2:
-                inter = cv2.INTER_CUBIC
-            else:
-                raise ValueError("order must be 0, 1 or 2 for openCV")
-            cv2.remap(image,
-                      x.astype(np.float32),  # converts to float 32 for opencv
-                      y.astype(np.float32),  # does nothing with default dtype
-                      inter,  # interpolation method
-                      dst,  # destination array
-                      cv2.BORDER_CONSTANT,  # fills in with constant value
-                      fill)
-        else:
-            map_coordinates(image,
-                            coords,
-                            order=order,
-                            mode='constant',
-                            cval=fill, output=dst.ravel(), prefilter=False)
+
+        map_coordinates(image,
+                        coords,
+                        order=order,
+                        mode='constant',
+                        cval=fill, output=dst.ravel(), prefilter=False)
         if return_:
             return dst
 
