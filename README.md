@@ -90,7 +90,7 @@ results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_ali
 ```
 
 **Important Advice** : You should always check the "correlation_results.pdf" figure, to ensure that the shift between the two images are within your lag parameter range. If you notice that the maximum correlation values are on the boundaries of the correlation image, then you should adapt the "param_alignment" innput accordingly. An example of a the type of "correlation_results.pdf" you should obtain is the following (with the maximum correlation not on the boundaries, but well within the figure):  
-[image](correlation_19_07_00.png)
+![image](correlation_19_07_00.png)
 
 
 ### Alignment of HRIEUV with FSI 174 using Carrington coordinates
