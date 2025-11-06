@@ -89,7 +89,7 @@ results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_ali
 
 ```
 
-**Important Advice** : You should always check the "correlation_results.pdf" figure, to ensure that the shift between the two images are within your lag parameter range. If you notice that the position of the maximum correlation are on the boundaries of the image, you should adapt the lag_crval1 and lag_crval2 parameters accordingly. In the example below, the maximum correlation is located well within the figure, and not on its boundaries (as it should be).   
+**Important Advice** : You should always check the "correlation_results.pdf" figure, to ensure that the shift between the two images are within your lag parameter range. If you notice that the position of the maximum correlation is on the boundaries of the image, you should adapt the lag_crval1 and lag_crval2 parameters accordingly. In the example below, the maximum correlation is located well within the figure, and not on its boundaries (as it should be).   
 ![image](correlation_19_07_00.png)
 
 
