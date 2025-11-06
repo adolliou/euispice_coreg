@@ -6,7 +6,6 @@ import astropy.units as u
 from matplotlib.gridspec import GridSpec
 from astropy.visualization import ImageNormalize, LogStretch, PowerStretch, LinearStretch
 import matplotlib.patches as patches
-import cv2
 import scipy
 from astropy.io import fits
 from ..utils.Util import AlignSpiceUtil, AlignEUIUtil, PlotFits, AlignCommonUtil
@@ -21,18 +20,12 @@ import astropy.constants
 from matplotlib.colors import CenteredNorm
 
 
-def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
+def interpol2d(image, x, y, order=1, fill=0, dst=None):
     """
-    Interpolates in 2D image using either map_coordinates or opencv
+    Interpolates in 2D image using either scipy.map_coordinates
 
     data: image to interpolate
     x, y: coordinates (in pixels) at which to interpolate the image
-    order: if opencv is True:  0=nearest neighbor, 1=linear, 2=cubic
-           if opencv is False: the order of the spline interpolation used by
-                               map_coordinates (see scipy documentation)
-    opencv: If True, uses opencv
-            If False, uses scipy.ndimage.map_coordinates
-            opencv can use only 32 bits floating point coordinates input
     fill: constant value usesd to fill in the edges
     dst: if present, ndarray in which to place the result
     """
@@ -44,30 +37,16 @@ def interpol2d(image, x, y, order=1, fill=0, opencv=False, dst=None):
     if dst is None:
         dst = np.empty(x.shape, dtype=image.dtype)
 
-    if opencv:
-        if order == 0:
-            inter = cv2.INTER_NEAREST
-        elif order == 1:
-            inter = cv2.INTER_LINEAR
-        elif order == 2:
-            inter = cv2.INTER_CUBIC
-        cv2.remap(image,
-                  x.astype(np.float32),  # converts to float 32 for opencv
-                  y.astype(np.float32),  # does nothing with default dtype
-                  inter,  # interpolation method
-                  dst,  # destination array
-                  cv2.BORDER_CONSTANT,  # fills in with constant value
-                  fill)  # constant value
-    else:
-        coords = np.stack((y.ravel(), x.ravel()), axis=0)
 
-        scipy.ndimage.map_coordinates(image,  # input array
-                                      coords,  # array of coordinates
-                                      order=order,  # spline order
-                                      mode='constant',  # fills in with constant value
-                                      cval=fill,  # constant value
-                                      output=dst.ravel(),
-                                      prefilter=False)
+    coords = np.stack((y.ravel(), x.ravel()), axis=0)
+
+    scipy.ndimage.map_coordinates(image,  # input array
+                                    coords,  # array of coordinates
+                                    order=order,  # spline order
+                                    mode='constant',  # fills in with constant value
+                                    cval=fill,  # constant value
+                                    output=dst.ravel(),
+                                    prefilter=False)
 
     return dst
 
