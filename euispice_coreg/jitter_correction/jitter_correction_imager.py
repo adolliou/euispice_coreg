@@ -14,11 +14,11 @@ from astropy.time import Time
 def jitter_correction_imagers(
         list_files_input: list, path_files_output: str, 
         lonlims = None, latlims = None, shape = None,     
-        lag_crval1: np.array = np.array(-5, 5, 0.1),
-        lag_crval2: np.array = np.array(-5, 5, 0.1),
-        lag_cdelt1: np.array = np.array(0, 1, 1),
-        lag_cdelt2: np.array = np.array(0, 1, 1),
-        lag_crota: np.array = np.array(0, 1, 1),    
+        lag_crval1: np.array = np.arange(-5, 5, 0.1),
+        lag_crval2: np.array = np.arange(-5, 5, 0.1),
+        lag_cdelt1: np.array = np.arange(0, 1, 1),
+        lag_cdelt2: np.array = np.arange(0, 1, 1),
+        lag_crota: np.array = np.arange(0, 1, 1),    
         sublist_length: int=10, overlap: int=1, 
         window_files_input: int = -1, 
         method_carrington_reprojection: str = "fa",
@@ -88,7 +88,7 @@ def jitter_correction_imagers(
         "shape": shape,
     }
 
-    idx_list = np.arange(list_files_input)
+    idx_list = np.arange(len(list_files_input))
 
     list_after_ref = idx_list[idx_list[0]:]
     sublists_after = [list_after_ref[n: n + sublist_length + overlap] for n

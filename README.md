@@ -226,7 +226,7 @@ from glob import glob
 import os
 
 
-list_files_input = glob.glob(os.path.join("path_to_input_files_folders", "*.fits"))
+list_files_input = glob(os.path.join("path_to_input_files_folders", "*.fits"))
 path_files_output = "path_to_output_folder"
 # Carrington grid where the alignment is performed
 lonlims = (200, 300)
@@ -234,7 +234,7 @@ latlims = (-20, 20)  # longitude min and max (degrees)
 shape = [2048, 2048] # number of pixels
 
 sublist_length = 10 # number of images for each sublist
-overap = 1 # number of images overlapping between sublists
+overlap = 1 # number of imagers overlapping between sublists
 
 param_alignment = {
     "lag_crval1": np.arange(-5, 5, 0.5), # lag crvals in the headers, in arcsec
@@ -244,14 +244,13 @@ param_alignment = {
     "lag_cdelt2": np.array([0]), # in arcsec
 }
 
-jitter_correction_images( 
+jitter_correction_imagers( 
     list_files_input=list_files_input, path_files_output=path_files_output, 
     lonlims=lonlims, latlims=latlims, shape=shape, 
     sublist_length=sublist_length, overlap=overlap, 
     **param_alignment
 )
 
-S
 
  ```
 
