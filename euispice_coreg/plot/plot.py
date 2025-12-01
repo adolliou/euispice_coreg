@@ -625,7 +625,6 @@ class PlotFunctions:
                           unit_to_plot="arcsec",
                           lonlims = None, 
                           latlims = None,
-                          rsun_factor = 1.004,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -657,7 +656,6 @@ class PlotFunctions:
         :param small_fov_value_max: add a maximal threshold on the absolute values of the to align image
         :param shift_arcsec: param for AlignmentResults class
         :param unit_to_plot: param for AlignmentResults class
-        :param rsun_factor: if use sunpy reproject, set rsub_ref to rsun_factor * rsun_ref for the two maps
         """
         if levels_percentile is None:
             levels_percentile = [85]
@@ -893,7 +891,7 @@ class PlotFunctions:
                     rsun=rsun.to("m").value
                     with PdfPages(path_save_figure) as pdf:
                         header_to_align_ = copy.deepcopy(header_to_align)
-                        header_to_align_["RSUN_REF"] = rsun_factor * rsun
+                        header_to_align_["RSUN_REF"] = rsun
                         w_to_align = WCS(header_to_align_)
                         
                         
@@ -916,7 +914,7 @@ class PlotFunctions:
                                 #     cmap = "viridis"
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
-                            m.meta["rsun_ref"] = rsun_factor * rsun
+                            m.meta["rsun_ref"] = rsun
 
                             with propagate_with_solar_surface():
                                 m_rep = m.reproject_to(w_to_align)
