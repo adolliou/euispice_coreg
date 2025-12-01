@@ -625,6 +625,7 @@ class PlotFunctions:
                           unit_to_plot="arcsec",
                           lonlims = None, 
                           latlims = None,
+                          factor_sun_mult=1.004,
                           ) -> None:
         """
         plot and save figure comparing the reference image and the image to align before and after the pointing
@@ -656,6 +657,7 @@ class PlotFunctions:
         :param small_fov_value_max: add a maximal threshold on the absolute values of the to align image
         :param shift_arcsec: param for AlignmentResults class
         :param unit_to_plot: param for AlignmentResults class
+        :param factor_sun_mult: if use sunpy reproject, set rsun_ref to factor_sun_mult * rsun_ref for all two maps. 
 
         """
         if levels_percentile is None:
@@ -915,7 +917,8 @@ class PlotFunctions:
                                 #     cmap = "viridis"
                             fig = plt.figure(figsize=(6, 6))
                             m = Map(hdu.data, hdu.header)
-                            m.meta["rsun_ref"] = rsun
+                            m.meta["rsun_ref"] = factor_sun_mult * rsun
+                            w_to_align["RSUN_REF"] = factor_sun_mult * rsun
                             with propagate_with_solar_surface():
                                 m_rep = m.reproject_to(w_to_align)
                             ax = fig.add_subplot(projection=m_rep)
