@@ -225,7 +225,7 @@ class Alignment:
                 raise ValueError("either set lonlims as None, or not. no in between.")
             
             if self.shape.size > 25000000:
-                warnings.warn(f"shape paramter is [{shape.shape[0]}, {shape.shape[1]}], which is very large."
+                warnings.warn(f"shape parameter is [{shape.shape[0]}, {shape.shape[1]}], which is very large."
                                "Computational time might significantly increase")
 
         # if self.use_pcij:
