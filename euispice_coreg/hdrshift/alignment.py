@@ -52,7 +52,7 @@ class Alignment:
                  small_fov_value_max: object = None, counts_cpu_max: int = 40, large_fov_window: object = -1,
                  small_fov_window: object = -1,
                  path_save_figure: str = None, reprojection_order=2, force_crota_0=False,
-                 unit_lag="arcsec"):
+                 unit_lag="arcsec", ):
         """
 
         @param large_fov_known_pointing: (str) path to the reference file fits (most of the time an imager or a synthetic raster)
@@ -260,18 +260,26 @@ class Alignment:
                                     reference_image_window=self.large_fov_window)
         return results
 
-    def align_using_helioprojective(self, method='correlation',
-                                    return_type='AlignmentResults', 
-                                    fov_limits=None):
+    def align_using_helioprojective(
+                                self,
+                                method: str                             = 'correlation',
+                                return_type: str                        = 'AlignmentResults', 
+                                fov_limits: list[u.Quantity] | None     = None, 
+                                remove_fov_limits: list | None          = None,
+                                ):
         """
-        Returns the results for the correlation algorithm in helioprojective frame
+        Run the co-alignment algorithm in the Helioprojective frame.
+        Returns either a correlation matrix (return_type="corr") 
+        or a AlignmentResults object (return_type= 'AlignmentResults')
 
         Args:
             method (str, optional): Method to co align the data. Defaults to 'correlation'.
             return_type (str, optional): Determinates the output object of the method 
             either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
-            fov_limits: list of the longitude and latitude limits to set to the small image for the correlation. 
+            fov_limits: list of the longitude and latitude limits to set to the small image FOV before the correlation. 
             [[lonmin , lonmax], [latmin, latmax]] * u.arcsec
+            remove_fov_limits: Same asf fov_limits, but for a region to remove from the small image before
+            the correlation
 
         Returns:
             corr matrix or AlignmentResults depending on return_type
@@ -308,7 +316,7 @@ class Alignment:
         f_small.close()
 
 
-        results = self._find_best_header_parameters(fov_limits=fov_limits)
+        results = self._find_best_header_parameters(fov_limits=fov_limits, remove_fov_limits=remove_fov_limits)
         if return_type == "corr":
             return results
         elif return_type == "AlignmentResults":
@@ -602,9 +610,14 @@ class Alignment:
             s = - np.sign(hdr["PC1_2"]) + (hdr["PC1_2"] == 0)
             hdr["CROTA"] = s * np.rad2deg(np.arccos(hdr["PC1_1"]))
 
-    def _find_best_header_parameters(self, ang2pipi=True, fov_limits=None):
+    def _find_best_header_parameters(
+            self,
+            ang2pipi: bool                              = True,
+            fov_limits: list[u.Quantity] | None         = None,
+            remove_fov_limits: list[u.Quantity] | None  = None,
+            ):
 
-        self._set_removed_values_to_nan_in_datasmall(fov_limits)
+        self._set_removed_values_to_nan_in_datasmall(fov_limits=fov_limits, remove_fov_limits=remove_fov_limits)
         
         self._set_initial_header_values(ang2pipi)
 
@@ -828,7 +841,39 @@ class Alignment:
         if self.lag_solar_r is None:
             self.lag_solar_r = np.array([1.004])
 
-    def _set_removed_values_to_nan_in_datasmall(self, fov_limits=None):
+    def _set_removed_values_to_nan_in_datasmall(
+            self,
+            fov_limits: list[u.Quantity] | None, 
+            remove_fov_limits: list[u.Quantity] | None,
+            ):
+        
+        """
+        Set values in small_image to nan if below or above a threshold, 
+        if the are within remove_fov_limits, 
+        and create a sub image with a FOV defined by fov_limits. 
+        """        
+        self._set_threshold_minmax_to_nan()
+
+        if remove_fov_limits is not None:
+            self._set_remove_fov_limits_to_nan(remove_fov_limits)
+
+        if fov_limits is not None:
+            self._select_fov_in_small_data(fov_limits)
+
+    def _set_remove_fov_limits_to_nan(self, remove_fov_limits):
+        longitude, latitude = Util.AlignEUIUtil.extract_EUI_coordinates(self.hdr_small, 
+                                                                        lon_ctype=self.lon_ctype,
+                                                                        lat_ctype=self.lat_ctype,
+                                                                        dsun=False)
+        lonlims = remove_fov_limits[0]
+        latlims = remove_fov_limits[1]
+        set_to_nan = np.logical_and(
+            np.logical_and(longitude >= lonlims[0], longitude <= lonlims[1]), 
+            np.logical_and(latitude  >= latlims[0], latitude  <= latlims[1]), 
+        )
+        self.data_small[set_to_nan] = np.nan
+
+    def _set_threshold_minmax_to_nan(self):
         condition_1 = np.ones(self.data_small.shape, dtype='bool')
         condition_2 = np.ones(self.data_small.shape, dtype='bool')
 
@@ -840,8 +885,6 @@ class Alignment:
         set_to_nan = np.logical_not(np.logical_and(condition_1, condition_2))
 
         self.data_small[set_to_nan] = np.nan
-        if fov_limits is not None:
-            self._select_fov_in_small_data(fov_limits)
 
     def _carrington_transform_fa(self, d_solar_r, data, hdr):
         rate_wave_ = None
