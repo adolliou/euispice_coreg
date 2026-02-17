@@ -5,15 +5,12 @@ Welcome to the euispice_coreg python package :artificial_satellite:. This packag
 
 ## Description :
 
-This package provides tools to co-align an image from an imager with another one (called "reference" image).  It corrects the pointing information on the FITS header using a cross-correlation algorithm. The data you want to align can be either from an imager (i.e. Solar Orbiter/HRIEUV etc.) or a Solar Orbiter/SPICE raster. Examples on how to align different types of data are provided below.  
-In addition, the package provides tools to create a synthethic raster from a set of images (FSI 174 for instance), given the timing of the exposures of a SPICE raster taken as a reference. In this way the SPICE raster can be co-aligned with the synthetic raster. 
+This package provides tools to correct the pointing information on HRIEUV or SPICE FITS files by co-aligning them with an imager with a known pointing (such as L2 FSI 174/304 images corrected with Limb fitting).  The algorithm cross-correlates both images and shifts the headers parameters (CRVAL1, CRVAL2, CROTA, CDELT1, CDELT2). It returns the set of header parameters with the highest correlation coefficient. Examples on how to use this package are provided below.  
 
-As the reference imager, it is advised to use one with a full Sun field of view, with Limb fitting previously applied. Examples of them are the L2 images from the FSI 174 and 304 imagers on board Solar Orbiter. 
-The co-alignment itself is performed using a cross-correlation technique, through the Pearson's coefficient, or the residus method. The alignment can be done in the following frames: 
+In addition, the package provides tools to create a synthethic raster from a set of images (FSI 304 for instance), given the timing of the exposures of a SPICE raster taken as a reference. In this way the SPICE raster can be co-aligned with the synthetic raster. 
 
-- **Helioprojective**. In this case both images will be reprojected into the coordinate frame of the image to align.  
-- **Carrington**: Slower, you have to provide the information to build a pixel grid in a carrington frame. Required if there is a significant time delay between both instruments, or if they do not share the same spacecraft (HRIEUV and AIA for instance).
-- **Pixels**. The algorithm slicing over the image pixels, complitely neglecting the headers information. (experimental)
+- **Helioprojective**. The correlation is performed is the Helioprojective frame.  
+- **Carrington**: the correlation is performed in a Carrington frame with a grid provided by the user. Useful for instance if one want to co-align HRIEUV with an FSI 174 image far in time, or with an imager from a different satellite (e.g. AIA 171).
 
 ## Installation
 This package is designed to be used in your personal python projects, and to be imported as a standard package.
