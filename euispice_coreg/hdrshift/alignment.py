@@ -200,7 +200,7 @@ class Alignment:
         if method_carrington_reprojection == "fa":
 
             if reference_date is None:
-                if "DATE-AVG":
+                if "DATE-AVG" not in self.hdr_large:
                     raise ValueError(
                         "Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
                 self.reference_date = self.hdr_large["DATE-AVG"]
