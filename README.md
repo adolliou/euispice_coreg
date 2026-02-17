@@ -15,9 +15,6 @@ The co-alignment itself is performed using a cross-correlation technique, throug
 - **Carrington**: Slower, you have to provide the information to build a pixel grid in a carrington frame. Required if there is a significant time delay between both instruments, or if they do not share the same spacecraft (HRIEUV and AIA for instance).
 - **Pixels**. The algorithm slicing over the image pixels, complitely neglecting the headers information. (experimental)
 
-**Warning** As of now, the code works for day to day cases, but has not been thouroughly tested. Please always verify the results with the plot_co_alignment method.
-Report any bug you encounter with Github or by e-mailing the author (see adress at the end of the readme). We welcome any suggestion for improvement or remarks.
-
 ## Installation
 This package is designed to be used in your personal python projects, and to be imported as a standard package.
 In your project, a virtual environement can be created with the following command in the shell :
