@@ -374,11 +374,6 @@ class AlignmentResults:
                 )
                 return None
         elif method == "poly2d":
-            A = np.array([1, px, py, px ** 2, py ** 2, px * py]).T
-            B = corr2d[px, py]
-            coeff, r, rank, s = np.linalg.lstsq(A, B)
-            # But then I need to compute the maximum from the polynom points.
-            # I dont know how to do that
             raise NotImplementedError
 
     def __repr__(self):
