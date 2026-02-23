@@ -267,4 +267,4 @@ If you use this code in your publication, please cite Dolliou et al. (A&A, 2024)
 
 ## Presentation
 
-[Presentation of the package](euispice_coreg_up)
+[Presentation of the package](euispice_coreg_up.pdf)
