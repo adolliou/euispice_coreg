@@ -264,3 +264,7 @@ Author: Antoine Dolliou (dolliou@mps.mpg.de)
 ## Acknowledgment
 
 If you use this code in your publication, please cite Dolliou et al. (A&A, 2024). DOI: https://doi.org/10.1051/0004-6361/202450439
+
+## Presentation
+
+[Presentation of the package](euispice_coreg_up)
