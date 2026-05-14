@@ -49,37 +49,40 @@ import numpy as np
 from euispice_coreg.hdrshift import Alignment
 import os
 
-path_hri = "path/to/HRIEUV.fits" # path to the HRI FITS file. It must end with a ".fits"
-path_fsi = "path/to/FSI174.fits" # path to the FSI FITS file. It must end with a ".fits"
-path_save_fits = "path/where/to/save/aligned_fits/fits.fits"  # path to FITS file that .
+
+if __name__ == "__main__":
+
+    path_hri = "path/to/HRIEUV.fits" # path to the HRI FITS file. It must end with a ".fits"
+    path_fsi = "path/to/FSI174.fits" # path to the FSI FITS file. It must end with a ".fits"
+    path_save_fits = "path/where/to/save/aligned_fits/fits.fits"  # path to FITS file that .
 
 
 
-folder_save_fig = "folder/where/to/save/figure" # path to the folder where to save the figure illustrating the alignment.
+    folder_save_fig = "folder/where/to/save/figure" # path to the folder where to save the figure illustrating the alignment.
 
 
 
-param_alignment = {
-    "lag_crval1": np.arange(-30, 30, 1), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(-30, 30, 1),  # in arcsec
-    "lag_crota": np.array([0]), # in degrees
-    "lag_cdelt1": np.array([0]), # in arcsec
-    "lag_cdelt2": np.array([0]), # in arcsec
-}
+    param_alignment = {
+        "lag_crval1": np.arange(-30, 30, 1), # lag crvals in the headers, in arcsec
+        "lag_crval2": np.arange(-30, 30, 1),  # in arcsec
+        "lag_crota": np.array([0]), # in degrees
+        "lag_cdelt1": np.array([0]), # in arcsec
+        "lag_cdelt2": np.array([0]), # in arcsec
+    }
 
 
-windows = [-1]
+    windows = [-1]
 
-A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, 
-              parallelism=True, display_progress_bar=True, counts_cpu_max=20,
-              **param_alignment,
-              )
+    A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri, 
+                parallelism=True, display_progress_bar=True, counts_cpu_max=20,
+                **param_alignment,
+                )
 
-results = A.align_using_helioprojective(method='correlation')
+    results = A.align_using_helioprojective(method='correlation')
 
-results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
-results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
-results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
+    results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
+    results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
+    results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
 
 ```
 
@@ -96,41 +99,42 @@ import os.path
 from euispice_coreg.hdrshift import Alignment
 import numpy as np
 
+if __name__ == "__main__":
 
-path_fsi = "path/to/FSI174.fits"
-path_hri = "path/to/HRIEUV.fits"
-
-
-folder_save_fig = "folder/where/to/save/figure"
-path_save_fits = "path/where/to/save/aligned_fits"
-
-parallelism = True
-param_alignment = {
-    "lag_crval1": np.arange(-60, 60, 1), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(-60, 60, 1),  # in arcsec
-    "lag_crota": np.array([0]), # in degrees
-    "lag_cdelt1": np.array([0]), # in arcsec
-    "lag_cdelt2": np.array([0]), # in arcsec
-}
-
-# Here, we build a common Carrington grid where the alignment will be performed.
-lonlims = (200, 300)
-latlims = (-20, 20)  # longitude min and max (degrees)
-shape = [2048, 2048]
+    path_fsi = "path/to/FSI174.fits"
+    path_hri = "path/to/HRIEUV.fits"
 
 
-windows = [-1]
+    folder_save_fig = "folder/where/to/save/figure"
+    path_save_fits = "path/where/to/save/aligned_fits"
 
-A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri,
-          parallelism=True, display_progress_bar=True,
-          small_fov_window=-1, large_fov_window=-1, **param_alignment)
+    parallelism = True
+    param_alignment = {
+        "lag_crval1": np.arange(-60, 60, 1), # lag crvals in the headers, in arcsec
+        "lag_crval2": np.arange(-60, 60, 1),  # in arcsec
+        "lag_crota": np.array([0]), # in degrees
+        "lag_cdelt1": np.array([0]), # in arcsec
+        "lag_cdelt2": np.array([0]), # in arcsec
+    }
 
-results = A.align_using_carrington(method='correlation', lonlims=lonlims, latlims=latlims, shape=shape)
+    # Here, we build a common Carrington grid where the alignment will be performed.
+    lonlims = (200, 300)
+    latlims = (-20, 20)  # longitude min and max (degrees)
+    shape = [2048, 2048]
 
 
-results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
-results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
-results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
+    windows = [-1]
+
+    A = Alignment(large_fov_known_pointing=path_fsi, small_fov_to_correct=path_hri,
+            parallelism=True, display_progress_bar=True,
+            small_fov_window=-1, large_fov_window=-1, **param_alignment)
+
+    results = A.align_using_carrington(method='correlation', lonlims=lonlims, latlims=latlims, shape=shape)
+
+
+    results.write_corrected_fits(windows, path_to_l3_output=path_save_fits)
+    results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"))
+    results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"))
 
 ```
 
@@ -145,18 +149,19 @@ from euispice_coreg.synras import SPICEComposedMapBuilder
 from glob import glob
 import astropy.units as u
 
+if __name__ == "__main__":
 
-path_spice = "path/to/spice/l2.fits"
-path_to_imager_list = glob("path/to/fsi304/*l2.fits")
-window_spice = "Ly-gamma-CIII group (Merged)" # The window of the HDULIST for the SPICE FITS file. 
-window_imager = -1 # The widow of the HDULIST of the imagers FITS files
-threshold_time = u.Quantity(30, "s") # maximum threshold between the SPICE acquisition time, and the closest FSI 304 image. If the code can't any FSI below the threshold, it returns an error 
-output_L3_fits = "path/to/output/synthetic_raster_folder"
+    path_spice = "path/to/spice/l2.fits"
+    path_to_imager_list = glob("path/to/fsi304/*l2.fits")
+    window_spice = "Ly-gamma-CIII group (Merged)" # The window of the HDULIST for the SPICE FITS file. 
+    window_imager = -1 # The widow of the HDULIST of the imagers FITS files
+    threshold_time = u.Quantity(30, "s") # maximum threshold between the SPICE acquisition time, and the closest FSI 304 image. If the code can't any FSI below the threshold, it returns an error 
+    output_L3_fits = "path/to/output/synthetic_raster_folder"
 
-C = SPICEComposedMapBuilder(path_to_spectro=path_spice, list_imager_paths=path_to_imager_list,
-                               window_imager=window_imager, window_spectro=window_spice,
-                               threshold_time=threshold_time)
-path_to_synras = C.process(folder_path_output=output_L3_fits, return_synras_name=True)
+    C = SPICEComposedMapBuilder(path_to_spectro=path_spice, list_imager_paths=path_to_imager_list,
+                                window_imager=window_imager, window_spectro=window_spice,
+                                threshold_time=threshold_time)
+    path_to_synras = C.process(folder_path_output=output_L3_fits, return_synras_name=True)
 ```
 #### Alignment of the SPICE raster with the synthetic raster
 
@@ -169,40 +174,41 @@ import numpy as np
 from euispice_coreg.hdrshift import AlignmentSpice
 
 
+if __name__ == "__main__":
 
-path_to_synthetic_raster_fits = "path/to/input/synthetic_raster.fits"
-path_spice_input = "path/to/spice/l2.fits"
-window_spice_to_align =  "Ly-gamma-CIII group (Merged)" # the window used for the co-alignment, here the one which includes the C III line.
-windows_spice = ["Mg IX 706 - Peak", # The windows where the pointing will be corrected. It is adviced to correct the shift in all of the spectral windows. 
-            "Ne VIII 770 - Peak",
-            "S V 786 / O IV 787 - Peak",
-            "Ly-gamma-CIII group (Merged)",
-            "LyB- FeX group (Merged)",
-            "O VI 1032 - Peak"] 
-window_sr = -1 # the HDULIST index for the synthetic raster. 
-path_save_figure= "path/to/output/figures/folder"
+    path_to_synthetic_raster_fits = "path/to/input/synthetic_raster.fits"
+    path_spice_input = "path/to/spice/l2.fits"
+    window_spice_to_align =  "Ly-gamma-CIII group (Merged)" # the window used for the co-alignment, here the one which includes the C III line.
+    windows_spice = ["Mg IX 706 - Peak", # The windows where the pointing will be corrected. It is adviced to correct the shift in all of the spectral windows. 
+                "Ne VIII 770 - Peak",
+                "S V 786 / O IV 787 - Peak",
+                "Ly-gamma-CIII group (Merged)",
+                "LyB- FeX group (Merged)",
+                "O VI 1032 - Peak"] 
+    window_sr = -1 # the HDULIST index for the synthetic raster. 
+    path_save_figure= "path/to/output/figures/folder"
 
-param_alignment = {
-    "lag_crval1": np.arange(-50, 50, 1), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(-50, 50, 1),  # in arcsec
-    "lag_crota": np.array([0]), # in degrees
-    "lag_cdelt1": np.array([0]), # in arcsec
-    "lag_cdelt2": np.array([0]), # in arcsec
-}
+    param_alignment = {
+        "lag_crval1": np.arange(-50, 50, 1), # lag crvals in the headers, in arcsec
+        "lag_crval2": np.arange(-50, 50, 1),  # in arcsec
+        "lag_crota": np.array([0]), # in degrees
+        "lag_cdelt1": np.array([0]), # in arcsec
+        "lag_cdelt2": np.array([0]), # in arcsec
+    }
 
-parallelism = True
+    parallelism = True
 
-A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small_fov_to_correct=path_spice_input,
-                         display_progress_bar=True,
-                   parallelism=parallelism, counts_cpu_max=10,
-                        large_fov_window=window_sr, small_fov_window=window_spice_to_align,
-                        path_save_figure=path_save_figure,
-                   **param_alignment)
+    A = AlignmentSpice(large_fov_known_pointing=path_to_synthetic_raster_fits, small_fov_to_correct=path_spice_input,
+                            display_progress_bar=True,
+                    parallelism=parallelism, counts_cpu_max=10,
+                            large_fov_window=window_sr, small_fov_window=window_spice_to_align,
+                            path_save_figure=path_save_figure,
+                    **param_alignment)
 
-results = A.align_using_helioprojective(method='correlation')
-results.write_corrected_fits(windows_spice, path_to_l3_output=path_save_fits)
-results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"), show=True)
-results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), levels_percentile=[80, 90])
+    results = A.align_using_helioprojective(method='correlation')
+    results.write_corrected_fits(windows_spice, path_to_l3_output=path_save_fits)
+    results.plot_correlation(path_save_figure=os.path.join(folder_save_fig, "correlation_results.pdf"), show=True)
+    results.plot_co_alignment(path_save_figure=os.path.join(folder_save_fig, "co_alignment_results.pdf"), levels_percentile=[80, 90])
 
 ```
 Example of a results for co-alignment between a SPICE C III image and a FSI 304 synthetic raster, obtained with plot_co_alignment :
@@ -220,31 +226,31 @@ from euispice_coreg.jitter_correction import jitter_correction_imagers
 from glob import glob
 import os
 
+if __name__ == "__main__":
+    list_files_input = glob(os.path.join("path_to_input_files_folders", "*.fits"))
+    path_files_output = "path_to_output_folder"
+    # Carrington grid where the alignment is performed
+    lonlims = (200, 300)
+    latlims = (-20, 20)  # longitude min and max (degrees)
+    shape = [2048, 2048] # number of pixels
 
-list_files_input = glob(os.path.join("path_to_input_files_folders", "*.fits"))
-path_files_output = "path_to_output_folder"
-# Carrington grid where the alignment is performed
-lonlims = (200, 300)
-latlims = (-20, 20)  # longitude min and max (degrees)
-shape = [2048, 2048] # number of pixels
+    sublist_length = 10 # number of images for each sublist
+    overlap = 1 # number of imagers overlapping between sublists
 
-sublist_length = 10 # number of images for each sublist
-overlap = 1 # number of imagers overlapping between sublists
+    param_alignment = {
+        "lag_crval1": np.arange(-5, 5, 0.5), # lag crvals in the headers, in arcsec
+        "lag_crval2": np.arange(-5, 5, 0.5),  # in arcsec
+        "lag_crota": np.array([0]), # in degrees
+        "lag_cdelt1": np.array([0]), # in arcsec
+        "lag_cdelt2": np.array([0]), # in arcsec
+    }
 
-param_alignment = {
-    "lag_crval1": np.arange(-5, 5, 0.5), # lag crvals in the headers, in arcsec
-    "lag_crval2": np.arange(-5, 5, 0.5),  # in arcsec
-    "lag_crota": np.array([0]), # in degrees
-    "lag_cdelt1": np.array([0]), # in arcsec
-    "lag_cdelt2": np.array([0]), # in arcsec
-}
-
-jitter_correction_imagers( 
-    list_files_input=list_files_input, path_files_output=path_files_output, 
-    lonlims=lonlims, latlims=latlims, shape=shape, 
-    sublist_length=sublist_length, overlap=overlap, 
-    **param_alignment
-)
+    jitter_correction_imagers( 
+        list_files_input=list_files_input, path_files_output=path_files_output, 
+        lonlims=lonlims, latlims=latlims, shape=shape, 
+        sublist_length=sublist_length, overlap=overlap, 
+        **param_alignment
+    )
 
 
  ```
