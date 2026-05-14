@@ -214,6 +214,7 @@ The code also includes a script to correct the instrumental Jitter, by adapting 
 The script separates a list of input FITS files into overlapping sublists, ordered by dates. Then each image is co-aligned in a carrington frame 
 with the first image of its sublist. The corrected FITS files are saved in an output folder.
 
+
  ```python
 from euispice_coreg.jitter_correction import jitter_correction_imagers
 from glob import glob
