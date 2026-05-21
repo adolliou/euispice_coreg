@@ -224,27 +224,26 @@ def _align_hrieuv_with_hrieuv( large_fov_fits_path: str, large_fov_window: str,
         results = A.align_using_carrington(method="correlation",
                                            lonlims=lonlims, latlims=latlims, shape=shape, reference_date=reference_date,
                                            method_carrington_reprojection=method_carrington_reprojection)
-        results.plot_correlation(path_save_figure=os.path.join(path_output_figures,
-                                                               f"correlation_{date_to_align}.pdf"))
         unit = "deg"
         lonlims_ = None
         latlims_ = None            
     elif alignement_method == "initial_carrington":
         results = A.align_using_initial_carrington(method="correlation", )
-        results.plot_correlation(
-            path_save_figure=os.path.join(path_output_figures, f"correlation_{date_to_align}_{date_ref}.pdf"))
         unit = "deg"
         lonlims_=u.Quantity(lonlims, unit)
         latlims_=u.Quantity(latlims, unit)
     elif alignement_method == "helioprojective":
     
         results = A.align_using_helioprojective(method="correlation", fov_limits=fov_limits)
-        results.plot_correlation(
-            path_save_figure=os.path.join(path_output_figures, f"correlation_{date_to_align}_{date_ref}.pdf"))
         lonlims_ = None
         latlims_ = None 
 
-    if do_plot_figure:
+    if path_output_figures is not None:
+        results.plot_correlation(
+            path_save_figure=os.path.join(path_output_figures, f"correlation_{date_to_align}_{date_ref}.pdf"))
+
+
+    if do_plot_figure & (path_output_figures is not None):
         results.plot_co_alignment(type_plot="successive_plot",
                                   path_save_figure=os.path.join(path_output_figures,
                                                                 f"plot_co_alignment_{date_to_align}_{date_ref}.pdf"),
