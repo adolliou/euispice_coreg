@@ -167,3 +167,7 @@ cython_debug/
 *plot_co_alignment1_results.png
 *plot_co_alignment1_results.png
 *co_alignment_sunpy.pdf
+*.fits
+euispice_coreg/hdrshift/small_spice_raster_alignment/test/data/
+euispice_coreg/hdrshift/small_spice_raster_alignment/test/data_input/
+euispice_coreg/hdrshift/small_spice_raster_alignment/test/figures/
