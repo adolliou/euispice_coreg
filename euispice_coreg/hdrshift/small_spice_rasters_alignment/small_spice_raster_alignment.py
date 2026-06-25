@@ -11,6 +11,8 @@ import sunpy.map
 from sunpy.coordinates import HeliocentricInertial, propagate_with_solar_surface
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
+from sunpy.coordinates.screens import SphericalScreen
+
 
 
 def small_spice_raster_alignment(small_raster_list_path: list, small_raster_window: int | str, 
@@ -276,4 +278,11 @@ def  co_align_small_rasters(
         coords_center_cr            : SkyCoord,
         datfolder                   : str, 
     ):
-    pass
+    
+
+    for path_sr in small_raster_list_path:
+        with fits 
+        hdu_sr          = 
+        with (propagate_with_solar_surface(),
+            SphericalScreen(cur_map.observer_coordinate, only_off_disk=True)):
+    
