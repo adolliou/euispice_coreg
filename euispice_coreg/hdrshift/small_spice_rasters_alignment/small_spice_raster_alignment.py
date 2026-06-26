@@ -7,7 +7,7 @@ from pathlib import Path
 from astropy.io import fits 
 from astropy.time import Time
 import astropy.units as u
-import sunpy.map
+from sunpy.map import Map
 from sunpy.coordinates import HeliocentricInertial, propagate_with_solar_surface
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
@@ -15,21 +15,24 @@ from sunpy.coordinates.screens import SphericalScreen
 
 
 
-def small_spice_raster_alignment(small_raster_list_path: list, small_raster_window: int | str, 
-                                context_raster_path: str, context_raster_window: int | str, 
-                                list_reference_imagers_small_raster: list, 
-                                window_reference_imagers_small_raster: int | str, 
-                                list_reference_imagers_context_raster: list, 
-                                window_reference_imagers_context_raster: int | str, 
-                                windows_to_correct: str,
-                                folder_save: str,
-                                threshold_time_synras: u.Quantity = 200 * u.s, 
-                                threshold_time_small_raster: u.Quantity = 200 * u.s, 
-                                parallelism: bool = True,
-                                cpu_count: int = 10,
-                                verbose: int = 1,
-                                param_alignment_cr=None,
-                                ):
+def small_spice_raster_alignment(
+        small_raster_list_path                          : list,
+        small_raster_window                             : int|str, 
+        context_raster_path                             : str,
+        context_raster_window                           : int|str, 
+        list_reference_imagers_small_raster             : list, 
+        window_reference_imagers_small_raster           : int|str, 
+        list_reference_imagers_context_raster           : list, 
+        window_reference_imagers_context_raster         : int|str,                         
+        windows_to_correct                              : str,
+        folder_save                                     : str,
+        threshold_time_synras                           : u.Quantity = 200 * u.s, 
+        threshold_time_small_raster                     : u.Quantity = 60 * u.s, 
+        parallelism                                     : bool = True,
+        cpu_count                                       : int = 10,
+        verbose                                         : int = 1,
+        param_alignment_cr                              : dict = None,
+        ):
     """_summary_
 
     Args:
@@ -140,32 +143,44 @@ def small_spice_raster_alignment(small_raster_list_path: list, small_raster_wind
         small_raster_list_window    = small_raster_window,
     )
 
-    coords_center_cr                = _get_coords_center_spice_cr(
+    # Get sr center in FSI pixels
+
+    # get HRIEUV pixels in FSI pixels
+
+    # get sr center in HRIEUV pixels
+    # 
+    # Co align sr with HRIEUV files 
+
+    coords_center_sr                = _get_coords_center_spice_sr(
         context_raster_path         = context_raster_path,
         context_raster_window       = context_raster_window,
+        delta_pc_arcsec             = delta_pc_arcsec,
     )
+
 
     co_align_small_rasters(
         small_raster_list_path      = small_raster_list_path, 
         small_raster_list_window    = small_raster_window, 
-        list_reference_imagers_cr   = list_reference_imagers_context_raster,
-        window_reference_imagers_cr = window_reference_imagers_context_raster, 
-
+        list_reference_imagers_sr   = list_reference_imagers_small_raster,
+        window_reference_imagers_sr = window_reference_imagers_small_raster, 
+        date_im_small               = date_im_small,
         delta_pc_arcsec             = delta_pc_arcsec, 
-        coords_center_cr            = coords_center_cr,
-        datfolder                   = datfolder, 
+        coords_center_sr            = coords_center_sr,
+        datfolder                   = datfolder,
+        windows_to_correct          = windows_to_correct,
+        threshold_time_small_raster = threshold_time_small_raster, 
     )
 
 
     
 
 def _create_sr_context_raster(
-        context_raster_path: str, 
-        context_raster_window: int | str,
-        list_reference_imagers_context_raster: list, 
-        window_reference_imagers_context_raster: int | str,
-        folder_save: str, 
-        threshold_time_synras: int,
+        context_raster_path                     :str, 
+        context_raster_window                   :int|str,
+        list_reference_imagers_context_raster   :list, 
+        window_reference_imagers_context_raster :int|str,
+        folder_save                             :str, 
+        threshold_time_synras                   :int,
 ):
     
 
@@ -181,14 +196,14 @@ def _create_sr_context_raster(
     return path_to_synras
 
 def _co_align_synras(
-    path_to_synras: str, 
-    window_synras: int | str, 
-    context_raster_path: str,
-    context_raster_window: int | str,
-    param_alignment: dict, 
-    parallelism: bool, 
-    cpu_count: int,
-    figfolder: str,
+    path_to_synras              : str, 
+    window_synras               : int|str, 
+    context_raster_path         : str,
+    context_raster_window       : int|str,
+    param_alignment             : dict, 
+    parallelism                 : bool, 
+    cpu_count                   : int,
+    figfolder                   : str,
     ):
 
     A = AlignmentSpice(
@@ -209,9 +224,9 @@ def _co_align_synras(
 
 def _compute_shift_fov_context_small_rasters(
         context_raster_path                    : str, 
-        context_raster_window                  : int | str, 
-        small_raster_list_path    : list, 
-        small_raster_list_window  : int | str, 
+        context_raster_window                  : int|str, 
+        small_raster_list_path                 : list, 
+        small_raster_list_window               : int|str, 
     ):
 
     index_small     = 0
@@ -239,12 +254,12 @@ def _compute_shift_fov_context_small_rasters(
             return delta_pc_arcsec
 
 
-def _get_coords_center_spice_cr(
+def _get_coords_center_spice_sr(
         context_raster_path         :list,
         context_raster_window       :str|int,
+        delta_pc_arcsec             :u.Quantity
     ):
 
-    date_avg_cr = None
 
     with fits.open(context_raster_path) as hdul_cr:
         hdu_cr              = hdul_cr[context_raster_window]
@@ -254,15 +269,18 @@ def _get_coords_center_spice_cr(
         naxis2              = header_cr["NAXIS2"]
 
         crpix1              = (naxis1 + 1)/2
-        crpix2              = (naxis1 + 1)/2
+        crpix2              = (naxis2 + 1)/2
 
         w_spice             = WCS(header_cr)
         w_xyt               = w_spice.dropaxis(2)
         w_xyt.wcs.pc[2, 0]  = 0
         w_xy = w_xyt.dropaxis(2)
 
+
+        delta_pc_crpixels   = delta_pc_arcsec/header_cr["CDELT1"]
+
         with propagate_with_solar_surface():
-            coords_center       = w_xy.pixel_to_world(crpix1 - 1, crpix2 - 1)
+            coords_center       = w_xy.pixel_to_world(crpix1 - 1 - delta_pc_crpixels, crpix2 - 1)
 
     return coords_center 
 
@@ -272,17 +290,36 @@ def _get_coords_center_spice_cr(
 def  co_align_small_rasters(
         small_raster_list_path      : str, 
         small_raster_list_window    : int|str, 
-        list_reference_imagers_cr   : list,
-        window_reference_imagers_cr : int|str, 
+        list_reference_imagers_sr   : list,
+        window_reference_imagers_sr : int|str,
+        date_im_small               : list,
+        threshold_time_small_raster : u.Quantity,  
         delta_pc_arcsec             : float, 
-        coords_center_cr            : SkyCoord,
+        coords_center_sr            : SkyCoord,
         datfolder                   : str, 
+        windows_to_correct          : list,
     ):
     
 
     for path_sr in small_raster_list_path:
-        with fits 
-        hdu_sr          = 
-        with (propagate_with_solar_surface(),
-            SphericalScreen(cur_map.observer_coordinate, only_off_disk=True)):
+        with fits.open(path_sr) as hdul_sr:
+            hdu_sr                      = hdul_sr[small_raster_list_window]
+            header_sr                   = hdu_sr.header      
+            time_sr                     = Time(header_sr["DATE-AVG"])
+            index_imager_sr_closest     = np.abs([(n - time_sr).to("s").value for n in date_im_small])
+            if index_imager_sr_closest > threshold_time_small_raster:
+                raise ValueError(f"could not find imager file close enough to {time_sr.fits[11:19]}")
+            path_im_sr                  = list_reference_imagers_sr[index_imager_sr_closest]
+            with fits.open(path_im_sr) as hdul_im_sr:
+                hdu_im_sr       = hdul_im_sr[window_reference_imagers_sr] 
+                map_im_sr       = Map(hdu_im_sr)
+                w_im_sr         = WCS(hdu_im_sr.header)
+
+                with (propagate_with_solar_surface(),
+                    SphericalScreen(map_im_sr.observer_coordinate, only_off_disk=True)):
+                    x, y        = w_im_sr.pixel_to_world(coords_center_sr)
+                    
+
+
+
     
