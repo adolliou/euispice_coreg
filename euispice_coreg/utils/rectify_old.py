@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan 24 14:22:07 2020
+
+@author: fauchere
+"""
+
 import numpy as np
 import astropy.io.fits
 import astropy.io.ascii
@@ -9,9 +17,6 @@ import configparser
 import os.path
 import scipy.ndimage
 import scipy.interpolate
-
-__all__ = ['EuclidianTransform', 'SphericalTransform', 'CarringtonTransform', 'PolarTransform', 'HomographicTransform',
-           'DifferentialRotationTransform', 'Rectifier']
 
 
 def interpol2d(image, x, y, order=1, fill=0, dst=None):
@@ -26,7 +31,7 @@ def interpol2d(image, x, y, order=1, fill=0, dst=None):
     opencv: If True, uses opencv
             If False, uses scipy.ndimage.map_coordinates
             opencv can use only 32 bits floating point coordinates input
-    fill: constant value used to fill in the edges
+    fill: constant value usesd to fill in the edges
     dst: if present, ndarray in which to place the result
     """
 
@@ -87,8 +92,8 @@ def rotationmatrix(angle, axis):
     sin = np.sin(angle)
 
     if axis == 0:  # Rz
-        matrix = np.array([[cos, -sin, 0],
-                           [sin, cos, 0],
+        matrix = np.array([[cos, sin, 0],
+                           [-sin, cos, 0],
                            [0, 0, 1]])
     elif axis == 1:  # Ry
         matrix = np.array([[cos, 0, sin],
@@ -118,7 +123,7 @@ def gridpattern(nx=3072, ny=3072, s=16, t=3):
     return image
 
 
-class BaseTransform:
+class BaseTransform():
     """
     Adapted from astropy.visualization.BaseTransform
     """
@@ -172,13 +177,7 @@ class Transform(BaseTransform):
         elif self.direction == 'inverse':
             return self.inverse(x=x, y=y)
         else:
-            raise ValueError('Transform direction must be forward or inverse')
-
-
-class IdentityTransform(Transform):
-
-    def __call__(self, x=None, y=None):
-        return x, y
+            raise ValueError('Transfrom direction must be forward or inverse')
 
 
 class LinearTransform(Transform):
@@ -188,8 +187,7 @@ class LinearTransform(Transform):
     contain respectively the forward and inverse transform matrices.
     """
 
-    @staticmethod
-    def transform(matrix, x=None, y=None):
+    def transform(self, matrix, x=None, y=None):
         z = np.ones_like(x)
         xyz = np.stack((x.ravel(), y.ravel(), z.ravel()))
         nx, ny, _ = np.matmul(matrix, xyz)
@@ -254,9 +252,8 @@ class PolarTransform(Transform):
 class EuclidianTransform(LinearTransform):
 
     def __init__(self,
-                 dx, dy, theta, scale=1,
+                 dx, dy, theta, scale,
                  dtype=np.float64,
-                 pivot=False,
                  degrees=True, direction='forward'):
         super().__init__(direction=direction)
         identity = lambda x: x
@@ -268,14 +265,6 @@ class EuclidianTransform(LinearTransform):
         self._fmatrix = np.array([[np.cos(self.theta) * scale, -np.sin(self.theta) * scale, dx],
                                   [np.sin(self.theta) * scale, np.cos(self.theta) * scale, dy],
                                   [0, 0, 1]], dtype=dtype)
-        if pivot:
-            translation1 = np.array([[1, 0, -pivot[0]],
-                                     [0, 1, -pivot[1]],
-                                     [0, 0, 1]], dtype=dtype)
-            translation2 = np.array([[1, 0, pivot[0]],
-                                     [0, 1, pivot[1]],
-                                     [0, 0, 1]], dtype=dtype)
-            self._fmatrix = translation2 @ self._fmatrix @ translation1
         self._imatrix = np.linalg.inv(self._fmatrix)
 
 
@@ -283,7 +272,7 @@ class HomographicTransform(LinearTransform):
 
     def __init__(self,
                  matrix,
-                 dtype=float,
+                 dtype=np.float32,
                  direction='forward'):
         super().__init__(direction=direction)
         self._fmatrix = matrix.astype(dtype)
@@ -319,7 +308,7 @@ class DifferentialRotationTransform(Transform):
         dx = self.delta_t * (self.coeffs[0] +
                              siny2 * (self.coeffs[1] + self.coeffs[2] * siny2) -
                              self.carrington_rate)
-        return x + dx, y
+        return x - dx, y
 
 
 class SphericalTransform(Transform):
@@ -396,29 +385,27 @@ class CarringtonTransform(CompositeTransform):
                  zclip=0,
                  c2limb=False):
         if 'CROTA' in hdr:
-            roll = np.radians(hdr['CROTA'])
+            roll = hdr['CROTA']
         elif 'CROTA2' in hdr:
-            roll = np.radians(hdr['CROTA2'])
-        elif 'PC1_1' in hdr and 'PC2_1' in hdr:
-            roll = np.arctan2(hdr['PC2_1'], hdr['PC1_1'])
+            roll = hdr['CROTA2']
         else:
             raise ValueError('No roll value found in header')
 
-        self.reference_date = hdr['DATE-OBS'] if reference_date is None else reference_date
+        self.reference_date = reference_date
 
-        cos = np.cos(roll)
-        sin = np.sin(roll)
+        cos = np.cos(np.radians(roll))
+        sin = np.sin(np.radians(roll))
 
         dx = cos * hdr['CRVAL1'] + sin * hdr['CRVAL2']
         dy = -sin * hdr['CRVAL1'] + cos * hdr['CRVAL2']
 
-        transform_2 = SphericalTransform(
+        self.transform_2 = SphericalTransform(
             (hdr['CRPIX1'] - 1) - dx / hdr['CDELT1'],
             (hdr['CRPIX2'] - 1) - dy / hdr['CDELT2'],
             hdr['DSUN_OBS'] / (radius_correction * astropy.constants.R_sun.value),
             hdr['CRLN_OBS'],
             hdr['CRLT_OBS'],
-            np.degrees(roll),
+            roll,
             hdr['CDELT1'],
             hdr['CDELT2'],
             direction=direction,
@@ -426,18 +413,14 @@ class CarringtonTransform(CompositeTransform):
             c2limb=c2limb,
             degrees=True
         )
-
         if self.reference_date is None:
-            transform_1 = IdentityTransform()
-        else:
-            delta_t = (Time(hdr['DATE-OBS']) - Time(self.reference_date)).value
-            transform_1 = DifferentialRotationTransform(
-                delta_t,
-                rate_wave,
-                degrees=True
-            )
-
-        super().__init__(transform_1, transform_2)
+            self.reference_date = Time(hdr['DATE-OBS'])
+        delta_t = (Time(hdr['DATE-OBS']) - Time(self.reference_date)).value
+        self.transform_1 = DifferentialRotationTransform(
+            delta_t,
+            rate_wave,
+            degrees=True
+        )
 
 
 class DistortionMatrix(Transform):
@@ -525,9 +508,9 @@ class DistortionMatrix(Transform):
                 """
                 Reformats the data read in the txt file
                 """
-                degree = int(items[axis + 'degree'])
+                degree = np.int(items[axis + 'degree'])
                 d = np.asarray(items['d' + axis + 'k'].split(),
-                               dtype=float).reshape((degree + 1, degree + 1))
+                               dtype=np.float32).reshape((degree + 1, degree + 1))
                 if axis == 'x':
                     d[1, 0] += scale  # poly encode the distortion: add scale
                 elif axis == 'y':
@@ -539,7 +522,7 @@ class DistortionMatrix(Transform):
             config = configparser.ConfigParser()
             config.read(self.file)
             items = dict(config.items(direction))
-            self.scale = float(items['scale'])
+            self.scale = np.float32(items['scale'])
             self.coefficients = (reform_poly(items, 'x', self.scale),
                                  reform_poly(items, 'y', self.scale))
 
@@ -614,8 +597,8 @@ class DistortionMatrix(Transform):
             # nsamples: number of data points on each axis
             # stored in the ASCII file in comment lines
             comments = data.meta['comments']
-            self.maxfield = float((comments[-5]).split()[-1])
-            self.nsamples = int(float((comments[-4]).split()[-1]))
+            self.maxfield = np.float((comments[-5]).split()[-1])
+            self.nsamples = np.int(np.float((comments[-4]).split()[-1]))
             self.step = 2 * self.maxfield / self.nsamples
 
             shape = (self.nsamples, self.nsamples)
@@ -669,7 +652,7 @@ class DistortionMatrix(Transform):
             c1 = polyfit2d(x, y, f1, d1, maxdegree=mx1)
             c2 = polyfit2d(x, y, f2, d2, maxdegree=mx2)
 
-            return c1, c2
+            return (c1, c2)
 
         def write_polynomials(self, outfile):
 
@@ -748,9 +731,9 @@ class DistortionMatrix(Transform):
                     config = configparser.ConfigParser()
                     config.read(self.file)
                     items = dict(config.items('gen'))
-                    self.phys_pix_size = float(items['phys_pix_size'])
-                    self.ref_x_pix = float(items['ref_x_pix'])
-                    self.ref_y_pix = float(items['ref_y_pix'])
+                    self.phys_pix_size = np.float32(items['phys_pix_size'])
+                    self.ref_x_pix = np.float32(items['ref_x_pix'])
+                    self.ref_y_pix = np.float32(items['ref_y_pix'])
             else:
                 raise FileNotFoundError
             # pos2field and field2pos are DistortionPolynomial objects initialized
@@ -763,9 +746,9 @@ class DistortionMatrix(Transform):
                 self.pos2field = self.DistortionPolynomial(file, 'pos2field')
                 self.field2pos = self.DistortionPolynomial(file, 'field2pos')
         else:  # Rebuids polynomials from Zemax data
-            self.phys_pix_size = float(0.01)
-            self.ref_x_pix = float(1535.5)
-            self.ref_y_pix = float(1535.5)
+            self.phys_pix_size = np.float32(0.01)
+            self.ref_x_pix = np.float32(1535.5)
+            self.ref_y_pix = np.float32(1535.5)
             self.zemax_data = self.ZemaxData(file)
             coeffs = self.zemax_data.fit('pos2field')
             self.pos2field = self.DistortionPolynomial(coefficients=(0, coeffs))
@@ -856,19 +839,13 @@ class DistortionMatrix(Transform):
         return fig
 
 
-class Rectifier:
+class Rectifier():
     """
     Rectifier class to be initialized with a Transform object instance.
     Provides an interpolator method to resample images on a regular grid
 
-    order: if using map_coordinates (opencv set to False), this is the order
-           of the spline interpolation, must be in the range 0-5.
-           if opencv is True, order=0, 1, 2, corresponds to nearest neighbor,
-           linear and cubic spline interpolation respectively.
-    opencv: if False (default), uses scipy map_coordinates. If True, uses
-            opencv remap function (faster)
 
-    dtype: float (default) or np.float64. 32 bit computations are faster
+    dtype: np.float32 (default) or np.float64. 32 bit computations are faster
            and should be sufficient in most cases. If opencv is True,
            computations are made in 32 bits in any case.
 
@@ -887,17 +864,17 @@ class Rectifier:
 
     def __call__(self,
                  image, shape, xlims, ylims,
-                 order=1, dst=None, dtype=float, fill=0):
+                 order=1, dst=None, dtype=np.float32, fill=0):
         """
-         image: ndarray containing the image to rectify
+        image: ndarray containing the image to rectify
         shape: shape of the regular grid on which to interpolate
         xlims: x limits of the regular grid on which to interpolate
         ylims: y limits of the regular grid on which to interpolate
         """
 
         if shape != self.shape or xlims != self.xlims or ylims != self.ylims:
-            self.coordinates = np.meshgrid(np.linspace(xlims[0], xlims[1], shape[1], dtype=dtype),
-                                           np.linspace(ylims[0], ylims[1], shape[0], dtype=dtype))
+            self.coordinates = np.meshgrid(np.linspace(xlims[0], xlims[1], shape[0], dtype=dtype),
+                                           np.linspace(ylims[0], ylims[1], shape[1], dtype=dtype))
             self.shape, self.xlims, self.ylims = shape, xlims, ylims
 
         x, y = self.coordinates
@@ -909,3 +886,5 @@ class Rectifier:
             nx, ny, mu = dum
 
         return interpol2d(image, nx, ny, dst=dst, order=order, fill=fill) / mu
+
+
