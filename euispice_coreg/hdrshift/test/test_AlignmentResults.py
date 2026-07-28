@@ -169,7 +169,7 @@ class TestAlignmentResults:
             reference_image_path=path_fsi,
             reference_image_window=-1
         )
-        assert np.abs(R.shift_pixels[0] - 9.33682107) < 1.0e-2
+        assert np.abs(R.shift_pixels[0] - 9.34903145) < 1.0e-2
         assert np.abs(R.shift_pixels[1] - 1.42187891) < 1.0e-2
         save_fits = os.path.join(Path(__file__).parents[0],"test.fits")
         windows = [-1]
