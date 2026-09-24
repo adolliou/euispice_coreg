@@ -524,18 +524,15 @@ class Alignment:
             lag = [0]
             is_nan = np.logical_or(np.logical_not(np.isfinite(data_large.ravel())),np.logical_not(np.isfinite(data_small_interp.ravel())))
 
-            # if data_large.ravel()[(~is_nan)].shape == data_small_interp.ravel()[(~is_nan)].shape:
-            # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
+
             A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
             B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
             c = self.correlation_function(A, B, lags=lag)
-
-            # print(f'{data_large=}')
-            # l = data_small_interp.shape
-            # print(f'{data_small_interp[l[0]//2, l[1]//2]=}')
-            # print(f'{c=}')
-
-            # c = copy.deepcopy(c)
+            if isinstance(c, np.ndarray):
+                if c.size == 1:
+                    c = c[0]
+                else:
+                    raise ValueError("multiple correlation values")
             shmm_large.close()
             shmm_small.close()
 
@@ -566,7 +563,11 @@ class Alignment:
             A = np.array(data_large.ravel()[(~is_nan)], dtype="float")
             B = np.array(data_small_interp.ravel()[(~is_nan)], dtype="float")
             c = self.correlation_function(A, B, lags=lag)
-            # c = np.corrcoef(data_large.ravel()[(~is_nan)], data_small_interp.ravel()[(~is_nan)])[1, 0]
+            if isinstance(c, np.ndarray):
+                if c.size == 1:
+                    c = c[0]
+                else:
+                    raise ValueError("multiple correlation values")
 
             return c
 
@@ -620,16 +621,6 @@ class Alignment:
         self._set_removed_values_to_nan_in_datasmall(fov_limits=fov_limits, remove_fov_limits=remove_fov_limits)
         
         self._set_initial_header_values(ang2pipi)
-
-        # for lag in [self.lag_crval1, self.lag_crval2, self.lag_cdelt1, self.lag_cdelt2, self.lag_crota]:
-        #     if lag is None:
-        #         lag = np.array([0])
-        
-        
-        # A = np.array([1, 2], dtype="float")
-        # B = np.array([1, 2], dtype="float")
-        # lag = [0]
-        # c = self.correlation_function(A, B, lag)
 
         if self.parallelism:
             results = np.zeros(
@@ -768,16 +759,7 @@ class Alignment:
 
 
                 isnan = np.isnan(self.data_small)
-                # shmm_large, data_large = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_large)
-                # self._large = {"name": shmm_large.name, "dtype": data_large.dtype, "shape": data_large.shape}
-                # self.data_large = None
-                #
-                # shmm_small, data_small = Util.MpUtils.gen_shmm(create=True, ndarray=self.data_small)
-                # self._small = {"name": shmm_small.name, "dtype": data_small.dtype, "shape": data_small.shape}
-                # self.data_small = None
-                #
-                # shmm_large.close()
-                # shmm_small.close()
+
 
                 for ii, d_crval1 in enumerate(self.lag_crval1):
                     for jj, d_crval2 in enumerate(tqdm(self.lag_crval2)):
