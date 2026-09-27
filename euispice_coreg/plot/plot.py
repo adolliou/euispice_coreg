@@ -237,7 +237,7 @@ class PlotFunctions:
         if ax is None:
             ax = fig.add_subplot(projection=m_main)
         if norm is None:
-            norm = PlotFits.get_range(m_main.data, stre=None)
+            norm = PlotFits.get_range(m_main.data, stre="linear")
         m_main.plot(axes=ax, norm=norm, cmap=cmap)
 
         # im = ax.imshow(data_main, origin="lower", interpolation="none", norm=norm,)
@@ -308,7 +308,7 @@ class PlotFunctions:
         if ax is None:
             ax = fig.add_subplot()
         if norm is None:
-            norm = PlotFits.get_range(image_on_regular_grid, stre=None)
+            norm = PlotFits.get_range(image_on_regular_grid, stre="linear")
         im = ax.imshow(image_on_regular_grid, origin="lower", interpolation="none", norm=norm, cmap=cmap,
                        extent=(longitude_grid_arcsec[0, 0] - 0.5 * dlon, longitude_grid_arcsec[-1, -1] + 0.5 * dlon,
                                latitude_grid_arcsec[0, 0] - 0.5 * dlat, latitude_grid_arcsec[-1, -1] + 0.5 * dlat))
@@ -534,7 +534,7 @@ class PlotFunctions:
             # min = np.percentile(data_contour_2[~isnan], 5)
             # max = np.percentile(data_contour_2[~isnan], 98)
             # norm_contour = ImageNormalize(stretch=LinearStretch(), vmin=min, vmax=max)
-            norm_contour = PlotFits.get_range(data_contour_2, imin=3, imax=97, stre=None)
+            norm_contour = PlotFits.get_range(data_contour_2, imin=3, imax=97, stre="linear")
         if lon_grid.unit == "deg":
             longitude_grid_arc =lon_grid.to("arcsec").value
             latitude_grid_arc = lat_grid.to("arcsec").value

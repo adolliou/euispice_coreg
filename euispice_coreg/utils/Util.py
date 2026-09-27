@@ -696,7 +696,7 @@ class PlotFits:
             vmin, vmax = AsymmetricPercentileInterval(imin, imax).get_limits(data)
 
         #    print('Vmin:', vmin, 'Vmax', vmax)
-        if stre is None:
+        if stre == "linear":
             norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=LinearStretch())
         elif stre == 'sqrt':
             norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=SqrtStretch())
