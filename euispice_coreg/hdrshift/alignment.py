@@ -665,6 +665,10 @@ class Alignment:
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large, fov_limits=fov_limits)
 
 
+                if (self.path_save_figure is not None) and not self.already_plot:
+                    self._plot_figures(d_solar_r)
+
+
                 isnan = np.isnan(self.data_small)
                 if isnan.all():
                     raise ValueError("minimum or maximum value have set all small FOV to nan")
@@ -800,6 +804,39 @@ class Alignment:
                                                                                                      )
 
         return data_correlation_cp
+
+    def _plot_figures(self, d_solar_r):
+        plt.ioff()
+
+        hdr_small_shft = self.hdr_small.copy()
+        self._shift_header(
+                        hdr_small_shft,
+                        d_crval1            = 0.0,
+                        d_crval2            = 0.0,
+                        d_cdelt1            = 0.0,
+                        d_cdelt2            = 0.0,
+                        d_crota             = 0.0
+                        )
+
+        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
+        data_small_interp = copy.deepcopy(data_small_interp)
+
+        date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
+        date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
+        cm                          = 1/2.56
+        fig                         = plt.figure(figsize = (9*cm, 9*cm))
+        ax                          = fig.add_subplot()
+        im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
+        fig.colorbar(im, ax=ax)
+        fig.savefig(os.path.join(self.path_save_figure, f"imsmall_{date_obs_small}_{date_obs_large}.pdf"))
+
+        fig                         = plt.figure(figsize = (9*cm, 9*cm))
+        ax                          = fig.add_subplot()
+        im                          = plot.PlotFunctions.plot_fov(data_large, fig=fig, )
+        fig.colorbar(im, ax=ax)
+        fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
+
+        self.already_plot           = True
 
     def _set_initial_header_values(self, ang2pipi):
         self.crval1_ref = self.hdr_small['CRVAL1']
