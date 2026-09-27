@@ -18,7 +18,9 @@ import os
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 # from sunpy.map import Map
 import astropy.constants
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
@@ -519,6 +521,20 @@ class Alignment:
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
         data_small_interp = copy.deepcopy(data_small_interp)
 
+        if self.path_save_figure is not None:
+            date_obs_small          = hdr_small_shft["DATE-OBS"].replace("-", "_").replace(":", "_")
+            date_obs_large          = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
+            with PdfPages(os.path.join(self.path_save_figure, f"image_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
+                cm                  = 1/2.56
+                fig                 = plt.figure(figsize = (9 * cm, 9 * cm))
+                plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
+                pdf.savefig(fig)
+                fig                 = plt.figure(figsize = (9 * cm, 9 * cm))
+                plot.PlotFunctions.plot_fov(data_large, fig=fig, )
+                pdf.savefig(fig)
+                plt.close("all")
+            
+
         if method == 'correlation':
 
             lag = [0]
@@ -881,46 +897,47 @@ class Alignment:
         spherizer = rectify.Rectifier(spherical)
         image = spherizer(data, self.shape, self.lonlims, self.latlims, order=self.order, fill=-32762)
         image = np.where(image == -32762, np.nan, image)
-        if Fits.HeaderDiff(hdr, self.hdr_large).identical:
-            if self.path_save_figure is not None:
-                date_obs        = hdr["DATE-OBS"]
-                date_obs        = date_obs.replace("-", "_").replace(":", "_")
-                dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
-                dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
-
-                plot.PlotFunctions.plot_fov(data=image, show=False,
-                                            path_save=os.path.join(self.path_save_figure,
-                                                                   f'image_large_{date_obs[:19]}.pdf'),
-                                            extent=(
-                                                self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
-                                                self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,),
-                                            xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
-                                            )
-                spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
-                                                        reference_date=self.reference_date,
-                                                        rate_wave=rate_wave_)
-                spherizer = rectify.Rectifier(spherical)
-
-                image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, 
-                                        order=self.order, fill=-32762, )
-                image_small     = np.where(image_small == -32762, np.nan, image_small)
-                date_obs        = self.hdr_small["DATE-OBS"]
-                date_obs        = date_obs.replace("-", "_").replace(":", "_")
-                dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
-                dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
-
-                plot.PlotFunctions.plot_fov(data=image_small, show=False,
-                                            path_save=os.path.join(self.path_save_figure,
-                                                                   f'image_small_{date_obs[:19]}.pdf'),
-                                            extent=(
-                                                self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
-                                                self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,
-                                            ),
-                                            xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
-
-                                            )
-
         return image
+
+        # if Fits.HeaderDiff(hdr, self.hdr_large).identical:
+            # if self.path_save_figure is not None:
+            #     date_obs        = hdr["DATE-OBS"]
+            #     date_obs        = date_obs.replace("-", "_").replace(":", "_")
+            #     dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
+            #     dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
+
+            #     plot.PlotFunctions.plot_fov(data=image, show=False,
+            #                                 path_save=os.path.join(self.path_save_figure,
+            #                                                        f'image_large_{date_obs[:19]}.pdf'),
+            #                                 extent=(
+            #                                     self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
+            #                                     self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,),
+            #                                 xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
+            #                                 )
+            #     spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
+            #                                             reference_date=self.reference_date,
+            #                                             rate_wave=rate_wave_)
+            #     spherizer = rectify.Rectifier(spherical)
+
+            #     image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, 
+            #                             order=self.order, fill=-32762, )
+            #     image_small     = np.where(image_small == -32762, np.nan, image_small)
+            #     date_obs        = self.hdr_small["DATE-OBS"]
+            #     date_obs        = date_obs.replace("-", "_").replace(":", "_")
+            #     dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
+            #     dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
+
+            #     plot.PlotFunctions.plot_fov(data=image_small, show=False,
+            #                                 path_save=os.path.join(self.path_save_figure,
+            #                                                        f'image_small_{date_obs[:19]}.pdf'),
+            #                                 extent=(
+            #                                     self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
+            #                                     self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,
+            #                                 ),
+            #                                 xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
+
+            #                                 )
+
 
     def _carrington_transform_sunpy(self, d_solar_r, data, hdr, data_large=None):
         rsun = (d_solar_r * astropy.constants.R_sun).to("m").value
