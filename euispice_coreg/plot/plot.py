@@ -621,7 +621,7 @@ class PlotFunctions:
                           small_fov_value_min: float = None,
                           small_fov_value_max: float = None,
                           shift_arcsec: list = None,
-                          norm_type=None, imin=2, imax=97,
+                          norm_type="linear", imin=2, imax=97,
                           unit_to_plot="arcsec",
                           lonlims = None, 
                           latlims = None,

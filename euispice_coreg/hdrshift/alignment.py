@@ -519,26 +519,6 @@ class Alignment:
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
         data_small_interp = copy.deepcopy(data_small_interp)
 
-        # if (self.path_save_figure is not None) and not self.already_plot:
-        #     plt.ioff()
-
-        #     date_obs_small              = hdr_small_shft["DATE-OBS"].replace("-", "_").replace(":", "_")
-        #     date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
-        #     cm                          = 1/2.56
-        #     fig                         = plt.figure(figsize = (9*cm, 9*cm))
-        #     ax                          = fig.add_subplot()
-        #     im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
-        #     fig.colorbar(im, ax=ax)
-        #     fig.savefig(os.path.join(self.path_save_figure, f"imsmall_{date_obs_small}_{date_obs_large}.pdf"))
-
-        #     fig                         = plt.figure(figsize = (9*cm, 9*cm))
-        #     ax                          = fig.add_subplot()
-        #     im                          = plot.PlotFunctions.plot_fov(data_large, fig=fig, )
-        #     fig.colorbar(im, ax=ax)
-        #     fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
-
-        #     self.already_plot           = True
-
         if method == 'correlation':
 
             lag = [0]
@@ -835,7 +815,7 @@ class Alignment:
         im                          = plot.PlotFunctions.plot_fov(self.data_small, fig=fig, )
         fig.colorbar(im, ax=ax)
         fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
-
+        plt.close("all")
         self.already_plot           = True
 
     def _set_initial_header_values(self, ang2pipi):
