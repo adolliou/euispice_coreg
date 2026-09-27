@@ -204,7 +204,7 @@ class PlotFunctions:
         if ax is None:
             ax = fig.add_subplot()
         if norm is None:
-            norm = ImageNormalize(stretch=LogStretch(5))
+            norm            = PlotFits.get_range(data, stre="linear", imin = 1, imax = 99)
         if slc is not None:
             im = ax.imshow(data[slc[0], slc[1]], origin="lower", interpolation="none", norm=norm, aspect=aspect,
                            cmap=cmap, extent=extent)
