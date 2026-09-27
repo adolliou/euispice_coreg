@@ -532,7 +532,6 @@ class Alignment:
             im                  = plot.PlotFunctions.plot_fov(data_large, fig=fig, )
             fig.colorbar(im, ax=ax)
             fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
-            plt.close("all")
             
 
         if method == 'correlation':
