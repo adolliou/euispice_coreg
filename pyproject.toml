@@ -14,7 +14,7 @@ matplotlib = ">=3.8.4"
 scipy = ">=1.13.0"
 pytest = ">=8.1.1"
 multiprocess = ">=0.70.15"
-sunpy = {extras = ["visualization"], version = ">=6.0.4"}
+sunpy = {extras = ["visualization"], version = "^6.0.4"}
 beautifulsoup4 = ">=4.12.3"
 reproject = ">=0.14.1"
 numba = ">=0.61.0"

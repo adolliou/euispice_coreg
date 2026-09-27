@@ -2501,52 +2501,51 @@ files = [
 
 [[package]]
 name = "sunpy"
-version = "7.0.5"
+version = "6.1.2"
 description = "SunPy core package: Python for Solar Physics"
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "sunpy-7.0.5-cp311-abi3-macosx_10_9_x86_64.whl", hash = "sha256:8b0821bbe11b706e3735b76189578b6833b99da9d8e97f37245f7d1611ed915a"},
-    {file = "sunpy-7.0.5-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:71004bc8c68fac26efe4fe18a3fc679b040e5f85f48c2db93c8f08935aa9c84d"},
-    {file = "sunpy-7.0.5-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5a548c16905a30c4e4c434df18954100989d03477b9b3bd57d15ab5078605787"},
-    {file = "sunpy-7.0.5-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:65300f5064dbad0d951d23fe67b72fea2d1b3c22a6190b5d6613a13200c28794"},
-    {file = "sunpy-7.0.5-py3-none-any.whl", hash = "sha256:c1a43027000a9889366c3e8593924c16ef0a3e20e42115b42282e1f2b2f21919"},
-    {file = "sunpy-7.0.5.tar.gz", hash = "sha256:164074dacfdf72db2de6db80cea6897b5e9285db38c50a0e841c6b0548ec4020"},
+    {file = "sunpy-6.1.2-cp311-abi3-macosx_10_9_x86_64.whl", hash = "sha256:4d83c409693ee2768b0e67157de19137bb5a749ad4ab8491d250fcb85bfcc255"},
+    {file = "sunpy-6.1.2-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:755116ac1e7b3857eaae8050d04c75ddf4eeebfebcef4130101cab0a67b9b4df"},
+    {file = "sunpy-6.1.2-cp311-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1b1c173de0490b37a9a507c4f0398b2bb942acf57ed92b909d571ed818fb0ca6"},
+    {file = "sunpy-6.1.2-cp311-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b2241d1f691fd1df1dc7c4ba12ec5520f85621f76a3903bac0e76005007adf9d"},
+    {file = "sunpy-6.1.2-py3-none-any.whl", hash = "sha256:6e4ad01d40afa4d5d5497d07b17cfad0227e9a87eb5b77ec958bb0122b903d9e"},
+    {file = "sunpy-6.1.2.tar.gz", hash = "sha256:5c186776887660b70f93eade3ac6c14aece3271e0e53211dccfd61a212c9a46c"},
 ]
 
 [package.dependencies]
-astropy = ">=6.1.0"
-fsspec = ">=2023.6.0"
-matplotlib = {version = ">=3.8.0", optional = true, markers = "extra == \"visualization\""}
-mpl-animators = {version = ">=1.2.0", optional = true, markers = "extra == \"visualization\""}
-numpy = ">=1.25.0"
-packaging = ">=23.2"
-parfive = {version = ">=2.1.0", extras = ["ftp"]}
+astropy = ">=6.0.0"
+fsspec = ">=2023.3.0"
+matplotlib = {version = ">=3.6.0", optional = true, markers = "extra == \"visualization\""}
+mpl-animators = {version = ">=1.0.0", optional = true, markers = "extra == \"visualization\""}
+numpy = ">=1.24.0"
+packaging = ">=23.0"
+parfive = {version = ">=2.0.0", extras = ["ftp"]}
 pyerfa = ">=2.0.1.1"
-requests = ">=2.32.0"
+requests = ">=2.28.0"
 
 [package.extras]
 all = ["sunpy[asdf,core,jpeg2000,opencv,scikit-image,spice]"]
-asdf = ["asdf (>=3.0.0)", "asdf-astropy (>=0.5.0)"]
-asdf-tests = ["pytest-asdf-plugin (>=0.1.1)", "sunpy[asdf]"]
+asdf = ["asdf (>=2.13.0)", "asdf-astropy (>=0.5.0)"]
 core = ["sunpy[image,map,net,timeseries,visualization]"]
-dask = ["dask[array] (>=2023.6.0)"]
+dask = ["dask[array] (>=2022.5.2)"]
 dev = ["sunpy[docs,tests]"]
-docs = ["hvpy (>=1.1.0)", "joblib", "packaging (>=23.2)", "ruamel.yaml (>=0.18.0)", "sphinx (>=7.1.0)", "sphinx-autodoc-typehints", "sphinx-automodapi (>=0.16.0)", "sphinx-changelog (>=1.5.0)", "sphinx-copybutton (>=0.5.0)", "sphinx-design (>=0.5.0)", "sphinx-gallery (>=0.14.0)", "sphinxcontrib-bibtex", "sphinxext-opengraph (>=0.9.0)", "sunpy-sphinx-theme (>=2.0.3)", "sunpy[all]"]
-docs-gallery = ["astroquery (>=0.4.6)", "jplephem (>=2.19)", "pillow", "sunpy[docs]"]
-image = ["scipy (>=1.11.0)"]
-jpeg2000 = ["glymur (>=0.13.0)", "lxml (>=4.9.1,!=5.0.0)"]
-map = ["contourpy (>=1.1.0)", "matplotlib (>=3.8.0)", "mpl-animators (>=1.2.0)", "reproject (>=0.12.0)", "scipy (>=1.11.0)"]
-net = ["beautifulsoup4 (>=4.13.0)", "drms (>=0.7.1)", "python-dateutil (>=2.9.0)", "tqdm (>=4.66.0)", "zeep (>=4.3.0)"]
-opencv = ["opencv-python (>=4.8.0.74)"]
-s3 = ["aiobotocore (>=2.6.0)", "boto3 (>=1.31.17)", "fsspec[s3] (>=2023.6.0)"]
-scikit-image = ["scikit-image (>=0.21.0)"]
-spice = ["spiceypy (>=6.0.0)"]
-tests = ["sunpy[all,asdf-tests,s3,tests-only]"]
-tests-only = ["hvpy (>=1.1.0)", "jplephem (>=2.19)", "pytest (>=7.4.0)", "pytest-astropy (>=0.11.0)", "pytest-mpl (>=0.17.0)"]
-timeseries = ["cdflib (>=1.3.2)", "h5netcdf (>=1.2.0)", "h5py (>=3.9.0)", "matplotlib (>=3.8.0)", "pandas (>=2.1.0)"]
-visualization = ["matplotlib (>=3.8.0)", "mpl-animators (>=1.2.0)"]
+docs = ["hvpy (>=1.1.0)", "packaging (>=23.0)", "ruamel.yaml (>=0.17.19)", "sphinx (>=6.0.0)", "sphinx-automodapi (>=0.14.1)", "sphinx-changelog (>=1.5.0)", "sphinx-copybutton (>=0.5.0)", "sphinx-design (>=0.2.0)", "sphinx-gallery (>=0.13.0)", "sphinx-hoverxref (>=1.3.0)", "sphinxext-opengraph (>=0.6.0)", "sunpy-sphinx-theme (>=2.0.3)", "sunpy[all]"]
+docs-gallery = ["astroquery (>=0.4.6)", "jplephem (>=2.14)", "sunpy[docs]"]
+image = ["scipy (>=1.10.1)"]
+jpeg2000 = ["glymur (>=0.11.0)", "lxml (>=4.9.1,!=5.0.0)"]
+map = ["contourpy (>=1.0.1)", "matplotlib (>=3.6.0)", "mpl-animators (>=1.0.0)", "reproject (>=0.10.0)", "scipy (>=1.10.1)"]
+net = ["beautifulsoup4 (>=4.11.0)", "drms (>=0.7.1)", "python-dateutil (>=2.8.1)", "tqdm (>=4.64.0)", "zeep (>=4.1.0)"]
+opencv = ["opencv-python (>=4.6.0.66)"]
+s3 = ["aiobotocore[boto3] (>=1.26.41)", "fsspec[s3] (>=2023.3.0)"]
+scikit-image = ["scikit-image (>=0.20.0)"]
+spice = ["spiceypy (>=5.0.0)"]
+tests = ["sunpy[all,s3,tests-only]"]
+tests-only = ["hvpy (>=1.1.0)", "jplephem (>=2.14)", "pytest (>=7.1.0)", "pytest-astropy (>=0.11.0)", "pytest-mpl (>=0.16)", "pytest-xdist (>=3.0.2)"]
+timeseries = ["cdflib (>=1.3.2)", "h5netcdf (>=1.0.0)", "h5py (>=3.8.0)", "matplotlib (>=3.6.0)", "pandas (>=1.5.0)"]
+visualization = ["matplotlib (>=3.6.0)", "mpl-animators (>=1.0.0)"]
 
 [[package]]
 name = "tifffile"
@@ -2837,4 +2836,4 @@ type = ["pytest-mypy (>=1.0.1)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "830c512ca02dba7dde4d485b19cd270301afc0f0160609550b2503fe8a6ecfd2"
+content-hash = "d16c28f98d05c828750f4897af80df703b44c2b55d3d0d5db3f2f0ab946f8971"
