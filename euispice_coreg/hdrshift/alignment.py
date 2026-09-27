@@ -818,7 +818,7 @@ class Alignment:
                         d_crota             = 0.0
                         )
 
-        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
+        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_small, hdr=hdr_small_shft)
         data_small_interp = copy.deepcopy(data_small_interp)
 
         date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
@@ -832,7 +832,7 @@ class Alignment:
 
         fig                         = plt.figure(figsize = (9*cm, 9*cm))
         ax                          = fig.add_subplot()
-        im                          = plot.PlotFunctions.plot_fov(data_large, fig=fig, )
+        im                          = plot.PlotFunctions.plot_fov(self.data_small, fig=fig, )
         fig.colorbar(im, ax=ax)
         fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
 
