@@ -883,9 +883,10 @@ class Alignment:
         image = np.where(image == -32762, np.nan, image)
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
             if self.path_save_figure is not None:
-                date_obs = hdr["DATE-OBS"]
-                dlon = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
-                dlat = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
+                date_obs        = hdr["DATE-OBS"]
+                date_obs        = date_obs.replace("-", "_").replace(":", "_")
+                dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
+                dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
 
                 plot.PlotFunctions.plot_fov(data=image, show=False,
                                             path_save=os.path.join(self.path_save_figure,
@@ -902,8 +903,11 @@ class Alignment:
 
                 image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, 
                                         order=self.order, fill=-32762, )
-                image_small = np.where(image_small == -32762, np.nan, image_small)
-                date_obs = self.hdr_small["DATE-OBS"]
+                image_small     = np.where(image_small == -32762, np.nan, image_small)
+                date_obs        = self.hdr_small["DATE-OBS"]
+                date_obs        = date_obs.replace("-", "_").replace(":", "_")
+                dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
+                dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
 
                 plot.PlotFunctions.plot_fov(data=image_small, show=False,
                                             path_save=os.path.join(self.path_save_figure,
