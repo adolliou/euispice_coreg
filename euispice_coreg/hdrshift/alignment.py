@@ -19,7 +19,7 @@ from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 # from sunpy.map import Map
 import astropy.constants
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+# from matplotlib.backends.backend_pdf import PdfPages
 
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
@@ -524,15 +524,15 @@ class Alignment:
         if self.path_save_figure is not None:
             date_obs_small          = hdr_small_shft["DATE-OBS"].replace("-", "_").replace(":", "_")
             date_obs_large          = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
-            with PdfPages(os.path.join(self.path_save_figure, f"image_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
-                cm                  = 1/2.56
-                fig                 = plt.figure(figsize = (9 * cm, 9 * cm))
-                plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
-                pdf.savefig(fig)
-                fig                 = plt.figure(figsize = (9 * cm, 9 * cm))
-                plot.PlotFunctions.plot_fov(data_large, fig=fig, )
-                pdf.savefig(fig)
-                plt.close("all")
+            # with PdfPages(os.path.join(self.path_save_figure, f"image_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
+            cm                  = 1/2.56
+            fig                 = plt.figure(figsize = (9 * cm, 9 * cm))
+            plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
+            fig.savefig(os.path.join(self.path_save_figure, f"imsmall_{date_obs_small}_{date_obs_large}.pdf"))
+            fig                 = plt.figure(figsize = (9 * cm, 9 * cm))
+            plot.PlotFunctions.plot_fov(data_large, fig=fig, )
+            fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
+            plt.close("all")
             
 
         if method == 'correlation':
