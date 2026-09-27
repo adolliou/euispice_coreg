@@ -18,13 +18,13 @@ import os
 from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 # from sunpy.map import Map
 import astropy.constants
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
 from .AlignmentResults import AlignmentResults
 
-
+plt.ioff()
 
 class HiddenPrints:
     def __enter__(self):
