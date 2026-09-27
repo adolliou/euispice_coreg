@@ -19,7 +19,6 @@ from astropy.wcs.utils import WCS_FRAME_MAPPINGS, FRAME_WCS_MAPPINGS
 # from sunpy.map import Map
 import astropy.constants
 from matplotlib import pyplot as plt
-
 warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
 from .AlignmentResults import AlignmentResults
@@ -518,6 +517,18 @@ class Alignment:
 
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
         data_small_interp = copy.deepcopy(data_small_interp)
+        if self.path_save_figure is not None:
+            date_obs_small          = hdr_small_shft["DATE-OBS"].replace("-", "_").replace(":", "_")
+            date_obs_large          = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
+            cm                  = 1/2.56
+            fig                 = plt.figure(figsize = (9*cm, 9*cm))
+            plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
+            fig.savefig(os.path.join(self.path_save_figure, f"imsmall_{date_obs_small}_{date_obs_large}.pdf"))
+            fig                 = plt.figure(figsize = (9*cm, 9*cm))
+            plot.PlotFunctions.plot_fov(data_large, fig=fig, )
+            fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
+            plt.close("all")
+            
 
         if method == 'correlation':
 
