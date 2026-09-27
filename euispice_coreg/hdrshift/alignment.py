@@ -518,6 +518,8 @@ class Alignment:
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
         data_small_interp = copy.deepcopy(data_small_interp)
         if self.path_save_figure is not None:
+            plt.ioff()
+
             date_obs_small          = hdr_small_shft["DATE-OBS"].replace("-", "_").replace(":", "_")
             date_obs_large          = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
             cm                  = 1/2.56
@@ -570,8 +572,9 @@ class Alignment:
                            d_crota=d_crota)
 
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=data_small, hdr=hdr_small_shft)
-
         if self.path_save_figure is not None:
+            plt.ioff()
+
             date_obs_small          = hdr_small_shft["DATE-OBS"].replace("-", "_").replace(":", "_")
             date_obs_large          = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
             cm                  = 1/2.56
@@ -586,7 +589,7 @@ class Alignment:
             im                  = plot.PlotFunctions.plot_fov(data_large, fig=fig, )
             fig.colorbar(im, ax=ax)
             fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
-
+            
         if method == 'correlation':
 
             lag = [0]
