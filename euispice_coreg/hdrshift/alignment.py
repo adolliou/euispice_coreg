@@ -757,8 +757,8 @@ class Alignment:
                  len(self.lag_crota), len(self.lag_solar_r)), dtype="float")
             for hh, d_solar_r in enumerate(self.lag_solar_r):
                 if self.coordinate_frame == "final_carrington":
-                    self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
-                                                             hdr=self.hdr_large)
+                    self.data_large, self.hdr_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
+                                                             hdr=self.hdr_large, return_out_header=True)
                 elif (self.coordinate_frame == "initial_helioprojective") or (
                         self.coordinate_frame == "initial_carrington"):
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large, fov_limits=fov_limits)
@@ -900,23 +900,25 @@ class Alignment:
 
         self.data_small[set_to_nan] = np.nan
 
-    def _carrington_transform_fa(self, d_solar_r, data, hdr):
+    def _carrington_transform_fa(self, d_solar_r, data, hdr, return_out_header=False):
         rate_wave_ = None
         if self.hdr_large['WAVELNTH'] not in self.rat_wave.keys():
             rate_wave_ = None
         else:
             rate_wave_ = self.rat_wave['%i' % (self.hdr_large['WAVELNTH'])]
 
-        spherical = rectify.CarringtonTransform(hdr, radius_correction=d_solar_r,
+        spherical               = rectify.CarringtonTransform(hdr, radius_correction=d_solar_r,
                                                 reference_date=self.reference_date,
                                                 rate_wave=rate_wave_)
-        spherizer = rectify.Rectifier(spherical)
-        image = spherizer(data, self.shape, self.lonlims, self.latlims, order=self.order, fill=-32762)
-        image = np.where(image == -32762, np.nan, image)
+        spherizer               = rectify.Rectifier(spherical)
+        image                   = spherizer(data, self.shape, self.lonlims, self.latlims, order=self.order, fill=-32762)
+        image                   = np.where(image == -32762, np.nan, image)
+        if return_out_header:
+            return image, self.hdr_large
+        else:
+            return image
 
-        return image
-
-    def _carrington_transform_sunpy(self, d_solar_r, data, hdr, ):
+    def _carrington_transform_sunpy(self, d_solar_r, data, hdr, return_out_header=False):
         from sunpy.map import Map, make_fitswcs_header
         from sunpy.coordinates import propagate_with_solar_surface
         
@@ -924,10 +926,10 @@ class Alignment:
         map_to_align                    = Map(data, hdr)
 
         reference_time                  = map_to_align.date
-        observer_coordinate             = map_to_align.observer_coordinate
         map_to_align.meta['rsun_ref']   = (d_solar_r * astropy.constants.R_sun).to("m").value
-        map_center_longitude = [0.5 * (self.lonlims[1] + self.lonlims[0]) * u.deg,
-                                0.5 * (self.latlims[1] + self.latlims[0]) * u.deg]
+        observer_coordinate             = map_to_align.observer_coordinate
+        map_center_longitude            = [ 0.5 * (self.lonlims[1] + self.lonlims[0]) * u.deg,
+                                            0.5 * (self.latlims[1] + self.latlims[0]) * u.deg]
 
         frame_out = SkyCoord(
         map_center_longitude[0],
@@ -948,8 +950,10 @@ class Alignment:
             map_to_align_rep            = map_to_align.reproject_to(header_out)
         image = copy.deepcopy(map_to_align_rep.data)
 
-        return image
-
+        if return_out_header:
+            return image, header_out
+        else:
+            return image
         # if Fits.HeaderDiff(hdr, self.hdr_large).identical:
 
         #     map_ref                         = Map(data, hdr)
