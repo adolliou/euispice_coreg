@@ -717,14 +717,15 @@ class Alignment:
                 self.launch_processes(Processes)
 
 
-                if (self.path_save_figure is not None) and not self.already_plot:
-                    self._plot_figures(data_large, data_small, d_solar_r, data_correlation_cp)
+
 
             shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
             shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
             shmm_small, data_small = Util.MpUtils.gen_shmm(create=False, **self._small)
 
             data_correlation_cp = copy.deepcopy(data_correlation)
+            if (self.path_save_figure is not None) and not self.already_plot:
+                self._plot_figures(data_large, data_small, self.lag_solar_r[0], data_correlation_cp)            
             shmm_correlation.close()
             shmm_large.close()
             shmm_large.unlink()
@@ -762,8 +763,8 @@ class Alignment:
 
                                                                                                      )
 
-                    if (self.path_save_figure is not None) and not self.already_plot:
-                        self._plot_figures(self.data_large, self.data_small, d_solar_r, data_correlation_cp)
+                if (self.path_save_figure is not None) and not self.already_plot:
+                    self._plot_figures(self.data_large, self.data_small, d_solar_r, data_correlation_cp)
 
 
 
