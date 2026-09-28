@@ -714,28 +714,11 @@ class Alignment:
 
                     Processes.append(Process(target=self._iteration_step, kwargs=kwargs))
 
-                lenp = len(Processes)
-                ii = -1
-                is_close = []
-                while (ii < lenp - 1):
-                    ii += 1
-                    Processes[ii].start()
-                    while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if
-                                   (mm not in is_close)]) > self.counts):
-                        pass
-                    for kk, P in zip(range(lenp), Processes):
-                        if kk not in is_close:
-                            if (not (P.is_alive())) and (kk <= ii):
-                                P.close()
-                                is_close.append(kk)
+                self.launch_processes(Processes)
 
-                while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if (mm not in is_close)]) != 0):
-                    pass
-                for kk, P in zip(range(lenp), Processes):
-                    if kk not in is_close:
-                        if (not (P.is_alive())) and (kk <= ii):
-                            P.close()
-                            is_close.append(kk)
+
+                if (self.path_save_figure is not None) and not self.already_plot:
+                    self._plot_figures(data_large, data_small, d_crval1, data_correlation_cp)
 
             shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
             shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
@@ -779,21 +762,45 @@ class Alignment:
 
                                                                                                      )
 
-        if (self.path_save_figure is not None) and not self.already_plot:
-            self._plot_figures(self.lag_solar_r[0], data_correlation_cp)
+                    if (self.path_save_figure is not None) and not self.already_plot:
+                        self._plot_figures(self.data_large, self.data_small, d_crval1, data_correlation_cp)
 
 
 
         return data_correlation_cp
 
-    def _plot_figures(self, d_solar_r, data_correlation_cp):
+    def launch_processes(self, Processes):
+        lenp = len(Processes)
+        ii = -1
+        is_close = []
+        while (ii < lenp - 1):
+            ii += 1
+            Processes[ii].start()
+            while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if
+                                   (mm not in is_close)]) > self.counts):
+                pass
+            for kk, P in zip(range(lenp), Processes):
+                if kk not in is_close:
+                    if (not (P.is_alive())) and (kk <= ii):
+                        P.close()
+                        is_close.append(kk)
+
+        while (np.sum([p.is_alive() for mm, p in zip(range(lenp), Processes) if (mm not in is_close)]) != 0):
+            pass
+        for kk, P in zip(range(lenp), Processes):
+            if kk not in is_close:
+                if (not (P.is_alive())) and (kk <= ii):
+                    P.close()
+                    is_close.append(kk)
+
+    def _plot_figures(self, data_large, data_small, d_solar_r, data_correlation_cp):
         plt.ioff()
 
 
 
         data_small_interp           = self.function_to_apply(
             d_solar_r               = d_solar_r,
-            data                    = self.data_small,
+            data                    = data_small,
             hdr                     = self.hdr_small
             )
 
@@ -811,7 +818,7 @@ class Alignment:
 
         data_small_interp_corr      = self.function_to_apply(
             d_solar_r               = d_solar_r,
-            data                    = self.data_small,
+            data                    = data_small,
             hdr                     = header_small_corrected
             )
 
@@ -821,7 +828,7 @@ class Alignment:
         with PdfPages(os.path.join(self.path_save_figure, f"coalign_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
             cm                          = 1/2.56
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
-            im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
+            im                          = plot.PlotFunctions.plot_fov(data_large, fig=fig, )
             pdf.savefig(fig)
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
