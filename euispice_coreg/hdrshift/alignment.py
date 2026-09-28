@@ -718,7 +718,7 @@ class Alignment:
 
 
                 if (self.path_save_figure is not None) and not self.already_plot:
-                    self._plot_figures(data_large, data_small, d_crval1, data_correlation_cp)
+                    self._plot_figures(data_large, data_small, d_solar_r, data_correlation_cp)
 
             shmm_correlation, data_correlation = Util.MpUtils.gen_shmm(create=False, **self._correlation)
             shmm_large, data_large = Util.MpUtils.gen_shmm(create=False, **self._large)
@@ -763,7 +763,7 @@ class Alignment:
                                                                                                      )
 
                     if (self.path_save_figure is not None) and not self.already_plot:
-                        self._plot_figures(self.data_large, self.data_small, d_crval1, data_correlation_cp)
+                        self._plot_figures(self.data_large, self.data_small, d_solar_r, data_correlation_cp)
 
 
 
