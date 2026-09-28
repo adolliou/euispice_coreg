@@ -793,7 +793,7 @@ class Alignment:
         data_small_interp = copy.deepcopy(data_small_interp)
 
         data_large_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large, hdr=self.hdr_large)
-        data_large_interp = copy.deepcopy(data_small_interp)
+        data_large_interp = copy.deepcopy(data_large_interp)
 
         date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
         date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
@@ -805,6 +805,7 @@ class Alignment:
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
             im                          = plot.PlotFunctions.plot_fov(data_large_interp, fig=fig, )
+            
             pdf.savefig(fig)
             plt.close("all")
             self.already_plot           = True
