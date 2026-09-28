@@ -926,7 +926,7 @@ class Alignment:
 
         reference_time                  = map_to_align.date
         observer_coordinate             = map_to_align.observer_coordinate
-        map.meta['rsun_ref'] = (d_solar_r * astropy.constants.R_sun).to("m").value
+        map_to_align.meta['rsun_ref']   = (d_solar_r * astropy.constants.R_sun).to("m").value
         map_center_longitude = [0.5 * (self.lonlims[1] + self.lonlims[0]) * u.deg,
                                 0.5 * (self.latlims[1] + self.latlims[0]) * u.deg]
 
