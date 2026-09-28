@@ -789,18 +789,13 @@ class Alignment:
     def _plot_figures(self, d_solar_r):
         plt.ioff()
 
-        hdr_small_shft = self.hdr_small.copy()
-        self._shift_header(
-                        hdr_small_shft,
-                        d_crval1            = 0.0,
-                        d_crval2            = 0.0,
-                        d_cdelt1            = 0.0,
-                        d_cdelt2            = 0.0,
-                        d_crota             = 0.0
-                        )
 
-        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_small, hdr=hdr_small_shft)
+
+        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_small, hdr=self.hdr_small)
         data_small_interp = copy.deepcopy(data_small_interp)
+
+        data_large_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large, hdr=self.hdr_large)
+        data_large_interp = copy.deepcopy(data_small_interp)
 
         date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
         date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
@@ -811,7 +806,7 @@ class Alignment:
             pdf.savefig(fig)
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
-            im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
+            im                          = plot.PlotFunctions.plot_fov(data_large_interp, fig=fig, )
             pdf.savefig(fig)
             plt.close("all")
             self.already_plot           = True
@@ -919,44 +914,6 @@ class Alignment:
         spherizer = rectify.Rectifier(spherical)
         image = spherizer(data, self.shape, self.lonlims, self.latlims, order=self.order, fill=-32762)
         image = np.where(image == -32762, np.nan, image)
-        # if Fits.HeaderDiff(hdr, self.hdr_large).identical:
-        #     if self.path_save_figure is not None:
-        #         date_obs        = hdr["DATE-OBS"]
-        #         date_obs        = date_obs.replace("-", "_").replace(":", "_")
-        #         dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
-        #         dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
-
-        #         plot.PlotFunctions.plot_fov(data=image, show=False,
-        #                                     path_save=os.path.join(self.path_save_figure,
-        #                                                            f'image_large_{date_obs[:19]}.pdf'),
-        #                                     extent=(
-        #                                         self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
-        #                                         self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,),
-        #                                     xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
-        #                                     )
-        #         spherical = rectify.CarringtonTransform(self.hdr_small, radius_correction=d_solar_r,
-        #                                                 reference_date=self.reference_date,
-        #                                                 rate_wave=rate_wave_)
-        #         spherizer = rectify.Rectifier(spherical)
-
-        #         image_small = spherizer(self.data_small, self.shape, self.lonlims, self.latlims, 
-        #                                 order=self.order, fill=-32762, )
-        #         image_small     = np.where(image_small == -32762, np.nan, image_small)
-        #         date_obs        = self.hdr_small["DATE-OBS"]
-        #         date_obs        = date_obs.replace("-", "_").replace(":", "_")
-        #         dlon            = (self.lonlims[1] - self.lonlims[0]) / self.shape[0]
-        #         dlat            = (self.latlims[1] - self.lonlims[0]) / self.shape[1]
-
-        #         plot.PlotFunctions.plot_fov(data=image_small, show=False,
-        #                                     path_save=os.path.join(self.path_save_figure,
-        #                                                            f'image_small_{date_obs[:19]}.pdf'),
-        #                                     extent=(
-        #                                         self.lonlims[0] - 0.5 * dlon, self.lonlims[1] + 0.5 * dlon,
-        #                                         self.latlims[0] - 0.5 * dlat, self.latlims[1] + 0.5 * dlat,
-        #                                     ),
-        #                                     xlabel="carrington longitude [°]", ylabel="carrington latitude [°]"
-
-        #                                     )
 
         return image
 
@@ -967,43 +924,23 @@ class Alignment:
 
         if Fits.HeaderDiff(hdr, self.hdr_large).identical:
 
-            map_ref = Map(data, hdr)
-            map_to_align = Map(self.data_small, self.hdr_small)
-            map_to_align.meta["rsun_ref"] = rsun
-            map_ref.meta["rsun_ref"] = rsun
+            map_ref                         = Map(data, hdr)
+            map_to_align                    = Map(self.data_small, self.hdr_small)
+            map_to_align.meta["rsun_ref"]   = rsun
+            map_ref.meta["rsun_ref"]        = rsun
             with propagate_with_solar_surface():
-                map_ref_rep = map_ref.reproject_to(map_to_align.wcs)
-            image = copy.deepcopy(map_ref_rep.data)
-            self.hdr_large = copy.deepcopy(self.hdr_small)
-
-            # if self.path_save_figure is not None:
-            #     date_obs = hdr["DATE-OBS"]
-
-            #     plot.PlotFunctions.simple_plot_sunpy(map_to_align, show=False,
-            #                                          path_save=os.path.join(self.path_save_figure,
-            #                                                                 f"image_small_{date_obs[:19]}.pdf"))
-            #     date_obs = self.hdr_small["DATE-OBS"]
-            #     plot.PlotFunctions.simple_plot_sunpy(map_ref, show=False,
-            #                                          path_save=os.path.join(self.path_save_figure,
-            #                                                                 f"image_large_{date_obs[:19]}.pdf"))
-
-            #     map_to_align = Map(self.data_small, self.hdr_small)
-            #     map_to_align.meta["rsun_ref"] = rsun
-            #     with propagate_with_solar_surface():
-            #         with HiddenPrints():
-            #             map_to_align_rep = map_to_align.reproject_to(map_ref.wcs)
-            #     plot.PlotFunctions.simple_plot_sunpy(map_ref_rep, show=False,
-            #                                          path_save=os.path.join(self.path_save_figure,
-            #                                                                 f"image_large_rep_{date_obs[:19]}.pdf"))
+                map_ref_rep                 = map_ref.reproject_to(map_to_align.wcs)
+            image                           = copy.deepcopy(map_ref_rep.data)
+            self.hdr_large                  = copy.deepcopy(self.hdr_small)
 
         else:
-            map_to_align = Map(data, hdr)
-            map_to_align.meta["rsun_ref"] = rsun
-            hdr_large = copy.deepcopy(self.hdr_large)
-            hdr_large["RSUN_REF"] = rsun
-            w_large = WCS(hdr_large)
+            map_to_align                    = Map(data, hdr)
+            map_to_align.meta["rsun_ref"]   = rsun
+            hdr_large                       = copy.deepcopy(self.hdr_large)
+            hdr_large["RSUN_REF"]           = rsun
+            w_large                         = WCS(hdr_large)
             with propagate_with_solar_surface():
-                map_to_align_rep = map_to_align.reproject_to(w_large)
+                map_to_align_rep            = map_to_align.reproject_to(w_large)
             image = copy.deepcopy(map_to_align_rep.data)
 
         return image
