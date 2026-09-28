@@ -811,7 +811,7 @@ class Alignment:
 
         fig                         = plt.figure(figsize = (9*cm, 9*cm))
         ax                          = fig.add_subplot()
-        im                          = plot.PlotFunctions.plot_fov(self.data_small, fig=fig, )
+        im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
         fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
         plt.close("all")
         self.already_plot           = True
