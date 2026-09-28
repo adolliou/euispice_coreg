@@ -644,9 +644,6 @@ class Alignment:
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large, fov_limits=fov_limits)
 
 
-                if (self.path_save_figure is not None) and not self.already_plot:
-                    self._plot_figures(d_solar_r)
-
 
                 isnan = np.isnan(self.data_small)
                 if isnan.all():
@@ -782,28 +779,59 @@ class Alignment:
 
                                                                                                      )
 
+        if (self.path_save_figure is not None) and not self.already_plot:
+            self._plot_figures(self.lag_solar_r[0], data_correlation_cp)
+
+
+
         return data_correlation_cp
 
-    def _plot_figures(self, d_solar_r):
+    def _plot_figures(self, d_solar_r, data_correlation_cp):
         plt.ioff()
 
 
 
-        data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_small, hdr=self.hdr_small)
-        data_small_interp = copy.deepcopy(data_small_interp)
+        data_small_interp           = self.function_to_apply(
+            d_solar_r               = d_solar_r,
+            data                    = self.data_small,
+            hdr                     = self.hdr_small
+            )
+
+        max_index = np.unravel_index(np.nanargmax(data_correlation_cp), data_correlation_cp.shape) 
+
+        header_small_corrected      = copy.deepcopy(self.hdr_small)
+        self._shift_header(
+            header_small_corrected, 
+            self.lag_crval1[max_index[0]], 
+            self.lag_crval2[max_index[1]], 
+            self.lag_cdelt1[max_index[2]],
+            self.lag_cdelt2[max_index[3]],
+            self.lag_crota[max_index[4]],
+        )
+
+        data_small_interp_corr      = self.function_to_apply(
+            d_solar_r               = d_solar_r,
+            data                    = self.data_small,
+            hdr                     = header_small_corrected
+            )
+
 
         date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
         date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
         with PdfPages(os.path.join(self.path_save_figure, f"coalign_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
             cm                          = 1/2.56
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
+            im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
+            pdf.savefig(fig)
+
+            fig                         = plt.figure(figsize = (9*cm, 9*cm))
             im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
             pdf.savefig(fig)
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
-            im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
-            
+            im                          = plot.PlotFunctions.plot_fov(data_small_interp_corr, fig=fig, )
             pdf.savefig(fig)
+
             plt.close("all")
             self.already_plot           = True
 
@@ -951,24 +979,10 @@ class Alignment:
             return image, header_out
         else:
             return image
-        # if Fits.HeaderDiff(hdr, self.hdr_large).identical:
-
-        #     map_ref                         = Map(data, hdr)
-        #     map_ref                         = Map(self.data_small, self.hdr_small)
-        #     map_ref.meta["rsun_ref"]        = map_to_align.meta["rsun_ref"]
-        #     with propagate_with_solar_surface():
-        #         map_to_align_rep            = map_to_align.reproject_to(map_ref.wcs)
-        #     image                           = copy.deepcopy(map_to_align_rep.data)
-        #     self.hdr_large                  = copy.deepcopy(self.hdr_small)
-
-        # else:
 
 
 
     def _create_submap_of_large_data(self, data_large,fov_limits=None ):
-        # if self.path_save_figure is not None:
-        #     plot.PlotFunctions.simple_plot(self.hdr_large, data_large, show=False,
-        #                                    path_save='%s/large_fov_before_cut.pdf' % (self.path_save_figure))
 
         hdr_cut = self.hdr_small.copy()
         x_cut, y_cut = self._extract_coordinates_pixels(hdr_cut, self.hdr_large)
@@ -979,20 +993,6 @@ class Alignment:
                                         order=self.order, fill=np.nan)
 
         self.hdr_large = hdr_cut.copy()
-
-        # if self.path_save_figure is not None:
-        #     levels = [0.15 * np.nanmax(self.data_small)]
-
-        #     date_small = self.hdr_small["DATE-AVG"]
-        #     date_small = date_small.replace(":", "_")
-        #     plot.PlotFunctions.simple_plot(self.hdr_large, image_large_cut, show=False,
-        #                                    path_save='%s/large_fov_%s.pdf' % (self.path_save_figure, date_small))
-        #     plot.PlotFunctions.simple_plot(self.hdr_small, self.data_small, show=False,
-        #                                    path_save='%s/small_fov_%s.pdf' % (self.path_save_figure, date_small))
-        #     plot.PlotFunctions.contour_plot(self.hdr_large, image_large_cut, self.hdr_small, self.data_small,
-        #                                     show=False, path_save='%s/compare_plot_%s.pdf' % (self.path_save_figure,
-        #                                                                                       date_small),
-        #                                     levels=levels)
         self.step_figure = False
         return np.array(image_large_cut)
 
