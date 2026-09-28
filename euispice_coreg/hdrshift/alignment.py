@@ -917,33 +917,53 @@ class Alignment:
 
         return image
 
-    def _carrington_transform_sunpy(self, d_solar_r, data, hdr, data_large=None):
-        rsun = (d_solar_r * astropy.constants.R_sun).to("m").value
-        from sunpy.map import Map
+    def _carrington_transform_sunpy(self, d_solar_r, data, hdr, ):
+        from sunpy.map import Map, make_fitswcs_header
         from sunpy.coordinates import propagate_with_solar_surface
+        
+        
+        map_to_align                    = Map(data, hdr)
 
-        if Fits.HeaderDiff(hdr, self.hdr_large).identical:
+        reference_time                  = map_to_align.date
+        observer_coordinate             = map_to_align.observer_coordinate
+        map.meta['rsun_ref'] = (d_solar_r * astropy.constants.R_sun).to("m").value
+        map_center_longitude = [0.5 * (self.lonlims[1] + self.lonlims[0]) * u.deg,
+                                0.5 * (self.latlims[1] + self.latlims[0]) * u.deg]
 
-            map_ref                         = Map(data, hdr)
-            map_to_align                    = Map(self.data_small, self.hdr_small)
-            map_to_align.meta["rsun_ref"]   = rsun
-            map_ref.meta["rsun_ref"]        = rsun
-            with propagate_with_solar_surface():
-                map_ref_rep                 = map_ref.reproject_to(map_to_align.wcs)
-            image                           = copy.deepcopy(map_ref_rep.data)
-            self.hdr_large                  = copy.deepcopy(self.hdr_small)
+        frame_out = SkyCoord(
+        map_center_longitude[0],
+        map_center_longitude[1],
+        frame               = f"heliographic_carrington",
+        obstime             = reference_time,
+        observer            = observer_coordinate,
+        rsun                = (d_solar_r * astropy.constants.R_sun).to("m"),
+            )
 
-        else:
-            map_to_align                    = Map(data, hdr)
-            map_to_align.meta["rsun_ref"]   = rsun
-            hdr_large                       = copy.deepcopy(self.hdr_large)
-            hdr_large["RSUN_REF"]           = rsun
-            w_large                         = WCS(hdr_large)
-            with propagate_with_solar_surface():
-                map_to_align_rep            = map_to_align.reproject_to(w_large)
-            image = copy.deepcopy(map_to_align_rep.data)
+        scale = [(self.lonlims[1] - self.lonlims[0]) / int(self.shape[0]),
+                 (self.latlims[1] - self.latlims[0]) / int(self.shape[1])] * u.deg / u.pix
+        header_out = make_fitswcs_header(
+            (self.shape[1], self.shape[0]), frame_out,
+            scale=scale, projection_code="CAR")
+
+        with propagate_with_solar_surface():
+            map_to_align_rep            = map_to_align.reproject_to(header_out)
+        image = copy.deepcopy(map_to_align_rep.data)
 
         return image
+
+        # if Fits.HeaderDiff(hdr, self.hdr_large).identical:
+
+        #     map_ref                         = Map(data, hdr)
+        #     map_ref                         = Map(self.data_small, self.hdr_small)
+        #     map_ref.meta["rsun_ref"]        = map_to_align.meta["rsun_ref"]
+        #     with propagate_with_solar_surface():
+        #         map_to_align_rep            = map_to_align.reproject_to(map_ref.wcs)
+        #     image                           = copy.deepcopy(map_to_align_rep.data)
+        #     self.hdr_large                  = copy.deepcopy(self.hdr_small)
+
+        # else:
+
+
 
     def _create_submap_of_large_data(self, data_large,fov_limits=None ):
         # if self.path_save_figure is not None:
