@@ -637,7 +637,7 @@ class Alignment:
                 Processes = []
 
                 if self.coordinate_frame == "final_carrington":
-                    self.data_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
+                    self.data_large, self.hdr_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
                                                              hdr=self.hdr_large)
                 elif (self.coordinate_frame == "final_helioprojective") or (
                         self.coordinate_frame == "initial_carrington"):
