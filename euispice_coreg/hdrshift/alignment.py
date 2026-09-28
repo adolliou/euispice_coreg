@@ -792,9 +792,6 @@ class Alignment:
         data_small_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_small, hdr=self.hdr_small)
         data_small_interp = copy.deepcopy(data_small_interp)
 
-        data_large_interp = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large, hdr=self.hdr_large)
-        data_large_interp = copy.deepcopy(data_large_interp)
-
         date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
         date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
         with PdfPages(os.path.join(self.path_save_figure, f"coalign_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
@@ -804,7 +801,7 @@ class Alignment:
             pdf.savefig(fig)
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
-            im                          = plot.PlotFunctions.plot_fov(data_large_interp, fig=fig, )
+            im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
             
             pdf.savefig(fig)
             plt.close("all")
