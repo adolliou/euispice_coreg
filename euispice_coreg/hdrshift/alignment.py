@@ -160,7 +160,6 @@ class Alignment:
             to take into account for the solar rotation (and differential rotation). Defaults to None.
             method (str, optional): method to co-align to imgages. either "correlation" or "residues". Defaults to 'correlation'.
             method_carrington_reprojection (str, optional): Method to use for the carrington reprojection. Either "fa" or "sunpy". 
-            If set to "sunpy", then no lonlims, latlims, size_deg or shape is required. 
             Defaults to "fa".
             return_type (str, optional): Determinates the output object of the method 
             either 'corr' or "AlignmentResults". Defaults to 'AlignmentResults'.
@@ -198,36 +197,35 @@ class Alignment:
 
         self.data_small = np.array(f_small[self.small_fov_window].data.copy(), dtype=np.float64)
 
-        if method_carrington_reprojection == "fa":
 
-            if reference_date is None:
-                if "DATE-AVG" not in self.hdr_large:
-                    raise ValueError(
-                        "Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
-                self.reference_date = self.hdr_large["DATE-AVG"]
-            else:
-                self.reference_date = reference_date
+        if reference_date is None:
+            if "DATE-AVG" not in self.hdr_large:
+                raise ValueError(
+                    "Either provide a reference date manualy or the reference file header must have a DATE-AVG keyword.")
+            self.reference_date = self.hdr_large["DATE-AVG"]
+        else:
+            self.reference_date = reference_date
 
-            if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
+        if (lonlims is None) and (latlims is None) & (size_deg_carrington is not None):
 
-                CRLN_OBS = self.hdr_small["CRLN_OBS"]
-                CRLT_OBS = self.hdr_small["CRLT_OBS"]
+            CRLN_OBS = self.hdr_small["CRLN_OBS"]
+            CRLT_OBS = self.hdr_small["CRLT_OBS"]
 
-                self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
-                self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
-                self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
+            self.lonlims = [CRLN_OBS - 0.5 * size_deg_carrington[0], CRLN_OBS + 0.5 * size_deg_carrington[0]]
+            self.latlims = [CRLT_OBS - 0.5 * size_deg_carrington[1], CRLT_OBS + 0.5 * size_deg_carrington[1]]
+            self.shape = [self.hdr_small["NAXIS1"], self.hdr_small["NAXIS2"]]
 
-            elif (lonlims is not None) and (latlims is not None) & (shape is not None):
+        elif (lonlims is not None) and (latlims is not None) & (shape is not None):
 
-                self.lonlims = lonlims
-                self.latlims = latlims
-                self.shape = shape
-            else:
-                raise ValueError("either set lonlims as None, or not. no in between.")
-            
-            if self.shape[0] * self.shape[1]  > 25000000:
-                warnings.warn(f"shape parameter is {shape=}, which is very large."
-                               "Computational time might significantly increase")
+            self.lonlims = lonlims
+            self.latlims = latlims
+            self.shape = shape
+        else:
+            raise ValueError("either set lonlims as None, or not. no in between.")
+        
+        if self.shape[0] * self.shape[1]  > 25000000:
+            warnings.warn(f"shape parameter is {shape=}, which is very large."
+                            "Computational time might significantly increase")
 
         # if self.use_pcij:
         self._check_ant_create_pcij_matrix(self.hdr_small)
