@@ -908,7 +908,7 @@ class Alignment:
                                                 reference_date=self.reference_date,
                                                 rate_wave=rate_wave_)
         spherizer               = rectify.Rectifier(spherical)
-        image                   = spherizer(data, self.shape, self.lonlims, self.latlims, order=self.order, fill=-32762)
+        image                   = spherizer(data, [self.shape[1], self.shape[0]], self.lonlims, self.latlims, order=self.order, fill=-32762)
         image                   = np.where(image == -32762, np.nan, image)
         if return_out_header:
             return image, self.hdr_large
