@@ -809,12 +809,12 @@ class Alignment:
 
         header_small_corrected      = copy.deepcopy(self.hdr_small)
         self._shift_header(
-            header_small_corrected, 
-            self.lag_crval1[max_index[0]], 
-            self.lag_crval2[max_index[1]], 
-            self.lag_cdelt1[max_index[2]],
-            self.lag_cdelt2[max_index[3]],
-            self.lag_crota[max_index[4]],
+            hdr                         = header_small_corrected, 
+            d_crval1                    = self.lag_crval1[max_index[0]], 
+            d_crval2                    = self.lag_crval2[max_index[1]], 
+            d_cdelt1                    = self.lag_cdelt1[max_index[2]],
+            d_cdelt2                    = self.lag_cdelt2[max_index[3]],
+            d_crota                     = self.lag_crota[max_index[4]],
         )
 
         data_small_interp_corr      = self.function_to_apply(
