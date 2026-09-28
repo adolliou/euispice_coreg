@@ -832,12 +832,13 @@ class Alignment:
             pdf.savefig(fig)
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
-            im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
+            im                          = plot.PlotFunctions.plot_fov(data_small_interp_corr, fig=fig, )
             pdf.savefig(fig)
 
             fig                         = plt.figure(figsize = (9*cm, 9*cm))
-            im                          = plot.PlotFunctions.plot_fov(data_small_interp_corr, fig=fig, )
+            im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
             pdf.savefig(fig)
+
 
             plt.close("all")
             self.already_plot           = True
