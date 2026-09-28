@@ -638,7 +638,7 @@ class Alignment:
 
                 if self.coordinate_frame == "final_carrington":
                     self.data_large, self.hdr_large = self.function_to_apply(d_solar_r=d_solar_r, data=self.data_large,
-                                                             hdr=self.hdr_large)
+                                                             hdr=self.hdr_large,  return_out_header=True)
                 elif (self.coordinate_frame == "final_helioprojective") or (
                         self.coordinate_frame == "initial_carrington"):
                     self.data_large = self._create_submap_of_large_data(data_large=self.data_large, fov_limits=fov_limits)
