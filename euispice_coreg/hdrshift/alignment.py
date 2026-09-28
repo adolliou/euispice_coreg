@@ -23,6 +23,7 @@ warnings.filterwarnings('ignore', category=FITSFixedWarning, append=True)
 import sys
 from .AlignmentResults import AlignmentResults
 import matplotlib
+from matplotlib.backends.backend_pdf import PdfPages
 matplotlib.use('Agg')
 plt.ioff()
 
@@ -803,18 +804,17 @@ class Alignment:
 
         date_obs_small              = self.hdr_small["DATE-OBS"].replace("-", "_").replace(":", "_")
         date_obs_large              = self.hdr_large["DATE-OBS"].replace("-", "_").replace(":", "_")
-        cm                          = 1/2.56
-        fig                         = plt.figure(figsize = (9*cm, 9*cm))
-        ax                          = fig.add_subplot()
-        im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
-        fig.savefig(os.path.join(self.path_save_figure, f"imsmall_{date_obs_small}_{date_obs_large}.pdf"))
+        with PdfPages(os.path.join(self.path_save_figure, f"coalign_{date_obs_small}_{date_obs_large}.pdf")) as pdf:
+            cm                          = 1/2.56
+            fig                         = plt.figure(figsize = (9*cm, 9*cm))
+            im                          = plot.PlotFunctions.plot_fov(data_small_interp, fig=fig, )
+            pdf.savefig(fig)
 
-        fig                         = plt.figure(figsize = (9*cm, 9*cm))
-        ax                          = fig.add_subplot()
-        im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
-        fig.savefig(os.path.join(self.path_save_figure, f"imlarge_{date_obs_small}_{date_obs_large}.pdf"))
-        plt.close("all")
-        self.already_plot           = True
+            fig                         = plt.figure(figsize = (9*cm, 9*cm))
+            im                          = plot.PlotFunctions.plot_fov(self.data_large, fig=fig, )
+            pdf.savefig(fig)
+            plt.close("all")
+            self.already_plot           = True
 
     def _set_initial_header_values(self, ang2pipi):
         self.crval1_ref = self.hdr_small['CRVAL1']
