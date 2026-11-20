@@ -976,9 +976,11 @@ class Alignment:
 
         scale = [(self.lonlims[1] - self.lonlims[0]) / int(self.shape[0]),
                  (self.latlims[1] - self.latlims[0]) / int(self.shape[1])] * u.deg / u.pix
-        header_out = make_fitswcs_header(
-            (self.shape[1], self.shape[0]), frame_out,
-            scale=scale, projection_code="CAR")
+        header_out              = make_fitswcs_header(
+                    (self.shape[1], self.shape[0]), frame_out,
+                    scale=scale, projection_code="CAR"
+                    )
+        header_out["RSUN-REF"]                  = (d_solar_r * astropy.constants.R_sun).to("m").value
 
         with propagate_with_solar_surface():
             map_to_align_rep            = map_to_align.reproject_to(header_out)
